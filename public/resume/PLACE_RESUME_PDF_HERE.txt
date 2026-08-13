@@ -1,0 +1,8 @@
+Place the final resume file here as:
+
+  maaz-arif-resume.pdf
+
+The Hero section's "Download Resume" button already links to
+/resume/maaz-arif-resume.pdf — once this file is added, the button
+will work with no further code changes. Delete this text file once
+the real PDF is in place.

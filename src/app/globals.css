@@ -1,0 +1,182 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ==========================================================================
+   THEME TOKENS
+   Dark theme is the primary identity: deep navy-black, purple primary,
+   blue/cyan supporting accents. Light theme is a deliberately separate
+   composition (warm neutral paper + deepened accents for contrast) rather
+   than a naive inversion of the dark palette.
+   ========================================================================== */
+
+:root {
+  /* Self-hosted fonts (via @fontsource, imported in layout.tsx). Space
+     Grotesk carries the display personality, Inter stays quiet for body
+     copy, JetBrains Mono supplies the terminal-inspired micro-details. */
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", monospace;
+
+  /* Light theme (default, accessible on its own) */
+  --background: 60 16.7% 97.6%; /* warm neutral white #FAFAF8 */
+  --background-secondary: 45 13.3% 94.1%; /* #F2F1EE */
+  --foreground: 222.2 47.4% 11.2%; /* dark navy text #0F172A */
+  --muted: 217.5 12.1% 38.8%; /* #57606F */
+  --border: 42.9 11.9% 88.4%; /* #E5E3DE */
+  --card: 0 0% 100%; /* pure white cards for crisp separation */
+
+  --primary: 263.4 70% 50.4%; /* #6D28D9 - deepened purple for AA contrast on light */
+  --primary-foreground: 0 0% 100%;
+  --secondary: 221.2 83.2% 53.3%; /* #2563EB */
+  --secondary-foreground: 0 0% 100%;
+  --accent: 191.6 91.4% 36.5%; /* #0891B2 */
+  --accent-foreground: 0 0% 100%;
+
+  --radius: 0.75rem;
+}
+
+.dark {
+  --background: 240 20% 4.9%; /* #0A0A0F */
+  --background-secondary: 240 20.9% 8.4%; /* #11111A */
+  --foreground: 210 40% 98%; /* #F8FAFC */
+  --muted: 215 20.2% 65.1%; /* #94A3B8 */
+  --border: 240 15% 15.7%; /* #22222E */
+  --card: 240 20.9% 8.4%;
+
+  --primary: 262.1 83.3% 57.8%; /* #7C3AED */
+  --primary-foreground: 210 40% 98%;
+  --secondary: 217.2 91.2% 59.8%; /* #3B82F6 */
+  --secondary-foreground: 210 40% 98%;
+  --accent: 188.7 94.5% 42.7%; /* #06B6D4 */
+  --accent-foreground: 210 40% 98%;
+}
+
+/* ==========================================================================
+   BASE
+   ========================================================================== */
+
+* {
+  border-color: hsl(var(--border));
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  transition: background-color 0.35s ease, color 0.35s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+::selection {
+  background-color: hsl(var(--primary) / 0.3);
+  color: hsl(var(--foreground));
+}
+
+/* Slim, quiet scrollbar that fits the developer aesthetic */
+::-webkit-scrollbar {
+  width: 10px;
+}
+::-webkit-scrollbar-track {
+  background: hsl(var(--background));
+}
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--muted) / 0.4);
+  border-radius: 999px;
+  border: 2px solid hsl(var(--background));
+}
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted) / 0.7);
+}
+
+/* Visible, on-brand keyboard focus ring everywhere */
+:focus-visible {
+  outline: 2px solid hsl(var(--primary));
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+/* ==========================================================================
+   TYPOGRAPHY SCALE
+   Space Grotesk (display) carries the technical/geometric personality,
+   Inter (body) stays quiet and legible, JetBrains Mono (mono) supplies the
+   terminal-inspired micro-details called for in the brief.
+   ========================================================================== */
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--font-display);
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  font-weight: 600;
+}
+
+.text-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: hsl(var(--primary));
+}
+
+.text-mono {
+  font-family: var(--font-mono);
+}
+
+/* ==========================================================================
+   SIGNATURE TEXTURES
+   Restrained security/terminal motifs: faint grid, glow orbs, scanlines.
+   Applied sparingly via utility classes rather than globally.
+   ========================================================================== */
+
+.bg-grid {
+  background-image: linear-gradient(to right, hsl(var(--border) / 0.5) 1px, transparent 1px),
+    linear-gradient(to bottom, hsl(var(--border) / 0.5) 1px, transparent 1px);
+  background-size: 44px 44px;
+  mask-image: radial-gradient(ellipse 70% 60% at 50% 0%, black 40%, transparent 100%);
+}
+
+.bg-noise {
+  position: relative;
+}
+
+.bg-noise::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.035;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+.glass {
+  background-color: hsl(var(--card) / 0.6);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid hsl(var(--border) / 0.8);
+}
+
+.glow-orb {
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(80px);
+  pointer-events: none;
+}
