@@ -93,6 +93,14 @@ function isRateLimited(ip: string): boolean {
   return record.count > MAX_REQUESTS_PER_WINDOW;
 }
 
+function sanitizeErrorMessage(error: any): string {
+  if (!error) return "Unknown error";
+  const message = error instanceof Error ? error.stack || error.message : String(error);
+  return message
+    .replace(/AIzaSy[a-zA-Z0-9\-_]+/g, "[REDACTED_API_KEY]")
+    .replace(/AQ\.[a-zA-Z0-9\-_]+/g, "[REDACTED_API_KEY]");
+}
+
 export async function POST(req: Request) {
   try {
     // 1. Rate Limiting
@@ -160,7 +168,7 @@ export async function POST(req: Request) {
     // 4. Gemini SDK Integration
     const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({
-      model: "gemini-1.5-flash",
+      model: "gemini-3.5-flash",
       systemInstruction: SYSTEM_INSTRUCTION,
     });
 
@@ -188,7 +196,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ text });
   } catch (error: any) {
-    console.error("Error in chat API route:", error);
+    console.error("Error in chat API route:", sanitizeErrorMessage(error));
 
     // Gracefully handle specific quota or rate limit errors if detectable from the SDK error message
     const errorMsg = error?.message || "";
