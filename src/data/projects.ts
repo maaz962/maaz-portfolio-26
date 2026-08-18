@@ -40,9 +40,9 @@ export const projects: Project[] = [
     technologies: ["Java", "Android", "XML"],
     categories: ["cybersecurity"],
     image:
-      "https://github.com/maaz962/CyberScamCheckerApp/raw/master/1app.png",
+      "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=800&h=600&fit=crop&q=80",
     imageAlt:
-      "Cyber Scam Checker App screenshot showing the main scam detection screen",
+      "Cybersecurity concept representing the Cyber Scam Checker scam detection app",
     github: "https://github.com/maaz962/CyberScamCheckerApp",
     featured: true,
   },
@@ -54,6 +54,10 @@ export const projects: Project[] = [
     category: "Mobile",
     technologies: ["Flutter", "Dart"],
     categories: ["flutter"],
+    image:
+      "https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=800&h=600&fit=crop&q=80",
+    imageAlt:
+      "Urban city view representing the Move-Go ride-hailing transport app",
     github: "https://github.com/maaz962/move-go-app",
   },
   {
@@ -64,6 +68,10 @@ export const projects: Project[] = [
     category: "Mobile",
     technologies: ["Flutter", "Dart"],
     categories: ["flutter"],
+    image:
+      "https://images.unsplash.com/photo-1484480974693-6ca0a78fb36b?w=800&h=600&fit=crop&q=80",
+    imageAlt:
+      "Checklist and notes representing the Flutter To-Do task management app",
   },
   {
     slug: "e-commerce",
@@ -73,6 +81,10 @@ export const projects: Project[] = [
     category: "Web",
     technologies: ["PHP", "MySQL", "JavaScript"],
     categories: ["web", "php"],
+    image:
+      "https://images.unsplash.com/photo-1556740758-90de374c12ad?w=800&h=600&fit=crop&q=80",
+    imageAlt:
+      "Online shopping and e-commerce representing the E-Commerce App store",
   },
   {
     slug: "scholarship-website",
@@ -82,6 +94,10 @@ export const projects: Project[] = [
     category: "Web",
     technologies: ["PHP", "MySQL", "HTML"],
     categories: ["web", "php"],
+    image:
+      "https://images.unsplash.com/photo-1541339907198-e08756dedf3f?w=800&h=600&fit=crop&q=80",
+    imageAlt:
+      "Graduation celebration representing the Scholarship Website for education",
     github: "https://github.com/maaz962/Scholarship_website",
   },
   {
@@ -92,6 +108,10 @@ export const projects: Project[] = [
     category: "Web",
     technologies: ["HTML", "CSS", "JavaScript"],
     categories: ["web"],
+    image:
+      "https://images.unsplash.com/photo-1449965408869-eaa3f722e40d?w=800&h=600&fit=crop&q=80",
+    imageAlt:
+      "Laptop with code representing the M44Z Web Dev Portfolio website",
     github: "https://github.com/maaz962/M44Z-WEB-DEV",
     liveDemo: "https://m44z-web-dev.vercel.app",
   },
@@ -103,6 +123,10 @@ export const projects: Project[] = [
     category: "Mobile",
     technologies: ["Java", "Android"],
     categories: [],
+    image:
+      "https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?w=800&h=600&fit=crop&q=80",
+    imageAlt:
+      "Mobile app interface representing the My Card View Android digital card app",
     github: "https://github.com/maaz962/My_Card_View",
   },
 ];

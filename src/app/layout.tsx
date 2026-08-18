@@ -9,7 +9,6 @@ import "@fontsource/space-grotesk/700.css";
 import "@fontsource/jetbrains-mono/400.css";
 import "@fontsource/jetbrains-mono/500.css";
 import { ThemeProvider } from "@/components/layout/theme-provider";
-import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
 import { AIAssistant } from "@/components/ui/ai-assistant";
 import { profile } from "@/data/profile";
@@ -73,7 +72,6 @@ export default function RootLayout({
       </head>
       <body className="font-sans">
         <ThemeProvider>
-          <Navbar />
           <main>{children}</main>
           <Footer />
           <AIAssistant />
