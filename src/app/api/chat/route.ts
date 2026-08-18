@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { GoogleGenAI } from "@google/genai";
 
 const SYSTEM_INSTRUCTION = `You are a helpful, professional, and concise portfolio AI assistant for M. Maaz Arif.
 Your primary role is to answer questions about M. Maaz Arif based ONLY on the following verified context.
@@ -98,7 +98,7 @@ function sanitizeErrorMessage(error: any): string {
   const message = error instanceof Error ? error.stack || error.message : String(error);
   return message
     .replace(/AIzaSy[a-zA-Z0-9\-_]+/g, "[REDACTED_API_KEY]")
-    .replace(/AQ\.[a-zA-Z0-9\-_]+/g, "[REDACTED_API_KEY]");
+    .replace(/AQ\.[a-zA-Z0-9\-_]+/g, "[REDACTED_KEY]");
 }
 
 export async function POST(req: Request) {
@@ -165,24 +165,10 @@ export async function POST(req: Request) {
       );
     }
 
-    if (!apiKey.startsWith("AIzaSy")) {
-      console.error("GEMINI_API_KEY appears to be invalid. Keys must start with 'AIzaSy'.");
-      return NextResponse.json(
-        { error: "AI assistant is temporarily unavailable. The API key format is invalid. You can contact Maaz directly on WhatsApp or email." },
-        { status: 503 }
-      );
-    }
+    // 4. Gemini SDK Integration (new @google/genai SDK)
+    const ai = new GoogleGenAI({ apiKey });
 
-    // 4. Gemini SDK Integration
-    const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({
-      model: "gemini-2.0-flash",
-      systemInstruction: SYSTEM_INSTRUCTION,
-    });
-
-    // Format chat history for Gemini SDK
-    // Exclude the last message from history since we send it via sendMessage
-    // Ensure roles are strictly 'user' or 'model'
+    // Format chat history for the new SDK
     const history = messages
       .slice(0, -1)
       .filter((msg: any) => msg.role === "user" || msg.role === "model")
@@ -191,12 +177,15 @@ export async function POST(req: Request) {
         parts: [{ text: msg.content.substring(0, 1000) }],
       }));
 
-    const chat = model.startChat({
-      history: history,
+    const result = await ai.models.generateContent({
+      model: "gemini-2.0-flash",
+      contents: history.length > 0 ? [...history, { role: "user", parts: [{ text: userText }] }] : userText,
+      config: {
+        systemInstruction: SYSTEM_INSTRUCTION,
+      },
     });
 
-    const result = await chat.sendMessage(userText);
-    const text = result.response.text();
+    const text = result.text;
 
     if (!text) {
       throw new Error("Empty response from Gemini API.");
