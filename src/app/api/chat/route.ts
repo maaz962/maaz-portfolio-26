@@ -160,7 +160,15 @@ export async function POST(req: Request) {
     if (!apiKey) {
       console.error("GEMINI_API_KEY environment variable is missing.");
       return NextResponse.json(
-        { error: "AI assistant is temporarily unavailable. You can contact Maaz directly on WhatsApp or email." },
+        { error: "AI assistant is temporarily unavailable. Please set the GEMINI_API_KEY environment variable. You can contact Maaz directly on WhatsApp or email." },
+        { status: 503 }
+      );
+    }
+
+    if (!apiKey.startsWith("AIzaSy")) {
+      console.error("GEMINI_API_KEY appears to be invalid. Keys must start with 'AIzaSy'.");
+      return NextResponse.json(
+        { error: "AI assistant is temporarily unavailable. The API key format is invalid. You can contact Maaz directly on WhatsApp or email." },
         { status: 503 }
       );
     }
@@ -168,7 +176,7 @@ export async function POST(req: Request) {
     // 4. Gemini SDK Integration
     const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({
-      model: "gemini-3.5-flash",
+      model: "gemini-2.0-flash",
       systemInstruction: SYSTEM_INSTRUCTION,
     });
 
