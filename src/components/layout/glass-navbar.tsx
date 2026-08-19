@@ -12,32 +12,30 @@ interface GlassNavbarProps {
 
 export function GlassNavbar({ activeSection, onNavigate }: GlassNavbarProps) {
   return (
-    <motion.div
+    <motion.header
       initial={{ y: -40, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-      className="fixed left-1/2 top-4 z-50 -translate-x-1/2"
+      className="fixed inset-x-0 top-0 z-50 border-b border-border/60 bg-background/70 backdrop-blur-md"
     >
-      <nav
-        aria-label="Primary"
-        className="glass-nav flex items-center gap-1 rounded-full border border-white/10 bg-background/40 px-2 py-1.5 shadow-lg shadow-black/10 backdrop-blur-xl dark:border-white/10 dark:bg-background/40 dark:shadow-black/20"
-      >
+      <div className="mx-auto flex h-14 max-w-content items-center px-6 md:px-10">
         <a
           href="#top"
           onClick={(e) => {
             e.preventDefault();
             onNavigate("top");
           }}
-          className="text-mono shrink-0 px-3 py-1.5 text-sm font-medium tracking-tight text-foreground transition-colors hover:text-primary"
+          className="text-mono shrink-0 text-sm font-medium tracking-tight text-foreground transition-colors hover:text-primary"
         >
           <span className="hidden sm:inline">{profile.name}</span>
           <span className="sm:hidden">{profile.initials}</span>
           <span className="text-primary">.</span>
         </a>
 
-        <div className="mx-1 hidden h-4 w-px bg-border sm:block" />
-
-        <div className="hidden items-center gap-0.5 md:flex">
+        <nav
+          className="hidden items-center gap-7 lg:flex lg:absolute lg:left-1/2 lg:-translate-x-1/2"
+          aria-label="Primary"
+        >
           {navLinks.map((link) => {
             const id = link.href.replace("#", "");
             const isActive = activeSection === id;
@@ -50,18 +48,18 @@ export function GlassNavbar({ activeSection, onNavigate }: GlassNavbarProps) {
                   onNavigate(id);
                 }}
                 aria-current={isActive ? "true" : undefined}
-                className="relative rounded-full px-3 py-1.5 text-xs font-medium transition-colors"
+                className="relative py-1 text-sm font-medium transition-colors"
               >
                 {isActive && (
                   <motion.span
                     layoutId="glass-nav-pill"
-                    className="absolute inset-0 rounded-full bg-primary/15 text-primary"
+                    className="absolute -bottom-1 left-0 right-0 h-px bg-primary"
                     transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
                   />
                 )}
                 <span
                   className={`relative z-10 ${
-                    isActive ? "text-primary" : "text-muted hover:text-foreground"
+                    isActive ? "text-foreground" : "text-muted hover:text-foreground"
                   }`}
                 >
                   {link.label}
@@ -69,14 +67,12 @@ export function GlassNavbar({ activeSection, onNavigate }: GlassNavbarProps) {
               </a>
             );
           })}
-        </div>
+        </nav>
 
-        <div className="mx-1 hidden h-4 w-px bg-border sm:block" />
-
-        <div className="flex items-center gap-1">
+        <div className="ml-auto flex items-center gap-3">
           <ThemeToggle />
         </div>
-      </nav>
-    </motion.div>
+      </div>
+    </motion.header>
   );
 }

@@ -58,7 +58,7 @@ export function SectionViewer({ children }: { children: React.ReactNode }) {
   return (
     <>
       <GlassNavbar activeSection={activeSection} onNavigate={handleNavigate} />
-      <main ref={mainRef}>
+      <main ref={mainRef} className="pt-14">
         <AnimatePresence mode="wait">
           <motion.div
             key={activeSection}
