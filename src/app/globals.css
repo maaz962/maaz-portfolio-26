@@ -11,12 +11,9 @@
    ========================================================================== */
 
 :root {
-  /* Self-hosted fonts (via @fontsource, imported in layout.tsx). Space
-     Grotesk carries the display personality, Inter stays quiet for body
-     copy, JetBrains Mono supplies the terminal-inspired micro-details. */
-  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
-  --font-display: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
-  --font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", monospace;
+  /* Font variables (--font-sans / --font-display / --font-mono) are defined
+     on <html> by next/font (see layout.tsx), which also self-hosts and
+     preloads the woff2 files. Do not redeclare them here. */
 
   /* Light theme (default, accessible on its own) */
   --background: 60 16.7% 97.6%; /* warm neutral white #FAFAF8 */

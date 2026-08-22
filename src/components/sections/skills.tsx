@@ -1,7 +1,6 @@
 "use client";
 
-import { cn } from "@/lib/utils";
-import type { SkillCategory, SkillProficiency } from "@/types";
+import type { SkillCategory } from "@/types";
 import {
   proficiencyLabels,
   skillCategoryMeta,
@@ -15,21 +14,6 @@ import {
   StaggerFadeIn,
   StaggerItem,
 } from "@/components/animations/stagger-fade-in";
-
-const categoryAccent: Record<SkillCategory, string> = {
-  frontend: "border-secondary/40 bg-secondary/5 text-secondary",
-  backend: "border-primary/40 bg-primary/5 text-primary",
-  database: "border-accent/40 bg-accent/5 text-accent",
-  mobile: "border-secondary/40 bg-secondary/5 text-secondary",
-  tools: "border-border bg-background-secondary text-foreground",
-  security: "border-primary/30 bg-primary/5 text-primary",
-};
-
-const proficiencyStyles: Record<SkillProficiency, string> = {
-  development: "border-primary/30 text-primary",
-  familiar: "border-border text-muted",
-  learning: "border-accent/30 text-accent",
-};
 
 function skillsByCategory(category: SkillCategory) {
   return skills.filter((skill) => skill.category === category);
@@ -66,12 +50,7 @@ export function Skills() {
                         {meta.description}
                       </p>
                     </div>
-                    <span
-                      className={cn(
-                        "text-mono rounded-full border px-3 py-1 text-xs",
-                        categoryAccent[category]
-                      )}
-                    >
+                    <span className="text-mono rounded-full border border-border bg-background-secondary px-3 py-1 text-xs text-foreground">
                       {items.length} skills
                     </span>
                   </div>
@@ -83,12 +62,7 @@ export function Skills() {
                           <span className="text-sm font-medium text-foreground">
                             {skill.name}
                           </span>
-                          <span
-                            className={cn(
-                              "text-mono shrink-0 rounded-full border px-2.5 py-0.5 text-[0.65rem] uppercase tracking-wide",
-                              proficiencyStyles[skill.proficiency]
-                            )}
-                          >
+                          <span className="text-mono shrink-0 rounded-full border border-accent/30 bg-accent/10 px-2.5 py-0.5 text-[0.65rem] uppercase tracking-wide text-accent">
                             {proficiencyLabels[skill.proficiency]}
                           </span>
                         </div>
