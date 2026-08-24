@@ -3,17 +3,20 @@
 import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Menu, X } from "lucide-react";
+import { usePathname } from "next/navigation";
 import { navLinks } from "@/data/nav";
 import { profile } from "@/data/profile";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
 
 interface GlassNavbarProps {
   activeSection: string;
-  onNavigate: (id: string) => void;
+  onNavigate?: (id: string) => void;
 }
 
 export function GlassNavbar({ activeSection, onNavigate }: GlassNavbarProps) {
   const [open, setOpen] = useState(false);
+  const pathname = usePathname();
+  const isHomePage = pathname === "/";
 
   return (
     <motion.div
@@ -24,13 +27,15 @@ export function GlassNavbar({ activeSection, onNavigate }: GlassNavbarProps) {
     >
       <nav
         aria-label="Primary"
-        className="glass-nav flex w-full max-w-[700px] items-center justify-between gap-2 rounded-2xl border border-white/10 bg-background/50 px-3 py-2 shadow-lg shadow-black/10 backdrop-blur-xl sm:px-4 dark:border-white/10 dark:bg-background/50 dark:shadow-black/20"
+        className="glass-nav flex w-full max-w-[860px] items-center justify-between gap-2 rounded-2xl border border-white/10 bg-background/50 px-3 py-2 shadow-lg shadow-black/10 backdrop-blur-xl sm:px-4 dark:border-white/10 dark:bg-background/50 dark:shadow-black/20"
       >
         <a
-          href="#top"
+          href="/#top"
           onClick={(e) => {
-            e.preventDefault();
-            onNavigate("top");
+            if (isHomePage && onNavigate) {
+              e.preventDefault();
+              onNavigate("top");
+            }
           }}
           className="text-mono shrink-0 text-sm font-medium tracking-tight text-foreground transition-colors hover:text-primary"
         >
@@ -39,20 +44,26 @@ export function GlassNavbar({ activeSection, onNavigate }: GlassNavbarProps) {
           <span className="text-primary">.</span>
         </a>
 
-        <div className="hidden items-center gap-1 md:flex">
+        <div className="hidden items-center gap-1 lg:flex">
           {navLinks.map((link) => {
-            const id = link.href.replace("#", "");
-            const isActive = activeSection === id;
+            const isHash = link.href.includes("#");
+            const id = isHash ? link.href.replace("/#", "").replace("#", "") : "";
+            const isActive = link.href === "/blog"
+              ? (pathname === "/blog" || pathname.startsWith("/blog/") || activeSection === "blog")
+              : (isHomePage && activeSection === id);
+
             return (
               <a
                 key={link.href}
                 href={link.href}
                 onClick={(e) => {
-                  e.preventDefault();
-                  onNavigate(id);
+                  if (isHomePage && isHash && onNavigate) {
+                    e.preventDefault();
+                    onNavigate(id);
+                  }
                 }}
                 aria-current={isActive ? "true" : undefined}
-                className="relative rounded-full px-3 py-1.5 text-xs font-medium transition-colors"
+                className="relative whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-medium transition-colors"
               >
                 {isActive && (
                   <motion.span
@@ -79,8 +90,8 @@ export function GlassNavbar({ activeSection, onNavigate }: GlassNavbarProps) {
             type="button"
             onClick={() => setOpen((v) => !v)}
             aria-label={open ? "Close menu" : "Open menu"}
-            aria-expanded={open}
-            className="flex h-9 w-9 items-center justify-center rounded-full border border-border text-foreground md:hidden"
+                aria-expanded={open}
+                className="flex h-9 w-9 items-center justify-center rounded-full border border-border text-foreground lg:hidden"
           >
             {open ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
           </button>
@@ -94,7 +105,7 @@ export function GlassNavbar({ activeSection, onNavigate }: GlassNavbarProps) {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm md:hidden"
+              className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm lg:hidden"
             onClick={() => setOpen(false)}
           />
         )}
@@ -109,18 +120,24 @@ export function GlassNavbar({ activeSection, onNavigate }: GlassNavbarProps) {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -8, scale: 0.95 }}
             transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
-            className="glass-nav absolute left-4 right-4 top-full z-50 mt-2 flex flex-col items-center gap-1 rounded-2xl border border-white/10 bg-background/80 py-3 shadow-lg shadow-black/10 backdrop-blur-xl md:hidden dark:border-white/10 dark:bg-background/80 dark:shadow-black/20"
+            className="glass-nav absolute left-4 right-4 top-full z-50 mt-2 flex flex-col items-center gap-1 rounded-2xl border border-white/10 bg-background/80 py-3 shadow-lg shadow-black/10 backdrop-blur-xl lg:hidden dark:border-white/10 dark:bg-background/80 dark:shadow-black/20"
           >
             {navLinks.map((link) => {
-              const id = link.href.replace("#", "");
-              const isActive = activeSection === id;
+              const isHash = link.href.includes("#");
+              const id = isHash ? link.href.replace("/#", "").replace("#", "") : "";
+              const isActive = link.href === "/blog"
+                ? (pathname === "/blog" || pathname.startsWith("/blog/") || activeSection === "blog")
+                : (isHomePage && activeSection === id);
+
               return (
                 <a
                   key={link.href}
                   href={link.href}
                   onClick={(e) => {
-                    e.preventDefault();
-                    onNavigate(id);
+                    if (isHomePage && isHash && onNavigate) {
+                      e.preventDefault();
+                      onNavigate(id);
+                    }
                     setOpen(false);
                   }}
                   className={`w-full text-center rounded-full px-4 py-2 text-sm font-medium transition-colors ${

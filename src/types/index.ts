@@ -92,3 +92,83 @@ export interface Service {
 
 export type Theme = "light" | "dark";
 
+export type BlogCategory =
+  | "Flutter"
+  | "Web Development"
+  | "React"
+  | "Next.js"
+  | "Cybersecurity";
+
+export interface BlogPost {
+  slug: string;
+  title: string;
+  description: string;
+  category: BlogCategory;
+  image?: string;
+  imageAlt?: string;
+  author: {
+    name: string;
+    avatar?: string;
+  };
+  publishedDate: string;
+  readTime: string;
+  content?: string;
+  sourceUrl?: string;
+  sourceName?: string;
+  /** Set server-side for posts the admin has featured. */
+  featured?: boolean;
+}
+
+/** Admin-controlled blog configuration persisted in the JSON DB. */
+export interface BlogSettings {
+  /** Source categories (e.g. Dev.to tags) that are currently disabled. */
+  disabledSources: string[];
+  /** Post slugs marked as featured — pinned first on the public blog. */
+  featuredSlugs: string[];
+  /** Post slugs hidden from the public blog but visible in admin. */
+  hiddenSlugs: string[];
+}
+
+/** A blog post enriched with moderation flags + engagement counts for the admin dashboard. */
+export interface AdminBlogPost extends BlogPost {
+  featured: boolean;
+  hidden: boolean;
+  likesCount: number;
+  commentsCount: number;
+}
+
+export interface User {
+  id: string;
+  name: string;
+  username: string;
+  email: string;
+  isAdmin: boolean;
+  avatarUrl: string;
+  createdAt: string;
+}
+
+export interface Comment {
+  id: string;
+  blogSlug: string;
+  userId: string;
+  userName: string;
+  userAvatar: string;
+  content: string;
+  parentId?: string; // For nesting reply threads
+  isDeleted: boolean;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export interface Like {
+  id: string;
+  blogSlug: string;
+  userId: string;
+  createdAt: string;
+}
+
+export interface BlogEngagement {
+  likesCount: number;
+  commentsCount: number;
+  userLiked: boolean;
+}

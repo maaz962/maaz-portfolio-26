@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import type { VisitorLog, VisitorStats } from "@/types/tracking";
+import { getAdminUser } from "@/lib/auth";
 
 const MAX_LOGS = 500;
 const visitorLogs: VisitorLog[] = [];
@@ -65,8 +66,8 @@ async function geolocate(ip: string): Promise<VisitorLog["location"]> {
 }
 
 export async function GET(req: NextRequest) {
-  const secret = req.headers.get("x-admin-secret");
-  if (secret !== "maaz-analytics-2026") {
+  const admin = await getAdminUser();
+  if (!admin) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
