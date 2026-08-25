@@ -33,14 +33,14 @@ const games = [
     slug: "grid-garden",
     title: "Grid Garden",
     description:
-      "Plant and grow your garden using CSS Grid. Learn grid-template-columns, grid-gap, and more!",
+      "Build layouts and master CSS Grid. Learn grid-template-columns, grid-areas, spanning, and more through fun challenges!",
     difficulty: "Intermediate",
-    topics: ["CSS Grid", "grid-template", "grid-gap"],
+    topics: ["CSS Grid", "grid-template", "grid-areas", "spanning"],
     animal: "🌱",
     color: "from-emerald-500/20 to-teal-500/20",
     borderColor: "border-emerald-500/30",
     accentColor: "text-emerald-500",
-    comingSoon: true,
+    comingSoon: false,
   },
   {
     slug: "css selectors",

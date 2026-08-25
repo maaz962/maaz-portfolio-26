@@ -340,24 +340,25 @@
 
 .zoo-status-toast {
   position: absolute;
-  bottom: 0.75rem;
-  left: 0.75rem;
-  right: 0.75rem;
+  bottom: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
   z-index: 30;
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.5rem 0.875rem;
-  border-radius: 0.5rem;
+  padding: 0.625rem 1.25rem;
+  border-radius: 9999px;
   font-family: var(--font-mono);
-  font-size: 0.7rem;
-  font-weight: 600;
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  box-shadow: 0 4px 16px -2px rgba(0, 0, 0, 0.3);
+  font-size: 0.75rem;
+  font-weight: 700;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: 0 6px 24px -4px rgba(0, 0, 0, 0.35);
   pointer-events: none;
   opacity: 0;
   transition: opacity 0.3s ease;
+  white-space: nowrap;
 }
 
 .zoo-status-toast.toast-exit {
@@ -365,15 +366,15 @@
 }
 
 .zoo-status-toast.success {
-  background: hsl(142 70% 45% / 0.2);
-  border: 1px solid hsl(142 70% 45% / 0.3);
-  color: hsl(142 70% 55%);
+  background: hsl(142 70% 40% / 0.9);
+  border: 1px solid hsl(142 70% 50% / 0.6);
+  color: #fff;
 }
 
 .zoo-status-toast.error {
-  background: hsl(0 84% 60% / 0.15);
-  border: 1px solid hsl(0 84% 60% / 0.25);
-  color: hsl(0 84% 65%);
+  background: hsl(0 84% 55% / 0.9);
+  border: 1px solid hsl(0 84% 60% / 0.6);
+  color: #fff;
 }
 
 .zoo-status-toast .toast-icon {
