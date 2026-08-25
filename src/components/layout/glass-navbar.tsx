@@ -48,26 +48,28 @@ export function GlassNavbar({ activeSection, onNavigate }: GlassNavbarProps) {
           {navLinks.map((link) => {
             const isHash = link.href.includes("#");
             const id = isHash ? link.href.replace("/#", "").replace("#", "") : "";
-            const isActive = link.href === "/blog"
-              ? (pathname === "/blog" || pathname.startsWith("/blog/") || activeSection === "blog")
-              : (isHomePage && activeSection === id);
+              const isActive = link.href === "/blog"
+                ? (pathname === "/blog" || pathname.startsWith("/blog/") || activeSection === "blog")
+                : link.href === "/games"
+                ? (pathname === "/games" || pathname.startsWith("/games/"))
+                : (isHomePage && activeSection === id);
 
-            return (
-              <a
-                key={link.href}
-                href={link.href}
-                onClick={(e) => {
-                  if (isHomePage && isHash && onNavigate) {
-                    e.preventDefault();
-                    onNavigate(id);
-                  }
-                }}
-                aria-current={isActive ? "true" : undefined}
-                className="relative whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-medium transition-colors"
-              >
-                {isActive && (
-                  <motion.span
-                    layoutId="glass-nav-pill"
+              return (
+                <a
+                  key={link.href}
+                  href={link.href}
+                  onClick={(e) => {
+                    if (isHomePage && isHash && onNavigate) {
+                      e.preventDefault();
+                      onNavigate(id);
+                    }
+                  }}
+                  aria-current={isActive ? "true" : undefined}
+                  className="relative whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-medium transition-colors"
+                >
+                  {isActive && (
+                    <motion.span
+                      layoutId="glass-nav-pill"
                     className="absolute inset-0 rounded-full bg-primary/15"
                     transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
                   />
@@ -127,6 +129,8 @@ export function GlassNavbar({ activeSection, onNavigate }: GlassNavbarProps) {
               const id = isHash ? link.href.replace("/#", "").replace("#", "") : "";
               const isActive = link.href === "/blog"
                 ? (pathname === "/blog" || pathname.startsWith("/blog/") || activeSection === "blog")
+                : link.href === "/games"
+                ? (pathname === "/games" || pathname.startsWith("/games/"))
                 : (isHomePage && activeSection === id);
 
               return (
