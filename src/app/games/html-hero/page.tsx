@@ -16,6 +16,9 @@ import {
   Sparkles,
   Eye,
   EyeOff,
+  RefreshCw,
+  Play,
+  Check,
 } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { GlassNavbar } from "@/components/layout/glass-navbar";
@@ -25,9 +28,10 @@ import { cn } from "@/lib/utils";
 import type { BlogEngagement, Comment, User } from "@/types";
 import "./game.css";
 
-const GAME_SLUG = "grid-garden";
+const GAME_SLUG = "html-hero";
+const TOTAL_LEVELS = 16;
 
-export default function GridGardenPage() {
+export default function HtmlHeroPage() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authMode, setAuthMode] = useState<"login" | "register">("login");
@@ -80,8 +84,8 @@ export default function GridGardenPage() {
   useEffect(() => {
     if (!currentUser) return;
     const tryInit = () => {
-      if (typeof window !== "undefined" && (window as any).__initGridGarden) {
-        (window as any).__initGridGarden();
+      if (typeof window !== "undefined" && (window as any).__initHtmlHero) {
+        (window as any).__initHtmlHero();
       } else {
         setTimeout(tryInit, 100);
       }
@@ -224,15 +228,15 @@ export default function GridGardenPage() {
         </Link>
 
         <div className="mb-6 flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-500">
-            <span className="text-xl">🌱</span>
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-500/10 text-indigo-500">
+            <span className="text-xl">🦸</span>
           </div>
           <div>
             <h1 className="font-display text-xl font-bold text-foreground">
-              Grid Garden
+              HTML Hero
             </h1>
             <p className="text-xs text-muted">
-              Build layouts and master CSS Grid by arranging garden plots
+              Write real HTML tags, level by level, and become an HTML Master
             </p>
           </div>
         </div>
@@ -254,81 +258,68 @@ export default function GridGardenPage() {
           />
         ) : (
         <>
-        <div className="grid-game-wrapper">
-          {/* LEFT SIDEBAR */}
-          <div className="grid-sidebar">
-            {/* Level Info */}
-            <div className="grid-level-info">
-              <div className="grid-level-header">
-                <span className="grid-level-badge">
-                  <Gamepad2 className="h-3 w-3" />
+        <div className="hh-game">
+          {/* LEFT COLUMN */}
+          <div className="hh-sidebar">
+            <div className="hh-level-info">
+              <div className="hh-level-header">
+                <span className="hh-level-badge">
+                  <Gamepad2 className="h-3 w-3 icon" />
                   Level <span id="level-number">1</span>
                   <span className="text-muted">/</span>
-                  <span>15</span>
+                  <span>{TOTAL_LEVELS}</span>
                 </span>
-                <span id="level-difficulty" className="grid-level-difficulty beginner">
-                  Beginner
+                <span id="level-difficulty" className="hh-difficulty easy">
+                  Easy
                 </span>
               </div>
-              <h2
-                id="level-title"
-                className="font-display text-sm font-bold text-foreground"
-              >
-                Turn On Grid!
+              <h2 id="level-title" className="hh-level-title">
+                Hello, World!
               </h2>
-              <p id="level-instruction" className="grid-instruction mt-1">
-                The blocks are stacked vertically. Activate CSS Grid to arrange them!
+              <p id="level-instruction" className="hh-instruction mt-1">
+                Task: write an h1 tag.
               </p>
-              <div id="level-hint" className="grid-hint">
-                <Sparkles className="mt-0.5 h-3 w-3 shrink-0 text-primary" />
-                <span>
-                  The magic property is <code>display: grid</code> — add it to the container.
-                </span>
+              <div id="level-hint" className="hh-hint">
+                <Sparkles className="icon h-3 w-3" />
+                <span>Hint: your hint appears here.</span>
               </div>
             </div>
 
-            {/* Code Editor */}
-            <div className="grid-editor">
-              <div className="grid-editor-header">
-                <div className="grid-editor-dots">
-                  <span className="grid-editor-dot red" />
-                  <span className="grid-editor-dot yellow" />
-                  <span className="grid-editor-dot green" />
+            <div className="hh-editor">
+              <div className="hh-editor-header">
+                <div className="hh-editor-dots">
+                  <span className="hh-editor-dot red" />
+                  <span className="hh-editor-dot yellow" />
+                  <span className="hh-editor-dot green" />
                 </div>
-                <span className="grid-editor-title">style.css</span>
+                <span className="hh-editor-title">index.html</span>
               </div>
-              <div className="grid-editor-body">
-                <div className="grid-line-numbers">
-                  1<br />2<br />3<br />4<br />5<br />6
-                </div>
-                <div className="grid-code-area">
-                  <div className="grid-code-prefix">
-                    <span className="grid-css-selector">#container</span>{" "}
-                    <span className="grid-css-brace">{"{"}</span>
-                  </div>
-                  <textarea
-                    id="css-editor"
-                    className="grid-editor-textarea"
-                    placeholder="display: grid"
-                    autoFocus
-                    autoCapitalize="none"
-                    spellCheck={false}
-                  />
-                  <div id="grid-editor-hint" className="grid-editor-hint">
-                    Type the CSS property here...
-                  </div>
-                </div>
+              <div className="hh-editor-body">
+                <textarea
+                  id="html-editor"
+                  className="hh-editor-textarea"
+                  placeholder='<h1>Hello World</h1>'
+                  autoFocus
+                  autoCapitalize="none"
+                  autoCorrect="off"
+                  spellCheck={false}
+                />
               </div>
-              <div id="toast" className="grid-status-toast" />
-              <div className="grid-editor-actions">
-                <button id="reset-btn" type="button" className="grid-reset-btn">
-                  ↺ Reset
+              <div id="toast" className="hh-status-toast" />
+              <div className="hh-editor-actions">
+                <button id="reset-btn" type="button" className="hh-btn hh-reset-btn">
+                  <RefreshCw className="h-3 w-3" />
+                  Reset
                 </button>
-                <div className="grid-nav-buttons">
-                  <button id="prev-btn" type="button" className="grid-nav-btn prev" disabled>
+                <div className="hh-nav-buttons">
+                  <button id="check-btn" type="button" className="hh-btn hh-check-btn">
+                    <Play className="h-3 w-3" />
+                    Check
+                  </button>
+                  <button id="prev-btn" type="button" className="hh-btn hh-nav-btn prev" disabled>
                     ← Prev
                   </button>
-                  <button id="next-btn" type="button" className="grid-nav-btn next" disabled>
+                  <button id="next-btn" type="button" className="hh-btn hh-nav-btn next">
                     Next →
                   </button>
                 </div>
@@ -336,43 +327,49 @@ export default function GridGardenPage() {
             </div>
           </div>
 
-          {/* RIGHT GAME AREA */}
-          <div className="grid-game-area">
-            {/* Preview Panel for Level 15 */}
-            <div id="grid-preview" className="grid-preview-panel" style={{ display: "none" }}>
-              <div className="grid-preview-header">
-                <span>Target Layout — Recreate This!</span>
+          {/* RIGHT COLUMN */}
+          <div className="hh-panel">
+            <div className="hh-preview-panel" style={{ position: "relative" }}>
+              <div className="hh-preview-header">
+                <div className="hh-preview-tabs">
+                  <button type="button" className="hh-preview-tab active">
+                    <Check className="h-3 w-3" />
+                    Preview
+                  </button>
+                </div>
+                <div className="hh-score">
+                  <span id="score-display">Score: 0</span>
+                </div>
               </div>
-              <div className="grid-preview-board">
-                <div className="grid-preview-item" style={{ gridArea: "header", background: "linear-gradient(135deg, #f43f5e, #e11d48)" }}>Header</div>
-                <div className="grid-preview-item" style={{ gridArea: "sidebar", background: "linear-gradient(135deg, #f97316, #ea580c)" }}>Sidebar</div>
-                <div className="grid-preview-item" style={{ gridArea: "main", background: "linear-gradient(135deg, #3b82f6, #2563eb)" }}>Main</div>
-                <div className="grid-preview-item" style={{ gridArea: "footer", background: "linear-gradient(135deg, #8b5cf6, #7c3aed)" }}>Footer</div>
-              </div>
-            </div>
 
-            <div className="grid-board-container">
-              <div className="grid-board-header">
-                <div className="grid-board-tabs">
-                  <button className="grid-board-tab active">Board</button>
-                </div>
-                <div className="grid-score">
-                  <span id="score-display" className="grid-score-value">
-                    Score: 0
-                  </span>
-                </div>
+              <div className="hh-preview-frame-wrap">
+                <iframe
+                  id="html-preview"
+                  className="hh-preview-frame"
+                  title="HTML Hero live preview"
+                  sandbox="allow-popups"
+                />
               </div>
-              <div id="grid-board" className="grid-board" />
-              <div id="overlay" className="grid-complete-overlay" style={{ display: "none" }}>
-                <div className="grid-stars">
-                  <span className="grid-star earned">⭐</span>
-                  <span className="grid-star earned">⭐</span>
-                  <span className="grid-star earned">⭐</span>
+
+              <div className="hh-preview-note">
+                <Sparkles className="h-3 w-3 shrink-0 text-primary" />
+                <span>
+                  Your page renders here as you type. Press “Check” to see if you nailed the task.
+                </span>
+              </div>
+
+              <div id="progress-dots" className="hh-progress" />
+
+              <div id="overlay" className="hh-complete-overlay" style={{ display: "none" }}>
+                <div className="hh-stars">
+                  <span className="hh-star">⭐</span>
+                  <span className="hh-star">⭐</span>
+                  <span className="hh-star">⭐</span>
                 </div>
-                <div className="grid-complete-text">Level Complete!</div>
-                <div className="grid-complete-sub">Great job! You solved it!</div>
-                <div className="grid-complete-msg"></div>
-                <button type="button" className="grid-complete-btn overlay-btn">
+                <div className="hh-complete-text">Level Complete!</div>
+                <div className="hh-complete-sub">Great job, code wrangler!</div>
+                <div className="hh-complete-msg"></div>
+                <button type="button" className="hh-complete-btn overlay-btn">
                   Next Level →
                 </button>
               </div>
@@ -390,7 +387,7 @@ export default function GridGardenPage() {
               <p className="text-xs text-muted">
                 {engagement.likesCount}{" "}
                 {engagement.likesCount === 1 ? "person likes" : "people liked"}{" "}
-                Grid Garden
+                HTML Hero
               </p>
             </div>
             <button
@@ -522,7 +519,7 @@ export default function GridGardenPage() {
         )}
       </main>
 
-      <Script src="/games/grid-garden/game.js" strategy="afterInteractive" />
+      <Script src="/games/html-hero/game.js" strategy="afterInteractive" />
 
       {/* Auth Modal */}
       <AnimatePresence>
@@ -532,7 +529,7 @@ export default function GridGardenPage() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-onClick={() => { if (currentUser) setShowAuthModal(false); }}
+              onClick={() => { if (currentUser) setShowAuthModal(false); }}
               className="absolute inset-0 bg-black/60 backdrop-blur-sm"
             />
             <motion.div
@@ -587,15 +584,15 @@ onClick={() => { if (currentUser) setShowAuthModal(false); }}
                 <div>
                   <label className="text-[0.65rem] font-semibold uppercase tracking-wider text-muted">Password</label>
                   <div className="relative mt-1">
-                  <input type={showPassword ? "text" : "password"} required placeholder="••••••••" value={authForm.password}
-                    onChange={(e) => setAuthForm({ ...authForm, password: e.target.value })}
-                    className="w-full rounded-xl border border-border bg-background-secondary px-3.5 py-2 pr-10 text-xs text-foreground focus:border-primary/60 focus:outline-none" />
-                  <button type="button" onClick={() => setShowPassword((v) => !v)}
-                    aria-label={showPassword ? "Hide password" : "Show password"}
-                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted transition-colors hover:text-foreground">
-                    {showPassword ? (<EyeOff className="h-4 w-4" />) : (<Eye className="h-4 w-4" />)}
-                  </button>
-                </div>
+                    <input type={showPassword ? "text" : "password"} required placeholder="••••••••" value={authForm.password}
+                      onChange={(e) => setAuthForm({ ...authForm, password: e.target.value })}
+                      className="w-full rounded-xl border border-border bg-background-secondary px-3.5 py-2 pr-10 text-xs text-foreground focus:border-primary/60 focus:outline-none" />
+                    <button type="button" onClick={() => setShowPassword((v) => !v)}
+                      aria-label={showPassword ? "Hide password" : "Show password"}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted transition-colors hover:text-foreground">
+                      {showPassword ? (<EyeOff className="h-4 w-4" />) : (<Eye className="h-4 w-4" />)}
+                    </button>
+                  </div>
                 </div>
                 <button type="submit" className="mt-2 w-full rounded-xl bg-primary py-2.5 text-xs font-semibold text-primary-foreground transition-all hover:brightness-110 shadow-glow">
                   {authMode === "login" ? "Sign In" : "Register"}

@@ -21,6 +21,19 @@ import type { BlogEngagement, User } from "@/types";
 
 const games = [
   {
+    slug: "html-hero",
+    title: "HTML Hero",
+    description:
+      "Become an HTML Master! Write real tags for headings, lists, tables, forms and full pages across easy to advanced challenges.",
+    difficulty: "All Levels",
+    topics: ["HTML", "Tags", "Semantics", "Forms"],
+    animal: "🦸",
+    color: "from-indigo-500/20 to-violet-500/20",
+    borderColor: "border-indigo-500/30",
+    accentColor: "text-indigo-500",
+    comingSoon: false,
+  },
+  {
     slug: "flexbox-zoo",
     title: "Flexbox Zoo",
     description:

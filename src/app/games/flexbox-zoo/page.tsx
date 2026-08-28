@@ -20,6 +20,7 @@ import {
 import { AnimatePresence, motion } from "framer-motion";
 import { GlassNavbar } from "@/components/layout/glass-navbar";
 import { CommentBlock } from "@/components/comments/comment-block";
+import { AuthGate } from "@/components/games/auth-gate";
 import { cn } from "@/lib/utils";
 import type { BlogEngagement, Comment, User } from "@/types";
 import "./game.css";
@@ -38,6 +39,7 @@ export default function FlexboxZooPage() {
   });
   const [authError, setAuthError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [authLoading, setAuthLoading] = useState(true);
 
   const [engagement, setEngagement] = useState<BlogEngagement>({
     likesCount: 0,
@@ -55,9 +57,16 @@ export default function FlexboxZooPage() {
     fetch("/api/auth/me")
       .then((r) => r.json())
       .then((d) => {
-        if (d.user) setCurrentUser(d.user);
+        if (d.user) {
+          setCurrentUser(d.user);
+        } else {
+          setAuthMode("register");
+          setAuthError("");
+          setShowAuthModal(true);
+        }
       })
-      .catch(() => {});
+      .catch(() => { setShowAuthModal(true); })
+      .finally(() => setAuthLoading(false));
 
     fetch(`/api/blog/likes?slug=${GAME_SLUG}`)
       .then((r) => r.json())
@@ -71,6 +80,7 @@ export default function FlexboxZooPage() {
   }, []);
 
   useEffect(() => {
+    if (!currentUser) return;
     const tryInit = () => {
       if (typeof window !== "undefined" && (window as any).__initFlexboxZoo) {
         (window as any).__initFlexboxZoo();
@@ -80,7 +90,7 @@ export default function FlexboxZooPage() {
     };
     const timer = setTimeout(tryInit, 200);
     return () => clearTimeout(timer);
-  }, []);
+  }, [currentUser]);
 
   const openAuthModal = () => {
     setAuthMode("login");
@@ -275,6 +285,22 @@ export default function FlexboxZooPage() {
         </div>
 
         {/* GAME SECTION — html / css / js structure */}
+        {!authLoading && !currentUser ? (
+          <AuthGate
+            loading={authLoading}
+            onSignIn={() => {
+              setAuthMode("login");
+              setAuthError("");
+              setShowAuthModal(true);
+            }}
+            onRegister={() => {
+              setAuthMode("register");
+              setAuthError("");
+              setShowAuthModal(true);
+            }}
+          />
+        ) : (
+        <>
         <div className="zoo-game-wrapper">
           {/* LEFT SIDEBAR — html structure */}
           <div className="zoo-sidebar">
@@ -586,6 +612,8 @@ export default function FlexboxZooPage() {
             </div>
           </div>
         </div>
+        </>
+        )}
       </main>
 
       <Script src="/games/flexbox-zoo/game.js" strategy="afterInteractive" />
@@ -598,7 +626,7 @@ export default function FlexboxZooPage() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              onClick={() => setShowAuthModal(false)}
+              onClick={() => { if (currentUser) setShowAuthModal(false); }}
               className="absolute inset-0 bg-black/60 backdrop-blur-sm"
             />
             <motion.div
@@ -608,7 +636,7 @@ export default function FlexboxZooPage() {
               className="relative w-full max-w-sm rounded-2xl border border-border bg-card p-6 shadow-glow"
             >
               <button
-                onClick={() => setShowAuthModal(false)}
+                onClick={() => { if (currentUser) setShowAuthModal(false); }}
                 aria-label="Close"
                 className="absolute right-4 top-4 text-muted hover:text-foreground"
               >
