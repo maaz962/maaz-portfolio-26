@@ -8,9 +8,11 @@ const sectionIds = [
   "top",
   "about",
   "skills",
+  "education",
   "experience",
   "projects",
   "services",
+  "testimonials",
   "contact",
 ] as const;
 

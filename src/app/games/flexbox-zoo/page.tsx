@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import Script from "next/script";
 import {
   ArrowLeft,
@@ -12,14 +11,15 @@ import {
   Key,
   AlertCircle,
   CornerDownRight,
-  Edit2,
-  Trash2,
   X,
   Gamepad2,
   Sparkles,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { GlassNavbar } from "@/components/layout/glass-navbar";
+import { CommentBlock } from "@/components/comments/comment-block";
 import { cn } from "@/lib/utils";
 import type { BlogEngagement, Comment, User } from "@/types";
 import "./game.css";
@@ -37,6 +37,7 @@ export default function FlexboxZooPage() {
     password: "",
   });
   const [authError, setAuthError] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
 
   const [engagement, setEngagement] = useState<BlogEngagement>({
     likesCount: 0,
@@ -199,6 +200,30 @@ export default function FlexboxZooPage() {
           ...prev,
           commentsCount: Math.max(0, prev.commentsCount - 1),
         }));
+      }
+    } catch {}
+  };
+
+  const handleLikeComment = async (commentId: string) => {
+    if (!currentUser) {
+      openAuthModal();
+      return;
+    }
+    try {
+      const res = await fetch("/api/blog/comments/likes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ commentId }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setComments((prev) =>
+          prev.map((c) =>
+            c.id === commentId
+              ? { ...c, likesCount: data.likesCount, userLiked: data.userLiked }
+              : c
+          )
+        );
       }
     } catch {}
   };
@@ -493,6 +518,8 @@ export default function FlexboxZooPage() {
                       }}
                       editText={editText}
                       setEditText={setEditText}
+                      onLikeClick={handleLikeComment}
+                      openAuth={openAuthModal}
                     />
                     {replies.map((reply) => (
                       <div key={reply.id} className="flex gap-2 pl-6">
@@ -513,6 +540,8 @@ export default function FlexboxZooPage() {
                             }}
                             editText={editText}
                             setEditText={setEditText}
+                            onLikeClick={handleLikeComment}
+                            openAuth={openAuthModal}
                           />
                         </div>
                       </div>
@@ -658,16 +687,30 @@ export default function FlexboxZooPage() {
                   <label className="text-[0.65rem] font-semibold uppercase tracking-wider text-muted">
                     Password
                   </label>
-                  <input
-                    type="password"
-                    required
-                    placeholder="••••••••"
-                    value={authForm.password}
-                    onChange={(e) =>
-                      setAuthForm({ ...authForm, password: e.target.value })
-                    }
-                    className="mt-1 w-full rounded-xl border border-border bg-background-secondary px-3.5 py-2 text-xs text-foreground focus:border-primary/60 focus:outline-none"
-                  />
+                  <div className="relative mt-1">
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      required
+                      placeholder="••••••••"
+                      value={authForm.password}
+                      onChange={(e) =>
+                        setAuthForm({ ...authForm, password: e.target.value })
+                      }
+                      className="w-full rounded-xl border border-border bg-background-secondary px-3.5 py-2 pr-10 text-xs text-foreground focus:border-primary/60 focus:outline-none"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword((v) => !v)}
+                      aria-label={showPassword ? "Hide password" : "Show password"}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted transition-colors hover:text-foreground"
+                    >
+                      {showPassword ? (
+                        <EyeOff className="h-4 w-4" />
+                      ) : (
+                        <Eye className="h-4 w-4" />
+                      )}
+                    </button>
+                  </div>
                 </div>
                 <button
                   type="submit"
@@ -709,126 +752,6 @@ export default function FlexboxZooPage() {
           </div>
         )}
       </AnimatePresence>
-    </div>
-  );
-}
-
-/* Comment block component — same pattern as blog */
-function CommentBlock({
-  comment,
-  currentUser,
-  onReplyClick,
-  onDeleteClick,
-  onEditSubmit,
-  isEditing,
-  setIsEditing,
-  editText,
-  setEditText,
-}: {
-  comment: Comment;
-  currentUser: User | null;
-  onReplyClick?: () => void;
-  onDeleteClick: () => void;
-  onEditSubmit: (text: string) => void;
-  isEditing: boolean;
-  setIsEditing: (v: boolean) => void;
-  editText: string;
-  setEditText: (v: string) => void;
-}) {
-  const isOwner = currentUser?.id === comment.userId;
-  const isAdmin = currentUser?.isAdmin || false;
-
-  return (
-    <div className="space-y-2 rounded-xl border border-border/60 bg-card p-3.5 shadow-sm">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <div className="relative h-5 w-5 overflow-hidden rounded-full border border-primary/10">
-            <Image
-              src={comment.userAvatar}
-              alt={comment.userName}
-              fill
-              sizes="20px"
-              className="object-cover"
-            />
-          </div>
-          <span className="text-[0.68rem] font-bold text-foreground/90">
-            {comment.userName}
-          </span>
-          {comment.userId === "admin-user-id" && (
-            <span className="rounded border border-primary/20 bg-primary/10 px-1 py-0.2 text-[0.55rem] font-mono font-medium text-primary">
-              Author
-            </span>
-          )}
-        </div>
-        <div className="text-mono flex items-center gap-1.5 text-[0.6rem] text-muted/65">
-          <span>{new Date(comment.createdAt).toLocaleDateString()}</span>
-          {comment.updatedAt && <span className="italic">(edited)</span>}
-        </div>
-      </div>
-      {isEditing ? (
-        <div className="space-y-1.5">
-          <textarea
-            rows={2}
-            value={editText}
-            onChange={(e) => setEditText(e.target.value)}
-            className="w-full rounded-lg border border-border bg-background-secondary p-2 text-xs text-foreground focus:outline-none"
-          />
-          <div className="flex justify-end gap-1.5">
-            <button
-              onClick={() => setIsEditing(false)}
-              className="rounded-full border border-border px-3 py-0.5 text-[0.65rem] text-muted hover:text-foreground"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={() => onEditSubmit(editText)}
-              disabled={editText.trim() === ""}
-              className="rounded-full bg-primary px-3 py-0.5 text-[0.65rem] text-primary-foreground hover:brightness-110 disabled:opacity-40"
-            >
-              Save
-            </button>
-          </div>
-        </div>
-      ) : (
-        <p
-          className={cn(
-            "font-sans text-xs leading-relaxed text-foreground/80",
-            comment.isDeleted && "font-mono italic text-muted/60"
-          )}
-        >
-          {comment.content}
-        </p>
-      )}
-      {!comment.isDeleted && !isEditing && (
-        <div className="flex items-center justify-end gap-3 border-t border-border/20 pt-1">
-          {onReplyClick && (
-            <button
-              onClick={onReplyClick}
-              className="text-mono text-[0.62rem] font-semibold text-primary/80 transition-colors hover:text-primary"
-            >
-              Reply
-            </button>
-          )}
-          {isOwner && (
-            <button
-              onClick={() => setIsEditing(true)}
-              className="text-mono flex items-center gap-0.5 text-[0.62rem] font-semibold text-muted transition-colors hover:text-foreground"
-            >
-              <Edit2 className="h-2.5 w-2.5" />
-              Edit
-            </button>
-          )}
-          {(isOwner || isAdmin) && (
-            <button
-              onClick={onDeleteClick}
-              className="text-mono flex items-center gap-0.5 text-[0.62rem] font-semibold text-red-500/80 transition-colors hover:text-red-500"
-            >
-              <Trash2 className="h-2.5 w-2.5" />
-              Delete
-            </button>
-          )}
-        </div>
-      )}
     </div>
   );
 }

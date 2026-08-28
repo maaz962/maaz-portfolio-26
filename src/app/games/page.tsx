@@ -2,18 +2,22 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import Image from "next/image";
+import { useRouter } from "next/navigation";
 import {
   Heart,
   MessageSquare,
   ArrowLeft,
   Gamepad2,
   Sparkles,
+  X,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { GlassNavbar } from "@/components/layout/glass-navbar";
 import { cn } from "@/lib/utils";
-import type { BlogEngagement, Comment, User } from "@/types";
+import { GameDiscussionPanel } from "./game-discussion-panel";
+import type { BlogEngagement, User } from "@/types";
 
 const games = [
   {
@@ -74,14 +78,18 @@ function GameCard({
   game,
   engagement,
   onLike,
+  onComments,
   currentUser,
   openAuthModal,
+  onPlay,
 }: {
   game: (typeof games)[0];
   engagement: BlogEngagement;
   onLike: (slug: string) => void;
+  onComments: (slug: string) => void;
   currentUser: User | null;
   openAuthModal: () => void;
+  onPlay: () => void;
 }) {
   return (
     <motion.div
@@ -160,21 +168,32 @@ function GameCard({
               />
               {engagement.likesCount}
             </button>
-            <span className="flex items-center gap-1 text-xs text-muted">
+            <button
+              onClick={() => onComments(game.slug)}
+              className="flex items-center gap-1 text-xs text-muted transition-colors hover:text-primary"
+              title={`View comments & discussion for ${game.title}`}
+            >
               <MessageSquare className="h-3.5 w-3.5" />
               {engagement.commentsCount}
-            </span>
+            </button>
           </div>
 
           {game.comingSoon ? (
             <span className="text-xs text-muted">Stay tuned...</span>
-          ) : (
+          ) : currentUser ? (
             <Link
               href={`/games/${game.slug}`}
               className="rounded-full bg-primary px-4 py-1.5 text-xs font-semibold text-primary-foreground transition-all hover:brightness-110"
             >
               Play Now
             </Link>
+          ) : (
+            <button
+              onClick={onPlay}
+              className="rounded-full bg-primary px-4 py-1.5 text-xs font-semibold text-primary-foreground transition-all hover:brightness-110"
+            >
+              Play Now
+            </button>
           )}
         </div>
       </div>
@@ -193,26 +212,44 @@ export default function GamesPage() {
     password: "",
   });
   const [authError, setAuthError] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [engagements, setEngagements] = useState<
     Record<string, BlogEngagement>
   >({});
+  const [discussionSlug, setDiscussionSlug] = useState<string | null>(null);
+  const [pendingSlug, setPendingSlug] = useState<string | null>(null);
+  const router = useRouter();
 
   useEffect(() => {
+    let timer: ReturnType<typeof setTimeout> | undefined;
+
     fetch("/api/auth/me")
       .then((r) => r.json())
       .then((d) => {
-        if (d.user) setCurrentUser(d.user);
+        if (d.user) {
+          setCurrentUser(d.user);
+        } else {
+          timer = setTimeout(() => {
+            setAuthMode("register");
+            setAuthError("");
+            setShowAuthModal(true);
+          }, 800);
+        }
       })
       .catch(() => {});
 
     games.forEach((game) => {
-      fetch(`/api/blog/likes?slug=${game.slug}`)
+      fetch(`/api/blog/likes?slug=${encodeURIComponent(game.slug)}`)
         .then((r) => r.json())
         .then((d) =>
           setEngagements((prev) => ({ ...prev, [game.slug]: d }))
         )
         .catch(() => {});
     });
+
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
   }, []);
 
   const handleLike = async (slug: string) => {
@@ -228,6 +265,10 @@ export default function GamesPage() {
         setEngagements((prev) => ({ ...prev, [slug]: data }));
       }
     } catch {}
+  };
+
+  const handleEngagementChange = (slug: string, engagement: BlogEngagement) => {
+    setEngagements((prev) => ({ ...prev, [slug]: engagement }));
   };
 
   const handleAuthSubmit = async (e: React.FormEvent) => {
@@ -252,6 +293,10 @@ export default function GamesPage() {
       setCurrentUser(data);
       setShowAuthModal(false);
       setAuthForm({ name: "", username: "", email: "", password: "" });
+      if (pendingSlug) {
+        router.push(`/games/${pendingSlug}`);
+        setPendingSlug(null);
+      }
     } catch {
       setAuthError("Server error");
     }
@@ -299,10 +344,17 @@ export default function GamesPage() {
                 }
               }
               onLike={handleLike}
+              onComments={(slug) => setDiscussionSlug(slug)}
               currentUser={currentUser}
               openAuthModal={() => {
                 setAuthMode("login");
                 setAuthError("");
+                setShowAuthModal(true);
+              }}
+              onPlay={() => {
+                setAuthMode("register");
+                setAuthError("");
+                setPendingSlug(game.slug);
                 setShowAuthModal(true);
               }}
             />
@@ -320,6 +372,50 @@ export default function GamesPage() {
           </p>
         </div>
       </main>
+
+      <AnimatePresence>
+        {discussionSlug && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setDiscussionSlug(null)}
+              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ scale: 0.96, opacity: 0, y: 10 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.96, opacity: 0, y: 10 }}
+              className="relative max-h-[85vh] w-full max-w-xl overflow-y-auto rounded-2xl border border-border bg-card p-6 shadow-glow"
+            >
+              <button
+                onClick={() => setDiscussionSlug(null)}
+                aria-label="Close discussion"
+                className="absolute right-4 top-4 z-10 text-muted hover:text-foreground"
+              >
+                <X className="h-4 w-4" />
+              </button>
+              {(() => {
+                const game = games.find((g) => g.slug === discussionSlug);
+                if (!game) return null;
+                return (
+                  <GameDiscussionPanel
+                    game={game}
+                    currentUser={currentUser}
+                    onEngagementChange={handleEngagementChange}
+                    onAuthRequired={() => {
+                      setAuthMode("login");
+                      setAuthError("");
+                      setShowAuthModal(true);
+                    }}
+                  />
+                );
+              })()}
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       <AnimatePresence>
         {showAuthModal && (
@@ -347,7 +443,7 @@ export default function GamesPage() {
                 {authMode === "login" ? "Welcome back" : "Create profile"}
               </h3>
               <p className="mt-1 text-[0.65rem] text-muted">
-                Sign in to like and comment on games
+                Sign up first to start playing, like and comment on games
               </p>
 
               {authError && (
@@ -357,38 +453,75 @@ export default function GamesPage() {
               )}
 
               <form onSubmit={handleAuthSubmit} className="mt-4 space-y-3">
-                {authMode === "register" && (
+                {authMode === "register" ? (
+                  <>
+                    <input
+                      type="text"
+                      required
+                      placeholder="Full Name"
+                      value={authForm.name}
+                      onChange={(e) =>
+                        setAuthForm({ ...authForm, name: e.target.value })
+                      }
+                      className="w-full rounded-xl border border-border bg-background-secondary px-3.5 py-2 text-xs text-foreground focus:border-primary/60 focus:outline-none"
+                    />
+                    <input
+                      type="text"
+                      required
+                      placeholder="Username"
+                      value={authForm.username}
+                      onChange={(e) =>
+                        setAuthForm({ ...authForm, username: e.target.value })
+                      }
+                      className="w-full rounded-xl border border-border bg-background-secondary px-3.5 py-2 text-xs text-foreground focus:border-primary/60 focus:outline-none"
+                    />
+                    <input
+                      type="email"
+                      required
+                      placeholder="Email Address"
+                      value={authForm.email}
+                      onChange={(e) =>
+                        setAuthForm({ ...authForm, email: e.target.value })
+                      }
+                      className="w-full rounded-xl border border-border bg-background-secondary px-3.5 py-2 text-xs text-foreground focus:border-primary/60 focus:outline-none"
+                    />
+                  </>
+                ) : (
                   <input
                     type="text"
                     required
-                    placeholder="Full Name"
-                    value={authForm.name}
+                    placeholder="Username or Email"
+                    value={authForm.username}
                     onChange={(e) =>
-                      setAuthForm({ ...authForm, name: e.target.value })
+                      setAuthForm({ ...authForm, username: e.target.value })
                     }
                     className="w-full rounded-xl border border-border bg-background-secondary px-3.5 py-2 text-xs text-foreground focus:border-primary/60 focus:outline-none"
                   />
                 )}
+                <div className="relative">
                 <input
-                  type="text"
-                  required
-                  placeholder="Username or Email"
-                  value={authForm.username}
-                  onChange={(e) =>
-                    setAuthForm({ ...authForm, username: e.target.value })
-                  }
-                  className="w-full rounded-xl border border-border bg-background-secondary px-3.5 py-2 text-xs text-foreground focus:border-primary/60 focus:outline-none"
-                />
-                <input
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   required
                   placeholder="Password"
                   value={authForm.password}
                   onChange={(e) =>
                     setAuthForm({ ...authForm, password: e.target.value })
                   }
-                  className="w-full rounded-xl border border-border bg-background-secondary px-3.5 py-2 text-xs text-foreground focus:border-primary/60 focus:outline-none"
+                  className="w-full rounded-xl border border-border bg-background-secondary px-3.5 py-2 pr-10 text-xs text-foreground focus:border-primary/60 focus:outline-none"
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((v) => !v)}
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted transition-colors hover:text-foreground"
+                >
+                  {showPassword ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
+                </button>
+              </div>
                 <button
                   type="submit"
                   className="w-full rounded-xl bg-primary py-2.5 text-xs font-semibold text-primary-foreground transition-all hover:brightness-110"

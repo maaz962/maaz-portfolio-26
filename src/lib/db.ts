@@ -293,6 +293,50 @@ export async function getBlogEngagement(blogSlug: string, userId?: string) {
   };
 }
 
+function commentLikeStats(comment: Comment, allLikes: Like[], userId?: string) {
+  const likes = allLikes.filter((l) => l.commentId === comment.id);
+  return {
+    likesCount: likes.length,
+    userLiked: userId ? likes.some((l) => l.userId === userId) : false,
+  };
+}
+
+export async function getComments(blogSlug: string, userId?: string): Promise<Comment[]> {
+  const db = await readDbFile();
+  return db.comments
+    .filter((c) => c.blogSlug === blogSlug && !c.isDeleted)
+    .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
+    .map((c) => ({ ...c, ...commentLikeStats(c, db.likes, userId) }));
+}
+
+export async function toggleCommentLike(
+  commentId: string,
+  userId: string
+): Promise<{ likesCount: number; userLiked: boolean }> {
+  const db = await readDbFile();
+
+  const comment = db.comments.find((c) => c.id === commentId);
+  if (!comment) throw new Error("Comment not found");
+
+  const existingIndex = db.likes.findIndex(
+    (l) => l.commentId === commentId && l.userId === userId
+  );
+
+  if (existingIndex > -1) {
+    db.likes.splice(existingIndex, 1);
+  } else {
+    db.likes.push({
+      id: `like-${crypto.randomUUID()}`,
+      commentId,
+      userId,
+      createdAt: new Date().toISOString(),
+    });
+  }
+
+  await saveDbFile(db);
+  return commentLikeStats(comment, db.likes, userId);
+}
+
 export async function toggleLike(blogSlug: string, userId: string): Promise<boolean> {
   const db = await readDbFile();
   
@@ -315,11 +359,6 @@ export async function toggleLike(blogSlug: string, userId: string): Promise<bool
 
   await saveDbFile(db);
   return liked;
-}
-
-export async function getComments(blogSlug: string): Promise<Comment[]> {
-  const db = await readDbFile();
-  return db.comments.filter((c) => c.blogSlug === blogSlug && !c.isDeleted);
 }
 
 export async function addComment(
@@ -455,6 +494,7 @@ export async function getAllEngagementCounts(): Promise<Record<string, { likes: 
   const counts: Record<string, { likes: number; comments: number }> = {};
 
   db.likes.forEach((l) => {
+    if (!l.blogSlug) return;
     if (!counts[l.blogSlug]) counts[l.blogSlug] = { likes: 0, comments: 0 };
     const entry = counts[l.blogSlug];
     if (entry) entry.likes++;
@@ -496,6 +536,7 @@ export async function getEngagementStats() {
 
   // Accumulate likes
   db.likes.forEach((l) => {
+    if (!l.blogSlug) return;
     if (!postsEngagement[l.blogSlug]) postsEngagement[l.blogSlug] = { likes: 0, comments: 0 };
     const likeStats = postsEngagement[l.blogSlug];
     if (likeStats) likeStats.likes++;
@@ -520,7 +561,7 @@ export async function getEngagementStats() {
     .slice(0, 5);
 
   return {
-    totalLikes: db.likes.length,
+    totalLikes: db.likes.filter((l) => l.blogSlug).length,
     totalComments: db.comments.filter((c) => !c.isDeleted).length,
     topLiked,
     topCommented,

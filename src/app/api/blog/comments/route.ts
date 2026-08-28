@@ -13,7 +13,8 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: "Invalid slug parameter" }, { status: 400 });
     }
 
-    const comments = await getComments(slug);
+    const user = await getSessionUser();
+    const comments = await getComments(slug, user?.id);
     return NextResponse.json(comments);
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });

@@ -45,12 +45,13 @@ export function GlassNavbar({ activeSection, onNavigate }: GlassNavbarProps) {
         </a>
 
         <div className="hidden items-center gap-1 lg:flex">
-          {navLinks.map((link) => {
+{navLinks.map((link) => {
             const isHash = link.href.includes("#");
             const id = isHash ? link.href.replace("/#", "").replace("#", "") : "";
+            const isGames = link.href === "/games";
               const isActive = link.href === "/blog"
                 ? (pathname === "/blog" || pathname.startsWith("/blog/") || activeSection === "blog")
-                : link.href === "/games"
+                : isGames
                 ? (pathname === "/games" || pathname.startsWith("/games/"))
                 : (isHomePage && activeSection === id);
 
@@ -65,24 +66,38 @@ export function GlassNavbar({ activeSection, onNavigate }: GlassNavbarProps) {
                     }
                   }}
                   aria-current={isActive ? "true" : undefined}
-                  className="relative whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-medium transition-colors"
-                >
-                  {isActive && (
-                    <motion.span
-                      layoutId="glass-nav-pill"
-                    className="absolute inset-0 rounded-full bg-primary/15"
-                    transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-                  />
-                )}
-                <span
-                  className={`relative z-10 ${
-                    isActive ? "text-primary" : "text-muted hover:text-foreground"
+                  className={`relative whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
+                    isGames ? "text-white" : ""
                   }`}
                 >
-                  {link.label}
-                </span>
-              </a>
-            );
+                  {isGames ? (
+                    <motion.span
+                      layoutId="glass-nav-games-pill"
+                      className="absolute inset-0 rounded-full bg-gradient-to-r from-primary via-primary to-violet-500 shadow-md shadow-primary/50"
+                      transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+                    />
+                  ) : (
+                    isActive && (
+                      <motion.span
+                        layoutId="glass-nav-pill"
+                        className="absolute inset-0 rounded-full bg-primary/15"
+                        transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+                      />
+                    )
+                  )}
+                  <span
+                    className={`relative z-10 ${
+                      isGames
+                        ? "font-semibold"
+                        : isActive
+                        ? "text-primary"
+                        : "text-muted hover:text-foreground"
+                    }`}
+                  >
+                    {link.label}
+                  </span>
+                </a>
+              );
           })}
         </div>
 
@@ -127,9 +142,10 @@ export function GlassNavbar({ activeSection, onNavigate }: GlassNavbarProps) {
             {navLinks.map((link) => {
               const isHash = link.href.includes("#");
               const id = isHash ? link.href.replace("/#", "").replace("#", "") : "";
+              const isGames = link.href === "/games";
               const isActive = link.href === "/blog"
                 ? (pathname === "/blog" || pathname.startsWith("/blog/") || activeSection === "blog")
-                : link.href === "/games"
+                : isGames
                 ? (pathname === "/games" || pathname.startsWith("/games/"))
                 : (isHomePage && activeSection === id);
 
@@ -144,10 +160,12 @@ export function GlassNavbar({ activeSection, onNavigate }: GlassNavbarProps) {
                     }
                     setOpen(false);
                   }}
-                  className={`w-full text-center rounded-full px-4 py-2 text-sm font-medium transition-colors ${
-                    isActive
-                      ? "bg-primary/15 text-primary"
-                      : "text-muted hover:text-foreground"
+                  className={`w-full text-center rounded-full px-4 py-2 text-sm transition-colors ${
+                    isGames
+                      ? "font-semibold text-white bg-gradient-to-r from-primary via-primary to-violet-500 shadow-md shadow-primary/50"
+                      : isActive
+                      ? "bg-primary/15 text-primary font-medium"
+                      : "text-muted hover:text-foreground font-medium"
                   }`}
                 >
                   {link.label}

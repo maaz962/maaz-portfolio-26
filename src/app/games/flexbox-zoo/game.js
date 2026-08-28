@@ -282,6 +282,14 @@
     "Beautiful! The animals are exactly where they should be!",
   ];
 
+  var WRONG_MSGS = [
+    "Not quite right! The animals aren't where they should be yet. Check the hint.",
+    "Hmm, that code doesn't solve this level. Check the hint and try again.",
+    "Almost! That CSS is valid, but it's wrong for this task. Check the hint.",
+    "Nope, wrong code! Figure out where the animals need to go, then fix it.",
+    "Not yet! Look at the hint and adjust the code until the board matches.",
+  ];
+
   var STATE = { currentLevel: 0, score: 0, completed: {} };
 
   function $(id) { return document.getElementById(id); }
@@ -344,6 +352,39 @@
       }
     }
     return null;
+  }
+
+  function getWrongHint(pairs) {
+    var level = LEVELS[STATE.currentLevel];
+    if (!level) return randomItem(WRONG_MSGS);
+    var userMap = {};
+    for (var i = 0; i < pairs.length; i++) userMap[pairs[i].property] = pairs[i].value;
+    var expectedProps = [];
+    var acceptedByProp = {};
+    for (var a = 0; a < level.accept.length; a++) {
+      var keys = Object.keys(level.accept[a]);
+      for (var k = 0; k < keys.length; k++) {
+        var key = keys[k];
+        if (expectedProps.indexOf(key) === -1) expectedProps.push(key);
+        if (!acceptedByProp[key]) acceptedByProp[key] = [];
+        if (acceptedByProp[key].indexOf(level.accept[a][key]) === -1) acceptedByProp[key].push(level.accept[a][key]);
+      }
+    }
+    var wrongProps = [];
+    var missingProps = [];
+    for (var e = 0; e < expectedProps.length; e++) {
+      var prop = expectedProps[e];
+      var val = userMap[prop];
+      if (val === undefined) missingProps.push(prop);
+      else if (acceptedByProp[prop].indexOf(val) === -1) wrongProps.push(prop);
+    }
+    if (wrongProps.length > 0) {
+      return "Wrong value for " + wrongProps.join(", ") + ". Check the hint below!";
+    }
+    if (missingProps.length > 0) {
+      return "Almost! You're still missing " + missingProps.join(", ") + ".";
+    }
+    return randomItem(WRONG_MSGS);
   }
 
   function applyCSS(pairs) {
@@ -579,7 +620,7 @@
     if (pairs.length > 0) {
       var err = validateInput(pairs);
       if (err) showToast(err, true);
-      else hideToast();
+      else showToast(getWrongHint(pairs), true);
     } else {
       hideToast();
     }

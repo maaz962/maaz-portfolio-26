@@ -2,7 +2,7 @@
 
 import { Suspense, useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Shield, Lock, AlertCircle, ArrowLeft, Loader2 } from "lucide-react";
+import { Shield, Lock, AlertCircle, ArrowLeft, Loader2, Eye, EyeOff } from "lucide-react";
 import type { User } from "@/types";
 
 export default function AdminLoginPage() {
@@ -19,6 +19,7 @@ function AdminLoginForm() {
   const [checkingSession, setCheckingSession] = useState(true);
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
@@ -132,16 +133,30 @@ function AdminLoginForm() {
                 <label htmlFor="password" className="text-[0.65rem] font-semibold uppercase tracking-wider text-muted">
                   Password
                 </label>
+                <div className="relative">
                 <input
                   id="password"
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   required
                   autoComplete="current-password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="w-full rounded-xl border border-border bg-background-secondary px-4 py-2.5 text-sm text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
+                  className="w-full rounded-xl border border-border bg-background-secondary px-4 py-2.5 pr-11 text-sm text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((v) => !v)}
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted transition-colors hover:text-foreground"
+                >
+                  {showPassword ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
+                </button>
+              </div>
               </div>
               <button
                 type="submit"

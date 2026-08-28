@@ -158,11 +158,18 @@ export interface Comment {
   isDeleted: boolean;
   createdAt: string;
   updatedAt?: string;
+  /** Computed for API responses: how many users liked this comment. */
+  likesCount?: number;
+  /** Computed for API responses: whether the current user liked this comment. */
+  userLiked?: boolean;
 }
 
 export interface Like {
   id: string;
-  blogSlug: string;
+  /** Set when the like targets a post/game (keyed by slug). */
+  blogSlug?: string;
+  /** Set when the like targets an individual comment. */
+  commentId?: string;
   userId: string;
   createdAt: string;
 }
