@@ -44,10 +44,6 @@ const [authLoading, setAuthLoading] = useState(true);
         if (d.user) {
           setCurrentUser(d.user);
           setGamesAuthed(true);
-        } else {
-          setAuthMode("register");
-          setAuthError("");
-          setShowAuthModal(true);
         }
       })
       .catch(() => {})
@@ -311,7 +307,7 @@ const [authLoading, setAuthLoading] = useState(true);
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              onClick={() => { if (gamesAuthed) setShowAuthModal(false); }}
+              onClick={() => setShowAuthModal(false)}
               className="absolute inset-0 bg-black/60 backdrop-blur-sm"
             />
             <motion.div
@@ -321,7 +317,7 @@ const [authLoading, setAuthLoading] = useState(true);
               className="relative w-full max-w-sm rounded-2xl border border-border bg-card p-6 shadow-glow"
             >
               <button
-                onClick={() => { if (gamesAuthed) setShowAuthModal(false); }}
+                onClick={() => setShowAuthModal(false)}
                 aria-label="Close"
                 className="absolute right-4 top-4 text-muted hover:text-foreground"
               >

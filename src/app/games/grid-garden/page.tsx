@@ -44,10 +44,6 @@ export default function GridGardenPage() {
         if (d.user) {
           setCurrentUser(d.user);
           setGamesAuthed(true);
-        } else {
-          setAuthMode("register");
-          setAuthError("");
-          setShowAuthModal(true);
         }
       })
       .catch(() => {})
@@ -291,7 +287,7 @@ export default function GridGardenPage() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-onClick={() => { if (gamesAuthed) setShowAuthModal(false); }}
+onClick={() => setShowAuthModal(false)}
               className="absolute inset-0 bg-black/60 backdrop-blur-sm"
             />
             <motion.div
@@ -300,7 +296,7 @@ onClick={() => { if (gamesAuthed) setShowAuthModal(false); }}
               exit={{ scale: 0.95, opacity: 0 }}
               className="relative w-full max-w-sm rounded-2xl border border-border bg-card p-6 shadow-glow"
             >
-              <button onClick={() => { if (gamesAuthed) setShowAuthModal(false); }} className="absolute right-4 top-4 text-muted hover:text-foreground">
+              <button onClick={() => setShowAuthModal(false)} className="absolute right-4 top-4 text-muted hover:text-foreground">
                 <X className="h-4 w-4" />
               </button>
               <div className="flex items-center gap-3">

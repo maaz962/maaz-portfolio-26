@@ -244,6 +244,16 @@ export default function GamesPage() {
         if (d.user) {
           setCurrentUser(d.user);
           setGamesAuthed(true);
+        } else if (
+          typeof window !== "undefined" &&
+          !window.localStorage.getItem("mp_games_auth_nudged")
+        ) {
+          // Profile-create prompt shows only once per browser, on the hub,
+          // before the visitor clicks into any game.
+          window.localStorage.setItem("mp_games_auth_nudged", "1");
+          setAuthMode("register");
+          setAuthError("");
+          setShowAuthModal(true);
         }
       })
       .catch(() => {})
