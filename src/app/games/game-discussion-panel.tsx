@@ -206,6 +206,18 @@ export function GameDiscussionPanel({
             {engagement.likesCount}{" "}
             {engagement.likesCount === 1 ? "person likes" : "people liked"} {game.title}
           </p>
+          {(engagement.recentLikers?.length ?? 0) > 0 && (
+            <p className="pt-1 text-[0.65rem] text-muted">
+              Liked by{" "}
+              <span className="font-semibold text-foreground">
+                {(engagement.recentLikers || [])
+                  .map((l) => `@${l.username}`)
+                  .join(", ")}
+              </span>
+              {engagement.likesCount > (engagement.recentLikers?.length ?? 0) &&
+                ` +${engagement.likesCount - (engagement.recentLikers?.length ?? 0)} more`}
+            </p>
+          )}
         </div>
         <button
           onClick={handleToggleLike}

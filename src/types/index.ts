@@ -178,4 +178,6 @@ export interface BlogEngagement {
   likesCount: number;
   commentsCount: number;
   userLiked: boolean;
+  /** Most recent likers (with avatar) so games can show an "Instagram-style" strip. */
+  recentLikers?: { id: string; name: string; username: string; avatarUrl: string }[];
 }

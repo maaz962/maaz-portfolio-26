@@ -1,16 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import Script from "next/script";
 import {
   ArrowLeft,
-  Heart,
-  MessageSquare,
-  Lock,
   Key,
   AlertCircle,
-  CornerDownRight,
   X,
   Gamepad2,
   Sparkles,
@@ -22,11 +18,9 @@ import {
 } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { GlassNavbar } from "@/components/layout/glass-navbar";
-import { CommentBlock } from "@/components/comments/comment-block";
 import { AuthGate } from "@/components/games/auth-gate";
-import { getGamesSession, setGamesSession } from "@/lib/games-session";
-import { cn } from "@/lib/utils";
-import type { BlogEngagement, Comment, User } from "@/types";
+import { GameSocial } from "@/components/games/game-social";
+import type { User } from "@/types";
 import "./game.css";
 
 const GAME_SLUG = "html-hero";
@@ -47,39 +41,21 @@ export default function HtmlHeroPage() {
   const [authLoading, setAuthLoading] = useState(true);
   const [gamesAuthed, setGamesAuthed] = useState(false);
 
-  const [engagement, setEngagement] = useState<BlogEngagement>({
-    likesCount: 0,
-    commentsCount: 0,
-    userLiked: false,
-  });
-  const [comments, setComments] = useState<Comment[]>([]);
-  const [newCommentText, setNewCommentText] = useState("");
-  const [replyingToId, setReplyingToId] = useState<string | null>(null);
-  const [replyText, setReplyText] = useState("");
-  const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
-  const [editText, setEditText] = useState("");
-
   useEffect(() => {
-    const authed = getGamesSession();
-    setGamesAuthed(authed);
-    if (!authed) {
-      setAuthMode("register");
-      setAuthError("");
-      setShowAuthModal(true);
-    }
     fetch("/api/auth/me")
       .then((r) => r.json())
-      .then((d) => { if (d.user) setCurrentUser(d.user); })
+      .then((d) => {
+        if (d.user) {
+          setCurrentUser(d.user);
+          setGamesAuthed(true);
+        } else {
+          setAuthMode("register");
+          setAuthError("");
+          setShowAuthModal(true);
+        }
+      })
       .catch(() => {})
       .finally(() => setAuthLoading(false));
-    fetch(`/api/blog/likes?slug=${GAME_SLUG}`)
-      .then((r) => r.json())
-      .then(setEngagement)
-      .catch(() => {});
-    fetch(`/api/blog/comments?slug=${GAME_SLUG}`)
-      .then((r) => r.json())
-      .then(setComments)
-      .catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -120,106 +96,11 @@ export default function HtmlHeroPage() {
       setCurrentUser(data);
       setShowAuthModal(false);
       setAuthForm({ name: "", username: "", email: "", password: "" });
-      setGamesSession();
       setGamesAuthed(true);
     } catch { setAuthError("Server error"); }
   };
 
   const canInteract = Boolean(currentUser) && gamesAuthed;
-
-  const handleToggleLike = async () => {
-    if (!canInteract) { openAuthModal(); return; }
-    try {
-      const res = await fetch("/api/blog/likes", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ slug: GAME_SLUG }),
-      });
-      if (res.ok) { const data = await res.json(); setEngagement(data); }
-    } catch {}
-  };
-
-  const handleAddComment = async (e: React.FormEvent, parentId?: string) => {
-    e.preventDefault();
-    if (!canInteract) return;
-    const content = parentId ? replyText : newCommentText;
-    if (content.trim() === "") return;
-    try {
-      const res = await fetch("/api/blog/comments", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ slug: GAME_SLUG, content, parentId }),
-      });
-      if (res.ok) {
-        const comment = await res.json();
-        setComments((prev) => [...prev, comment]);
-        setEngagement((prev) => ({ ...prev, commentsCount: prev.commentsCount + 1 }));
-        if (parentId) { setReplyText(""); setReplyingToId(null); }
-        else { setNewCommentText(""); }
-      }
-    } catch {}
-  };
-
-  const handleEditComment = async (commentId: string) => {
-    if (!canInteract) return;
-    if (editText.trim() === "") return;
-    try {
-      const res = await fetch("/api/blog/comments", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ commentId, content: editText }),
-      });
-      if (res.ok) {
-        const updated = await res.json();
-        setComments((prev) => prev.map((c) => (c.id === commentId ? updated : c)));
-        setEditingCommentId(null);
-        setEditText("");
-      }
-    } catch {}
-  };
-
-  const handleDeleteComment = async (commentId: string) => {
-    if (!canInteract) return;
-    try {
-      const res = await fetch(`/api/blog/comments?commentId=${commentId}`, { method: "DELETE" });
-      if (res.ok) {
-        setComments((prev) => prev.map((c) => (c.id === commentId ? { ...c, isDeleted: true, content: "[deleted]" } : c)));
-        setEngagement((prev) => ({ ...prev, commentsCount: Math.max(0, prev.commentsCount - 1) }));
-      }
-    } catch {}
-  };
-
-  const handleLikeComment = async (commentId: string) => {
-    if (!canInteract) {
-      openAuthModal();
-      return;
-    }
-    try {
-      const res = await fetch("/api/blog/comments/likes", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ commentId }),
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setComments((prev) =>
-          prev.map((c) => (c.id === commentId ? { ...c, likesCount: data.likesCount, userLiked: data.userLiked } : c))
-        );
-      }
-    } catch {}
-  };
-
-  const commentThreads = useMemo(() => {
-    const visibleIds = new Set(comments.map((c) => c.id));
-    const parents = comments.filter((c) => !c.parentId || !visibleIds.has(c.parentId));
-    const childrenMap: Record<string, Comment[]> = {};
-    comments.filter((c) => c.parentId && visibleIds.has(c.parentId)).forEach((c) => {
-      const pid = c.parentId!;
-      if (!childrenMap[pid]) childrenMap[pid] = [];
-      childrenMap[pid].push(c);
-    });
-    return parents.map((parent) => ({ parent, replies: childrenMap[parent.id] || [] }));
-  }, [comments]);
 
   return (
     <div className="relative min-h-screen bg-background">
@@ -385,143 +266,16 @@ export default function HtmlHeroPage() {
         )}
 
         {/* LIKE + COMMENTS */}
-        <div className="mx-auto mt-12 max-w-3xl space-y-8">
-          <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-border bg-card p-6">
-            <div className="space-y-1">
-              <h2 className="font-display text-base font-semibold text-foreground">
-                Enjoyed this game?
-              </h2>
-              <p className="text-xs text-muted">
-                {engagement.likesCount}{" "}
-                {engagement.likesCount === 1 ? "person likes" : "people liked"}{" "}
-                HTML Hero
-              </p>
-            </div>
-            <button
-              onClick={handleToggleLike}
-              aria-pressed={engagement.userLiked}
-              className={cn(
-                "flex items-center gap-2 rounded-full border px-5 py-2.5 text-xs font-semibold transition-all duration-200",
-                engagement.userLiked
-                  ? "border-red-500 bg-red-500/10 text-red-500"
-                  : "border-border bg-card text-muted hover:border-red-400 hover:text-red-500 hover:bg-red-500/5"
-              )}
-            >
-              <Heart className={cn("h-4 w-4", engagement.userLiked && "fill-current")} />
-              {engagement.userLiked ? "Liked" : "Like"}
-            </button>
-          </div>
-
-          <div className="rounded-2xl border border-border bg-card p-6 md:p-8">
-            <div className="flex items-center gap-2 border-b border-border/50 pb-3">
-              <MessageSquare className="h-4 w-4 text-primary" />
-              <h2 className="font-display text-base font-semibold text-foreground">
-                Comments ({engagement.commentsCount})
-              </h2>
-            </div>
-
-            {canInteract ? (
-              <form onSubmit={(e) => handleAddComment(e)} className="mt-5 space-y-2.5">
-                <textarea
-                  rows={3}
-                  placeholder="Share your thoughts about this game..."
-                  value={newCommentText}
-                  onChange={(e) => setNewCommentText(e.target.value)}
-                  className="w-full rounded-xl border border-border bg-background-secondary px-3.5 py-2.5 text-sm text-foreground placeholder:text-muted focus:border-primary/60 focus:outline-none focus:ring-1 focus:ring-primary/60"
-                />
-                <div className="flex justify-end">
-                  <button
-                    type="submit"
-                    disabled={newCommentText.trim() === ""}
-                    className="rounded-full bg-primary px-5 py-2 text-xs font-semibold text-primary-foreground transition-all hover:brightness-110 disabled:pointer-events-none disabled:opacity-40"
-                  >
-                    Submit Comment
-                  </button>
-                </div>
-              </form>
-            ) : (
-              <div className="mt-5 rounded-xl border border-dashed border-border bg-background-secondary/20 p-5 text-center">
-                <Lock className="mx-auto h-4 w-4 text-muted/60" />
-                <p className="mt-1 text-xs text-muted">Join the conversation</p>
-                <button
-                  type="button"
-                  onClick={openAuthModal}
-                  className="mt-3 rounded-full border border-primary/20 bg-primary/10 px-4 py-1.5 text-xs font-semibold text-primary transition-all hover:bg-primary/20"
-                >
-                  Sign In / Register
-                </button>
-              </div>
-            )}
-
-            <div className="mt-7 space-y-4">
-              {commentThreads.length > 0 ? (
-                commentThreads.map(({ parent, replies }) => (
-                  <div key={parent.id} className="space-y-3.5">
-                    <CommentBlock
-                      comment={parent}
-                      currentUser={canInteract ? currentUser : null}
-                      onReplyClick={
-                        currentUser
-                          ? () => { setReplyingToId(parent.id); setReplyText(""); }
-                          : undefined
-                      }
-                      onDeleteClick={() => handleDeleteComment(parent.id)}
-                      onEditSubmit={(text) => { setEditText(text); handleEditComment(parent.id); }}
-                      isEditing={editingCommentId === parent.id}
-                      setIsEditing={(v) => { setEditingCommentId(v ? parent.id : null); setEditText(parent.content); }}
-                      editText={editText}
-                      setEditText={setEditText}
-                      onLikeClick={handleLikeComment}
-                      openAuth={openAuthModal}
-                    />
-                    {replies.map((reply) => (
-                      <div key={reply.id} className="flex gap-2 pl-6">
-                        <CornerDownRight className="mt-2 h-4 w-4 shrink-0 text-muted/50" />
-                        <div className="flex-1">
-                          <CommentBlock
-                            comment={reply}
-                            currentUser={canInteract ? currentUser : null}
-                            onDeleteClick={() => handleDeleteComment(reply.id)}
-                            onEditSubmit={(text) => { setEditText(text); handleEditComment(reply.id); }}
-                            isEditing={editingCommentId === reply.id}
-                            setIsEditing={(v) => { setEditingCommentId(v ? reply.id : null); setEditText(reply.content); }}
-                            editText={editText}
-                            setEditText={setEditText}
-                            onLikeClick={handleLikeComment}
-                            openAuth={openAuthModal}
-                          />
-                        </div>
-                      </div>
-                    ))}
-                    {replyingToId === parent.id && canInteract && (
-                      <form onSubmit={(e) => handleAddComment(e, parent.id)} className="mt-1 space-y-2 pl-6">
-                        <textarea
-                          rows={2}
-                          placeholder={`Replying to ${parent.userName}...`}
-                          value={replyText}
-                          onChange={(e) => setReplyText(e.target.value)}
-                          className="w-full rounded-xl border border-border bg-background-secondary px-3 py-1.5 text-xs text-foreground placeholder:text-muted focus:border-primary/60 focus:outline-none"
-                        />
-                        <div className="flex justify-end gap-2">
-                          <button type="button" onClick={() => setReplyingToId(null)} className="rounded-full border border-border px-3.5 py-1 text-[0.65rem] font-semibold text-muted transition-all hover:text-foreground">
-                            Cancel
-                          </button>
-                          <button type="submit" disabled={replyText.trim() === ""} className="rounded-full bg-primary px-3.5 py-1 text-[0.65rem] font-semibold text-primary-foreground transition-all hover:brightness-110 disabled:opacity-40">
-                            Post Reply
-                          </button>
-                        </div>
-                      </form>
-                    )}
-                  </div>
-                ))
-              ) : (
-                <p className="py-6 text-center text-xs text-muted">
-                  No comments yet. Be the first to share your thoughts!
-                </p>
-              )}
-            </div>
-          </div>
-        </div>
+        <GameSocial
+          slug={GAME_SLUG}
+          title="HTML Hero"
+          emoji="🦸"
+          accentText="text-indigo-500"
+          accentBg="bg-indigo-500/10"
+          currentUser={currentUser}
+          canInteract={canInteract}
+          onAuthRequired={openAuthModal}
+        />
       </main>
 
       <Script src="/games/html-hero/game.js" strategy="afterInteractive" />

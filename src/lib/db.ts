@@ -84,6 +84,20 @@ async function saveDbFile(data: DatabaseSchema): Promise<void> {
   return writePromise;
 }
 
+// Full read-modify-write operations are serialized through this queue so that
+// concurrent requests (e.g. a like POST racing a register) never clobber each
+// other's changes — each task re-reads the freshest file while holding the lock.
+let dbTaskQueue: Promise<unknown> = Promise.resolve();
+
+async function withDbLock<T>(task: () => Promise<T>): Promise<T> {
+  const run = dbTaskQueue.then(task);
+  dbTaskQueue = run.then(
+    () => undefined,
+    () => undefined
+  );
+  return run;
+}
+
 function getSeedData(): DatabaseSchema {
   const adminId = "admin-user-id";
   const user1Id = "user-jane-id";
@@ -217,64 +231,68 @@ export async function registerUser(
   email: string,
   password: string
 ): Promise<User> {
-  const db = await readDbFile();
+  return withDbLock(async () => {
+    const db = await readDbFile();
 
-  const formattedEmail = email.toLowerCase().trim();
-  const formattedUsername = username.toLowerCase().trim();
+    const formattedEmail = email.toLowerCase().trim();
+    const formattedUsername = username.toLowerCase().trim();
 
-  // Validate unique user
-  const emailExists = db.users.some((u) => u.email.toLowerCase() === formattedEmail);
-  const usernameExists = db.users.some((u) => u.username.toLowerCase() === formattedUsername);
+    // Validate unique user
+    const emailExists = db.users.some((u) => u.email.toLowerCase() === formattedEmail);
+    const usernameExists = db.users.some((u) => u.username.toLowerCase() === formattedUsername);
 
-  if (emailExists) throw new Error("Email already registered");
-  if (usernameExists) throw new Error("Username already taken");
+    if (emailExists) throw new Error("Email already registered");
+    if (usernameExists) throw new Error("Username already taken");
 
-  const id = `user-${crypto.randomUUID()}`;
-  // Privileges are only granted via the seeded admin account — never
-  // automatically based on email/username, which would be an escalation hole.
-  const isAdmin = false;
-  const avatarUrl = `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(formattedUsername)}`;
+    const id = `user-${crypto.randomUUID()}`;
+    // Privileges are only granted via the seeded admin account — never
+    // automatically based on email/username, which would be an escalation hole.
+    const isAdmin = false;
+    const avatarUrl = `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(formattedUsername)}`;
 
-  const newUser: UserWithPassword = {
-    id,
-    name: name.trim(),
-    username: formattedUsername,
-    email: formattedEmail,
-    isAdmin,
-    avatarUrl,
-    createdAt: new Date().toISOString(),
-    passwordHash: hashPassword(password),
-  };
+    const newUser: UserWithPassword = {
+      id,
+      name: name.trim(),
+      username: formattedUsername,
+      email: formattedEmail,
+      isAdmin,
+      avatarUrl,
+      createdAt: new Date().toISOString(),
+      passwordHash: hashPassword(password),
+    };
 
-  db.users.push(newUser);
-  await saveDbFile(db);
+    db.users.push(newUser);
+    await saveDbFile(db);
 
-  const { passwordHash, ...user } = newUser;
-  return user;
+    const { passwordHash, ...user } = newUser;
+    return user;
+  });
 }
 
 export async function validateCredentials(
   emailOrUsername: string,
   password: string
 ): Promise<User | null> {
-  const db = await readDbFile();
-  const lowerInput = emailOrUsername.toLowerCase().trim();
-  const found = db.users.find(
-    (u) => u.email.toLowerCase() === lowerInput || u.username.toLowerCase() === lowerInput
-  );
+  return withDbLock(async () => {
+    const db = await readDbFile();
+    const lowerInput = emailOrUsername.toLowerCase().trim();
+    const found = db.users.find(
+      (u) => u.email.toLowerCase() === lowerInput || u.username.toLowerCase() === lowerInput
+    );
 
-  if (!found) return null;
+    if (!found) return null;
 
-  if (!verifyPassword(password, found.passwordHash)) return null;
+    if (!verifyPassword(password, found.passwordHash)) return null;
 
-  // Transparently upgrade legacy unsalted hashes to salted scrypt on login
-  if (!found.passwordHash.startsWith("scrypt$")) {
-    found.passwordHash = hashPassword(password);
-    await saveDbFile(db);
-  }
+    // Transparently upgrade legacy unsalted hashes to salted scrypt on login
+    if (!found.passwordHash.startsWith("scrypt$")) {
+      found.passwordHash = hashPassword(password);
+      await saveDbFile(db);
+    }
 
-  const { passwordHash, ...user } = found;
-  return user;
+    const { passwordHash, ...user } = found;
+    return user;
+  });
 }
 
 // --- BLOG INTERACTIONS ---
@@ -286,10 +304,29 @@ export async function getBlogEngagement(blogSlug: string, userId?: string) {
 
   const userLiked = userId ? likes.some((l) => l.userId === userId) : false;
 
+  // Most recent unique likers (max 5), so the UI can render an avatar strip.
+  const recentLikers = Array.from(
+    new Map(
+      likes
+        .slice()
+        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+        .map((l) => {
+          const u = db.users.find((u) => u.id === l.userId);
+          return [
+            l.userId,
+            u
+              ? { id: u.id, name: u.name, username: u.username, avatarUrl: u.avatarUrl }
+              : { id: l.userId, name: "User", username: "user", avatarUrl: "" },
+          ];
+        })
+    ).values()
+  ).slice(0, 5);
+
   return {
     likesCount: likes.length,
     commentsCount: comments.length,
     userLiked,
+    recentLikers,
   };
 }
 
@@ -313,52 +350,56 @@ export async function toggleCommentLike(
   commentId: string,
   userId: string
 ): Promise<{ likesCount: number; userLiked: boolean }> {
-  const db = await readDbFile();
+  return withDbLock(async () => {
+    const db = await readDbFile();
 
-  const comment = db.comments.find((c) => c.id === commentId);
-  if (!comment) throw new Error("Comment not found");
+    const comment = db.comments.find((c) => c.id === commentId);
+    if (!comment) throw new Error("Comment not found");
 
-  const existingIndex = db.likes.findIndex(
-    (l) => l.commentId === commentId && l.userId === userId
-  );
+    const existingIndex = db.likes.findIndex(
+      (l) => l.commentId === commentId && l.userId === userId
+    );
 
-  if (existingIndex > -1) {
-    db.likes.splice(existingIndex, 1);
-  } else {
-    db.likes.push({
-      id: `like-${crypto.randomUUID()}`,
-      commentId,
-      userId,
-      createdAt: new Date().toISOString(),
-    });
-  }
+    if (existingIndex > -1) {
+      db.likes.splice(existingIndex, 1);
+    } else {
+      db.likes.push({
+        id: `like-${crypto.randomUUID()}`,
+        commentId,
+        userId,
+        createdAt: new Date().toISOString(),
+      });
+    }
 
-  await saveDbFile(db);
-  return commentLikeStats(comment, db.likes, userId);
+    await saveDbFile(db);
+    return commentLikeStats(comment, db.likes, userId);
+  });
 }
 
 export async function toggleLike(blogSlug: string, userId: string): Promise<boolean> {
-  const db = await readDbFile();
-  
-  const existingLikeIndex = db.likes.findIndex(
-    (l) => l.blogSlug === blogSlug && l.userId === userId
-  );
+  return withDbLock(async () => {
+    const db = await readDbFile();
 
-  let liked = false;
-  if (existingLikeIndex > -1) {
-    db.likes.splice(existingLikeIndex, 1);
-  } else {
-    db.likes.push({
-      id: `like-${crypto.randomUUID()}`,
-      blogSlug,
-      userId,
-      createdAt: new Date().toISOString(),
-    });
-    liked = true;
-  }
+    const existingLikeIndex = db.likes.findIndex(
+      (l) => l.blogSlug === blogSlug && l.userId === userId
+    );
 
-  await saveDbFile(db);
-  return liked;
+    let liked = false;
+    if (existingLikeIndex > -1) {
+      db.likes.splice(existingLikeIndex, 1);
+    } else {
+      db.likes.push({
+        id: `like-${crypto.randomUUID()}`,
+        blogSlug,
+        userId,
+        createdAt: new Date().toISOString(),
+      });
+      liked = true;
+    }
+
+    await saveDbFile(db);
+    return liked;
+  });
 }
 
 export async function addComment(
@@ -367,32 +408,34 @@ export async function addComment(
   content: string,
   parentId?: string
 ): Promise<Comment> {
-  const db = await readDbFile();
+  return withDbLock(async () => {
+    const db = await readDbFile();
 
-  const user = db.users.find((u) => u.id === userId);
-  if (!user) throw new Error("User not found");
+    const user = db.users.find((u) => u.id === userId);
+    if (!user) throw new Error("User not found");
 
-  const trimmedContent = content.trim();
-  if (trimmedContent === "") throw new Error("Comment cannot be empty");
-  if (trimmedContent.length > MAX_COMMENT_LENGTH) {
-    throw new Error(`Comment cannot exceed ${MAX_COMMENT_LENGTH} characters`);
-  }
+    const trimmedContent = content.trim();
+    if (trimmedContent === "") throw new Error("Comment cannot be empty");
+    if (trimmedContent.length > MAX_COMMENT_LENGTH) {
+      throw new Error(`Comment cannot exceed ${MAX_COMMENT_LENGTH} characters`);
+    }
 
-  const newComment: Comment = {
-    id: `comment-${crypto.randomUUID()}`,
-    blogSlug,
-    userId,
-    userName: user.name,
-    userAvatar: user.avatarUrl,
-    content: trimmedContent,
-    parentId: parentId || undefined,
-    isDeleted: false,
-    createdAt: new Date().toISOString(),
-  };
+    const newComment: Comment = {
+      id: `comment-${crypto.randomUUID()}`,
+      blogSlug,
+      userId,
+      userName: user.name,
+      userAvatar: user.avatarUrl,
+      content: trimmedContent,
+      parentId: parentId || undefined,
+      isDeleted: false,
+      createdAt: new Date().toISOString(),
+    };
 
-  db.comments.push(newComment);
-  await saveDbFile(db);
-  return newComment;
+    db.comments.push(newComment);
+    await saveDbFile(db);
+    return newComment;
+  });
 }
 
 export async function editComment(
@@ -400,23 +443,25 @@ export async function editComment(
   userId: string,
   content: string
 ): Promise<Comment> {
-  const db = await readDbFile();
-  const comment = db.comments.find((c) => c.id === commentId);
+  return withDbLock(async () => {
+    const db = await readDbFile();
+    const comment = db.comments.find((c) => c.id === commentId);
 
-  if (!comment) throw new Error("Comment not found");
-  if (comment.userId !== userId) throw new Error("Unauthorized editing");
+    if (!comment) throw new Error("Comment not found");
+    if (comment.userId !== userId) throw new Error("Unauthorized editing");
 
-  const trimmedContent = content.trim();
-  if (trimmedContent === "") throw new Error("Comment cannot be empty");
-  if (trimmedContent.length > MAX_COMMENT_LENGTH) {
-    throw new Error(`Comment cannot exceed ${MAX_COMMENT_LENGTH} characters`);
-  }
+    const trimmedContent = content.trim();
+    if (trimmedContent === "") throw new Error("Comment cannot be empty");
+    if (trimmedContent.length > MAX_COMMENT_LENGTH) {
+      throw new Error(`Comment cannot exceed ${MAX_COMMENT_LENGTH} characters`);
+    }
 
-  comment.content = trimmedContent;
-  comment.updatedAt = new Date().toISOString();
+    comment.content = trimmedContent;
+    comment.updatedAt = new Date().toISOString();
 
-  await saveDbFile(db);
-  return comment;
+    await saveDbFile(db);
+    return comment;
+  });
 }
 
 export async function deleteComment(
@@ -424,24 +469,26 @@ export async function deleteComment(
   userId: string,
   isAdmin: boolean
 ): Promise<Comment> {
-  const db = await readDbFile();
-  const comment = db.comments.find((c) => c.id === commentId);
+  return withDbLock(async () => {
+    const db = await readDbFile();
+    const comment = db.comments.find((c) => c.id === commentId);
 
-  if (!comment) throw new Error("Comment not found");
-  
-  // Only owner or admin can delete
-  if (comment.userId !== userId && !isAdmin) {
-    throw new Error("Unauthorized deletion");
-  }
+    if (!comment) throw new Error("Comment not found");
+    
+    // Only owner or admin can delete
+    if (comment.userId !== userId && !isAdmin) {
+      throw new Error("Unauthorized deletion");
+    }
 
-  comment.isDeleted = true;
-  comment.content = "[Comment deleted by user]";
-  comment.updatedAt = new Date().toISOString();
+    comment.isDeleted = true;
+    comment.content = "[Comment deleted by user]";
+    comment.updatedAt = new Date().toISOString();
 
-  // If there are child comments, keep it marked as deleted. If it's a leaf node, we could delete it,
-  // but to preserve threads, we mark it.
-  await saveDbFile(db);
-  return comment;
+    // If there are child comments, keep it marked as deleted. If it's a leaf node, we could delete it,
+    // but to preserve threads, we mark it.
+    await saveDbFile(db);
+    return comment;
+  });
 }
 
 // --- BLOG SETTINGS (ADMIN) ---
@@ -452,9 +499,11 @@ export async function getBlogSettings(): Promise<BlogSettings> {
 }
 
 async function saveBlogSettings(settings: BlogSettings): Promise<void> {
-  const db = await readDbFile();
-  db.blogSettings = settings;
-  await saveDbFile(db);
+  return withDbLock(async () => {
+    const db = await readDbFile();
+    db.blogSettings = settings;
+    await saveDbFile(db);
+  });
 }
 
 export async function setSourceEnabled(category: string, enabled: boolean): Promise<BlogSettings> {
@@ -517,16 +566,18 @@ export async function getAdminComments(): Promise<Comment[]> {
 }
 
 export async function adminDeleteComment(commentId: string): Promise<void> {
-  const db = await readDbFile();
-  const comment = db.comments.find((c) => c.id === commentId);
+  return withDbLock(async () => {
+    const db = await readDbFile();
+    const comment = db.comments.find((c) => c.id === commentId);
 
-  if (!comment) throw new Error("Comment not found");
+    if (!comment) throw new Error("Comment not found");
 
-  comment.isDeleted = true;
-  comment.content = "[Comment deleted by moderator]";
-  comment.updatedAt = new Date().toISOString();
+    comment.isDeleted = true;
+    comment.content = "[Comment deleted by moderator]";
+    comment.updatedAt = new Date().toISOString();
 
-  await saveDbFile(db);
+    await saveDbFile(db);
+  });
 }
 
 export async function getEngagementStats() {

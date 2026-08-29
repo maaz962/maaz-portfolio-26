@@ -19,11 +19,6 @@ import { AnimatePresence, motion } from "framer-motion";
 import { GlassNavbar } from "@/components/layout/glass-navbar";
 import { cn } from "@/lib/utils";
 import { GameDiscussionPanel } from "./game-discussion-panel";
-import {
-  getGamesSession,
-  setGamesSession,
-  clearGamesSession,
-} from "@/lib/games-session";
 import type { BlogEngagement, User } from "@/types";
 
 const games = [
@@ -246,14 +241,13 @@ export default function GamesPage() {
     fetch("/api/auth/me")
       .then((r) => r.json())
       .then((d) => {
-        if (d.user) setCurrentUser(d.user);
+        if (d.user) {
+          setCurrentUser(d.user);
+          setGamesAuthed(true);
+        }
       })
       .catch(() => {})
       .finally(() => setAuthLoading(false));
-
-    if (typeof window !== "undefined") {
-      setGamesAuthed(getGamesSession());
-    }
 
     games.forEach((game) => {
       fetch(`/api/blog/likes?slug=${encodeURIComponent(game.slug)}`)
@@ -306,7 +300,6 @@ export default function GamesPage() {
       setCurrentUser(data);
       setShowAuthModal(false);
       setAuthForm({ name: "", username: "", email: "", password: "" });
-      setGamesSession();
       setGamesAuthed(true);
       if (pendingSlug) {
         router.push(`/games/${pendingSlug}`);
@@ -355,16 +348,18 @@ export default function GamesPage() {
                   </span>
                 </span>
                 <button
-                  onClick={() => {
-                    clearGamesSession();
+                  onClick={async () => {
+                    try {
+                      await fetch("/api/auth/logout", { method: "POST" });
+                    } catch {}
                     setGamesAuthed(false);
                     setCurrentUser(null);
                   }}
-                  title="Sign out of games (login is required again on your next visit)"
+                  title="Sign out"
                   className="flex items-center gap-1 rounded-full bg-background-secondary px-2.5 py-1 text-muted transition-colors hover:text-foreground"
                 >
                   <LogOut className="h-3 w-3" />
-                  Games Logout
+                  Log Out
                 </button>
               </div>
             ) : (
@@ -385,7 +380,8 @@ export default function GamesPage() {
           {!gamesAuthed && (
             <p className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-amber-500/20 bg-amber-500/10 px-3 py-1.5 text-[0.65rem] text-amber-600">
               <Sparkles className="h-3 w-3" />
-              A quick sign-in is required before playing — every time you visit.
+              A quick sign-in is required before playing games. You stay signed
+              in until you log out.
             </p>
           )}
         </div>
