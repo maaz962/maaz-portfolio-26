@@ -33,5 +33,8 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# local JSON database (runtime user data & password hashes — auto-seeds on first run)
+# local JSON database (runtime user data & password hashes ï¿½ auto-seeds on first run)
 /src/data/blog-db.json
+
+# runtime analytics (visitor fingerprint & event data)
+/src/data/tracking.json

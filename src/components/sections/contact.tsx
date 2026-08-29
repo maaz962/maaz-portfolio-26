@@ -172,7 +172,7 @@ export function Contact() {
                   className="flex items-center gap-3.5 group text-sm text-muted hover:text-foreground transition-colors"
                 >
                   <span className="flex h-9 w-9 items-center justify-center rounded-xl border border-border bg-card text-muted transition-colors group-hover:border-primary/40 group-hover:text-primary">
-                    <Mail className="h-4.5 w-4.5" strokeWidth={1.75} />
+                    <Mail className="h-[18px] w-[18px]" strokeWidth={1.75} />
                   </span>
                   <div>
                     <p className="text-[0.65rem] text-mono uppercase tracking-wider text-muted/60">
@@ -184,7 +184,7 @@ export function Contact() {
 
                 <div className="flex items-center gap-3.5 text-sm text-muted">
                   <span className="flex h-9 w-9 items-center justify-center rounded-xl border border-border bg-card text-muted">
-                    <MapPin className="h-4.5 w-4.5" strokeWidth={1.75} />
+                    <MapPin className="h-[18px] w-[18px]" strokeWidth={1.75} />
                   </span>
                   <div>
                     <p className="text-[0.65rem] text-mono uppercase tracking-wider text-muted/60">
@@ -278,7 +278,7 @@ export function Contact() {
                         value={formData.name}
                         onChange={handleInputChange}
                         className={cn(
-                          "w-full rounded-xl border border-border bg-background-secondary px-4.5 py-3 text-sm text-foreground transition-all duration-200 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary focus-visible:border-primary disabled:opacity-50",
+                          "w-full rounded-xl border border-border bg-background-secondary px-4 py-3 text-sm text-foreground transition-all duration-200 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary focus-visible:border-primary disabled:opacity-50",
                           errors.name && "border-red-500 focus-visible:ring-red-500 focus-visible:border-red-500"
                         )}
                         placeholder="John Doe"
@@ -302,7 +302,7 @@ export function Contact() {
                         value={formData.email}
                         onChange={handleInputChange}
                         className={cn(
-                          "w-full rounded-xl border border-border bg-background-secondary px-4.5 py-3 text-sm text-foreground transition-all duration-200 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary focus-visible:border-primary disabled:opacity-50",
+                          "w-full rounded-xl border border-border bg-background-secondary px-4 py-3 text-sm text-foreground transition-all duration-200 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary focus-visible:border-primary disabled:opacity-50",
                           errors.email && "border-red-500 focus-visible:ring-red-500 focus-visible:border-red-500"
                         )}
                         placeholder="john@example.com"
@@ -327,7 +327,7 @@ export function Contact() {
                       value={formData.subject}
                       onChange={handleInputChange}
                       className={cn(
-                        "w-full rounded-xl border border-border bg-background-secondary px-4.5 py-3 text-sm text-foreground transition-all duration-200 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary focus-visible:border-primary disabled:opacity-50",
+                        "w-full rounded-xl border border-border bg-background-secondary px-4 py-3 text-sm text-foreground transition-all duration-200 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary focus-visible:border-primary disabled:opacity-50",
                         errors.subject && "border-red-500 focus-visible:ring-red-500 focus-visible:border-red-500"
                       )}
                       placeholder="Project details or inquiry description"
@@ -351,7 +351,7 @@ export function Contact() {
                       value={formData.message}
                       onChange={handleInputChange}
                       className={cn(
-                        "w-full resize-none rounded-xl border border-border bg-background-secondary px-4.5 py-3 text-sm text-foreground transition-all duration-200 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary focus-visible:border-primary disabled:opacity-50",
+                        "w-full resize-none rounded-xl border border-border bg-background-secondary px-4 py-3 text-sm text-foreground transition-all duration-200 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary focus-visible:border-primary disabled:opacity-50",
                         errors.message && "border-red-500 focus-visible:ring-red-500 focus-visible:border-red-500"
                       )}
                       placeholder="Hi Maaz, I'd like to discuss a freelance web project..."

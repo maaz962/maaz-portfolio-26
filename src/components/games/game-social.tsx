@@ -1,13 +1,13 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
+  Check,
   CornerDownRight,
   Heart,
   Lock,
   MessageCircle,
-  MoreHorizontal,
   Send,
 } from "lucide-react";
 import { motion } from "framer-motion";
@@ -48,6 +48,8 @@ export function GameSocial({
   const [replyText, setReplyText] = useState("");
   const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
   const [editText, setEditText] = useState("");
+  const [shareCopied, setShareCopied] = useState(false);
+  const shareTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     fetch(`/api/blog/likes?slug=${encodeURIComponent(slug)}`)
@@ -60,6 +62,12 @@ export function GameSocial({
       .then(setComments)
       .catch(() => {});
   }, [slug]);
+
+  useEffect(() => {
+    return () => {
+      if (shareTimeoutRef.current) clearTimeout(shareTimeoutRef.current);
+    };
+  }, []);
 
   const handleToggleLike = async () => {
     if (!canInteract) {
@@ -206,6 +214,29 @@ export function GameSocial({
     } catch {}
   };
 
+  const handleShare = async () => {
+    const shareData = {
+      title: `${title} — Maaz's Learn Game`,
+      text: `Check out ${title}, a web dev learning game from Maaz's portfolio!`,
+      url: window.location.href,
+    };
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData);
+        return;
+      }
+      throw new Error("share not supported");
+    } catch (err: any) {
+      if (err?.name === "AbortError") return;
+      try {
+        await navigator.clipboard.writeText(window.location.href);
+        setShareCopied(true);
+        if (shareTimeoutRef.current) clearTimeout(shareTimeoutRef.current);
+        shareTimeoutRef.current = setTimeout(() => setShareCopied(false), 2000);
+      } catch {}
+    }
+  };
+
   const commentThreads = useMemo(() => {
     const visibleIds = new Set(comments.map((c) => c.id));
     const parents = comments.filter(
@@ -245,13 +276,6 @@ export function GameSocial({
           </p>
           <p className="truncate text-[0.65rem] text-muted">{title}</p>
         </div>
-        <button
-          type="button"
-          aria-label="Post options"
-          className="ml-auto text-muted transition-colors hover:text-foreground"
-        >
-          <MoreHorizontal className="h-4 w-4" />
-        </button>
       </div>
 
       {/* Action row */}
@@ -302,10 +326,21 @@ export function GameSocial({
 
         <button
           type="button"
-          aria-label="Share"
-          className="ml-auto text-muted transition-colors hover:text-foreground"
+          onClick={handleShare}
+          aria-label={shareCopied ? "Link copied" : "Share this game"}
+          title="Share"
+          className="ml-auto flex items-center gap-1 text-muted transition-colors hover:text-primary"
         >
-          <Send className="h-5 w-5" />
+          {shareCopied ? (
+            <Check className="h-4 w-4 text-green-500" />
+          ) : (
+            <Send className="h-5 w-5" />
+          )}
+          {shareCopied && (
+            <span className="text-[0.62rem] font-semibold text-green-500">
+              Copied
+            </span>
+          )}
         </button>
       </div>
 

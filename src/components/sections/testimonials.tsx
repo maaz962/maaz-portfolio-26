@@ -37,7 +37,7 @@ export function Testimonials() {
               <StaggerItem>
                 <div className="rounded-xl border border-border bg-card p-5 shadow-card transition-colors hover:border-primary/20">
                   <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-primary/20 bg-primary/5 text-primary">
-                    <Users className="h-4.5 w-4.5" strokeWidth={1.75} />
+                    <Users className="h-[18px] w-[18px]" strokeWidth={1.75} />
                   </div>
                   <h4 className="mt-4 text-sm font-semibold text-foreground">
                     Club Leadership
@@ -51,7 +51,7 @@ export function Testimonials() {
               <StaggerItem>
                 <div className="rounded-xl border border-border bg-card p-5 shadow-card transition-colors hover:border-primary/20">
                   <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-accent/25 bg-accent/5 text-accent">
-                    <BookOpen className="h-4.5 w-4.5" strokeWidth={1.75} />
+                    <BookOpen className="h-[18px] w-[18px]" strokeWidth={1.75} />
                   </div>
                   <h4 className="mt-4 text-sm font-semibold text-foreground">
                     Technical Teaching
@@ -65,7 +65,7 @@ export function Testimonials() {
               <StaggerItem>
                 <div className="rounded-xl border border-border bg-card p-5 shadow-card transition-colors hover:border-primary/20">
                   <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-primary/20 bg-primary/5 text-primary">
-                    <Code2 className="h-4.5 w-4.5" strokeWidth={1.75} />
+                    <Code2 className="h-[18px] w-[18px]" strokeWidth={1.75} />
                   </div>
                   <h4 className="mt-4 text-sm font-semibold text-foreground">
                     Verified Builds
@@ -79,7 +79,7 @@ export function Testimonials() {
               <StaggerItem>
                 <div className="rounded-xl border border-border bg-card p-5 shadow-card transition-colors hover:border-primary/20">
                   <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-accent/25 bg-accent/5 text-accent">
-                    <GraduationCap className="h-4.5 w-4.5" strokeWidth={1.75} />
+                    <GraduationCap className="h-[18px] w-[18px]" strokeWidth={1.75} />
                   </div>
                   <h4 className="mt-4 text-sm font-semibold text-foreground">
                     Academic Base

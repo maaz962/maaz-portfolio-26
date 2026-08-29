@@ -10,16 +10,20 @@ import {
   Gamepad2,
   Sparkles,
   X,
-  Eye,
-  EyeOff,
   UserPlus,
   LogOut,
+  Trophy,
+  ListTodo,
+  CheckCircle2,
+  Award,
 } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { GlassNavbar } from "@/components/layout/glass-navbar";
 import { cn } from "@/lib/utils";
 import { GameDiscussionPanel } from "./game-discussion-panel";
-import type { BlogEngagement, GameProgress, User } from "@/types";
+import { AuthModal } from "@/components/games/auth-modal";
+import { useAuth } from "@/lib/auth-context";
+import type { BlogEngagement, GameProgress } from "@/types";
 
 const games = [
   {
@@ -254,49 +258,20 @@ function GameCard({
 }
 
 export default function GamesPage() {
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const { user, loading: authLoading, logout } = useAuth();
   const [showAuthModal, setShowAuthModal] = useState(false);
-  const [authMode, setAuthMode] = useState<"login" | "register">("login");
-  const [authForm, setAuthForm] = useState({
-    name: "",
-    username: "",
-    email: "",
-    password: "",
-  });
-  const [authError, setAuthError] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const [gamesAuthed, setGamesAuthed] = useState(false);
-  const [authLoading, setAuthLoading] = useState(true);
+  const [pendingSlug, setPendingSlug] = useState<string | null>(null);
   const [engagements, setEngagements] = useState<
     Record<string, BlogEngagement>
   >({});
   const [progress, setProgress] = useState<Record<string, GameProgress>>({});
   const [discussionSlug, setDiscussionSlug] = useState<string | null>(null);
-  const [pendingSlug, setPendingSlug] = useState<string | null>(null);
   const router = useRouter();
 
-  useEffect(() => {
-    fetch("/api/auth/me")
-      .then((r) => r.json())
-      .then((d) => {
-        if (d.user) {
-          setCurrentUser(d.user);
-          setGamesAuthed(true);
-        } else if (
-          typeof window !== "undefined" &&
-          !window.localStorage.getItem("mp_games_auth_nudged")
-        ) {
-          // Profile-create prompt shows only once per browser, on the hub,
-          // before the visitor clicks into any game.
-          window.localStorage.setItem("mp_games_auth_nudged", "1");
-          setAuthMode("register");
-          setAuthError("");
-          setShowAuthModal(true);
-        }
-      })
-      .catch(() => {})
-      .finally(() => setAuthLoading(false));
+  const currentUser = user;
+  const gamesAuthed = Boolean(user) && !authLoading;
 
+  useEffect(() => {
     games.forEach((game) => {
       fetch(`/api/blog/likes?slug=${encodeURIComponent(game.slug)}`)
         .then((r) => r.json())
@@ -341,37 +316,19 @@ export default function GamesPage() {
     setEngagements((prev) => ({ ...prev, [slug]: engagement }));
   };
 
-  const handleAuthSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setAuthError("");
-    const url = authMode === "login" ? "/api/auth/login" : "/api/auth/register";
-    const body =
-      authMode === "login"
-        ? { emailOrUsername: authForm.username || authForm.email, password: authForm.password }
-        : authForm;
-    try {
-      const res = await fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        setAuthError(data.error || "Auth failed");
-        return;
-      }
-      setCurrentUser(data);
-      setShowAuthModal(false);
-      setAuthForm({ name: "", username: "", email: "", password: "" });
-      setGamesAuthed(true);
-      if (pendingSlug) {
-        router.push(`/games/${pendingSlug}`);
-        setPendingSlug(null);
-      }
-    } catch {
-      setAuthError("Server error");
-    }
+  const handleLogout = async () => {
+    await logout();
+    setProgress({});
   };
+
+  const playerGames = games.filter((g) => !g.comingSoon);
+  const pendingGames = playerGames.filter((g) => {
+    const p = progress[g.slug];
+    if (!p) return true;
+    const done = Object.values(p.completed).filter(Boolean).length;
+    return done < (p.totalLevels || 0);
+  });
+  const totalScore = playerGames.reduce((sum, g) => sum + (progress[g.slug]?.score ?? 0), 0);
 
   return (
     <div className="relative min-h-screen bg-background">
@@ -402,79 +359,9 @@ export default function GamesPage() {
               </div>
             </div>
 
-            {gamesAuthed && currentUser ? (
-              <div className="flex flex-col items-end gap-2">
-                <div className="flex items-center gap-2 rounded-full border border-border bg-card py-1.5 pl-2 pr-1.5 text-xs">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={currentUser.avatarUrl}
-                    alt={currentUser.name}
-                    className="h-6 w-6 rounded-full object-cover"
-                  />
-                  <span className="text-muted">
-                    Hi,{" "}
-                    <span className="font-semibold text-foreground">
-                      {currentUser.name.split(" ")[0]}
-                    </span>
-                  </span>
-                  <button
-                    onClick={async () => {
-                      try {
-                        await fetch("/api/auth/logout", { method: "POST" });
-                      } catch {}
-                      setGamesAuthed(false);
-                      setCurrentUser(null);
-                      setProgress({});
-                    }}
-                    title="Sign out"
-                    className="flex items-center gap-1 rounded-full bg-background-secondary px-2.5 py-1 text-muted transition-colors hover:text-foreground"
-                  >
-                    <LogOut className="h-3 w-3" />
-                    Log Out
-                  </button>
-                </div>
-                <div className="flex flex-wrap justify-end gap-1.5">
-                  {games
-                    .filter((g) => !g.comingSoon)
-                    .map((g) => {
-                      const p = progress[g.slug];
-                      const done = p
-                        ? Object.values(p.completed).filter(Boolean).length
-                        : 0;
-                      const left = p ? Math.max(0, p.totalLevels - done) : null;
-                      return (
-                        <Link
-                          key={g.slug}
-                          href={`/games/${g.slug}`}
-                          className={cn(
-                            "flex items-center gap-1.5 rounded-full border border-border bg-card px-2.5 py-1 text-[0.65rem] transition-colors hover:border-primary/40",
-                            g.accentColor
-                          )}
-                          title={`${g.title} — ${
-                            p ? `${p.score} pts, ${done}/${p.totalLevels} levels` : "not started"
-                          }`}
-                        >
-                          <span>{g.animal}</span>
-                          <span className="font-bold text-foreground">
-                            {p ? p.score : 0} pts
-                          </span>
-                          <span className="text-muted">
-                            {left === null
-                              ? "not started"
-                              : left > 0
-                                ? `${left} left`
-                                : "done ✓"}
-                          </span>
-                        </Link>
-                      );
-                    })}
-                </div>
-              </div>
-            ) : (
+            {!gamesAuthed && !authLoading ? (
               <button
                 onClick={() => {
-                  setAuthMode("login");
-                  setAuthError("");
                   setShowAuthModal(true);
                 }}
                 className="flex items-center gap-1.5 rounded-full bg-gradient-to-r from-primary to-violet-600 px-4 py-2 text-xs font-semibold text-white shadow-lg shadow-primary/25 transition-all hover:brightness-110"
@@ -482,6 +369,8 @@ export default function GamesPage() {
                 <UserPlus className="h-3.5 w-3.5" />
                 Sign In / Sign Up
               </button>
+            ) : (
+              <div className="hidden h-10 w-10 items-center justify-center rounded-xl bg-background-secondary sm:flex" />
             )}
           </div>
 
@@ -493,6 +382,154 @@ export default function GamesPage() {
             </p>
           )}
         </div>
+
+        {gamesAuthed && currentUser && (
+          <motion.section
+            initial={{ opacity: 0, y: 14 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+            className="mb-8 rounded-2xl border border-border bg-card p-5 shadow-sm"
+          >
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <div className="flex items-center gap-3">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={currentUser.avatarUrl}
+                  alt={currentUser.name}
+                  className="h-14 w-14 rounded-2xl border border-border object-cover"
+                />
+                <div>
+                  <h2 className="font-display text-lg font-bold text-foreground">
+                    {currentUser.name}
+                  </h2>
+                  <p className="text-xs text-muted">@{currentUser.username}</p>
+                </div>
+              </div>
+
+              <button
+                onClick={handleLogout}
+                title="Sign out"
+                className="flex items-center gap-1.5 rounded-full border border-border bg-background-secondary px-3.5 py-1.5 text-xs font-semibold text-muted transition-colors hover:border-red-400/40 hover:text-red-500"
+              >
+                <LogOut className="h-3.5 w-3.5" />
+                Logout
+              </button>
+            </div>
+
+            <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
+              <div className="flex items-center gap-2.5 rounded-xl border border-border bg-background-secondary/60 p-3">
+                <Trophy className="h-5 w-5 shrink-0 text-primary" />
+                <div>
+                  <p className="text-lg font-bold leading-none text-foreground">
+                    {totalScore}
+                  </p>
+                  <p className="mt-0.5 text-[0.65rem] text-muted">Total points</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2.5 rounded-xl border border-border bg-background-secondary/60 p-3">
+                <ListTodo className="h-5 w-5 shrink-0 text-primary" />
+                <div>
+                  <p className="text-lg font-bold leading-none text-foreground">
+                    {pendingGames.length}
+                  </p>
+                  <p className="mt-0.5 text-[0.65rem] text-muted">Games in progress</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2.5 rounded-xl border border-border bg-background-secondary/60 p-3">
+                <Award className="h-5 w-5 shrink-0 text-primary" />
+                <div>
+                  <p className="text-lg font-bold leading-none text-foreground">
+                    {playerGames.filter((g) => {
+                      const p = progress[g.slug];
+                      if (!p) return false;
+                      return (
+                        Object.values(p.completed).filter(Boolean).length >=
+                        (p.totalLevels || 0)
+                      );
+                    }).length}
+                  </p>
+                  <p className="mt-0.5 text-[0.65rem] text-muted">Completed</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-4">
+              <p className="mb-2 text-[0.65rem] font-semibold uppercase tracking-wider text-muted">
+                Your progress
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {playerGames.map((g) => {
+                  const p = progress[g.slug];
+                  const done = p
+                    ? Object.values(p.completed).filter(Boolean).length
+                    : 0;
+                  const total = p?.totalLevels ?? 0;
+                  const left = p ? Math.max(0, total - done) : null;
+                  const isDone = left !== null && left === 0;
+                  return (
+                    <Link
+                      key={g.slug}
+                      href={`/games/${g.slug}`}
+                      className={cn(
+                        "flex items-center gap-2 rounded-full border border-border bg-background-secondary px-3 py-1.5 text-xs transition-colors hover:border-primary/40",
+                        g.accentColor
+                      )}
+                      title={`${g.title} — ${p ? `${p.score} pts, ${done}/${total} levels` : "not started"}`}
+                    >
+                      {isDone ? (
+                        <CheckCircle2 className="h-3.5 w-3.5 text-green-500" />
+                      ) : (
+                        <span>{g.animal}</span>
+                      )}
+                      <span className="font-bold text-foreground">
+                        {p ? p.score : 0} pts
+                      </span>
+                      <span className="text-muted">
+                        {left === null
+                          ? "not started"
+                          : left > 0
+                            ? `${done}/${total} levels`
+                            : "done"}
+                      </span>
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
+
+            {pendingGames.length > 0 && (
+              <div className="mt-4 rounded-xl border border-amber-500/20 bg-amber-500/10 p-3">
+                <p className="text-[0.65rem] font-semibold uppercase tracking-wider text-amber-600">
+                  Pending games
+                </p>
+                <ul className="mt-1.5 space-y-1">
+                  {pendingGames.map((g) => {
+                    const p = progress[g.slug];
+                    const done = p
+                      ? Object.values(p.completed).filter(Boolean).length
+                      : 0;
+                    const total = p?.totalLevels ?? 0;
+                    return (
+                      <li key={g.slug} className="flex items-center gap-2 text-xs text-muted">
+                        <span>{g.animal}</span>
+                        <Link
+                          href={`/games/${g.slug}`}
+                          className="font-semibold text-foreground hover:text-primary"
+                        >
+                          {g.title}
+                        </Link>
+                        <span className="ml-auto">
+                          {p ? `${done}/${total} levels left` : "not started"} —{" "}
+                          {p?.score ?? 0} pts
+                        </span>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            )}
+          </motion.section>
+        )}
 
         <div className="grid gap-5 sm:grid-cols-2">
           {games.map((game) => (
@@ -509,14 +546,8 @@ export default function GamesPage() {
               onLike={handleLike}
               onComments={(slug) => setDiscussionSlug(slug)}
               authed={Boolean(currentUser) && gamesAuthed}
-              openAuthModal={() => {
-                setAuthMode("login");
-                setAuthError("");
-                setShowAuthModal(true);
-              }}
+              openAuthModal={() => setShowAuthModal(true)}
               onPlay={() => {
-                setAuthMode("register");
-                setAuthError("");
                 setPendingSlug(game.slug);
                 setShowAuthModal(true);
               }}
@@ -568,11 +599,7 @@ export default function GamesPage() {
                     game={game}
                     currentUser={currentUser}
                     onEngagementChange={handleEngagementChange}
-                    onAuthRequired={() => {
-                      setAuthMode("login");
-                      setAuthError("");
-                      setShowAuthModal(true);
-                    }}
+                    onAuthRequired={() => setShowAuthModal(true)}
                   />
                 );
               })()}
@@ -581,152 +608,16 @@ export default function GamesPage() {
         )}
       </AnimatePresence>
 
-      <AnimatePresence>
-        {showAuthModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setShowAuthModal(false)}
-              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-            />
-            <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              className="relative w-full max-w-sm rounded-2xl border border-border bg-card p-6 shadow-glow"
-            >
-              <button
-                onClick={() => setShowAuthModal(false)}
-                className="absolute right-4 top-4 text-muted hover:text-foreground"
-              >
-                ✕
-              </button>
-              <h3 className="font-display text-sm font-semibold text-foreground">
-                {authMode === "login" ? "Welcome back" : "Create profile"}
-              </h3>
-              <p className="mt-1 text-[0.65rem] text-muted">
-                Sign up first to start playing, like and comment on games
-              </p>
-
-              {authError && (
-                <div className="mt-3 rounded-lg border border-red-500/20 bg-red-500/10 p-2 text-[0.7rem] text-red-500">
-                  {authError}
-                </div>
-              )}
-
-              <form onSubmit={handleAuthSubmit} className="mt-4 space-y-3">
-                {authMode === "register" ? (
-                  <>
-                    <input
-                      type="text"
-                      required
-                      placeholder="Full Name"
-                      value={authForm.name}
-                      onChange={(e) =>
-                        setAuthForm({ ...authForm, name: e.target.value })
-                      }
-                      className="w-full rounded-xl border border-border bg-background-secondary px-3.5 py-2 text-xs text-foreground focus:border-primary/60 focus:outline-none"
-                    />
-                    <input
-                      type="text"
-                      required
-                      placeholder="Username"
-                      value={authForm.username}
-                      onChange={(e) =>
-                        setAuthForm({ ...authForm, username: e.target.value })
-                      }
-                      className="w-full rounded-xl border border-border bg-background-secondary px-3.5 py-2 text-xs text-foreground focus:border-primary/60 focus:outline-none"
-                    />
-                    <input
-                      type="email"
-                      required
-                      placeholder="Email Address"
-                      value={authForm.email}
-                      onChange={(e) =>
-                        setAuthForm({ ...authForm, email: e.target.value })
-                      }
-                      className="w-full rounded-xl border border-border bg-background-secondary px-3.5 py-2 text-xs text-foreground focus:border-primary/60 focus:outline-none"
-                    />
-                  </>
-                ) : (
-                  <input
-                    type="text"
-                    required
-                    placeholder="Username or Email"
-                    value={authForm.username}
-                    onChange={(e) =>
-                      setAuthForm({ ...authForm, username: e.target.value })
-                    }
-                    className="w-full rounded-xl border border-border bg-background-secondary px-3.5 py-2 text-xs text-foreground focus:border-primary/60 focus:outline-none"
-                  />
-                )}
-                <div className="relative">
-                <input
-                  type={showPassword ? "text" : "password"}
-                  required
-                  placeholder="Password"
-                  value={authForm.password}
-                  onChange={(e) =>
-                    setAuthForm({ ...authForm, password: e.target.value })
-                  }
-                  className="w-full rounded-xl border border-border bg-background-secondary px-3.5 py-2 pr-10 text-xs text-foreground focus:border-primary/60 focus:outline-none"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword((v) => !v)}
-                  aria-label={showPassword ? "Hide password" : "Show password"}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted transition-colors hover:text-foreground"
-                >
-                  {showPassword ? (
-                    <EyeOff className="h-4 w-4" />
-                  ) : (
-                    <Eye className="h-4 w-4" />
-                  )}
-                </button>
-              </div>
-                <button
-                  type="submit"
-                  className="w-full rounded-xl bg-primary py-2.5 text-xs font-semibold text-primary-foreground transition-all hover:brightness-110"
-                >
-                  {authMode === "login" ? "Sign In" : "Register"}
-                </button>
-              </form>
-
-              <div className="mt-3 text-center text-xs text-muted">
-                {authMode === "login" ? (
-                  <p>
-                    No account?{" "}
-                    <button
-                      onClick={() => {
-                        setAuthMode("register");
-                        setAuthError("");
-                      }}
-                      className="font-semibold text-primary hover:underline"
-                    >
-                      Sign Up
-                    </button>
-                  </p>
-                ) : (
-                  <p>
-                    Have account?{" "}
-                    <button
-                      onClick={() => {
-                        setAuthMode("login");
-                        setAuthError("");
-                      }}
-                      className="font-semibold text-primary hover:underline"
-                    >
-                      Sign In
-                    </button>
-                  </p>
-                )}
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
+      <AuthModal
+        open={showAuthModal}
+        onClose={() => setShowAuthModal(false)}
+        onAuthed={() => {
+          if (pendingSlug) {
+            router.push(`/games/${pendingSlug}`);
+            setPendingSlug(null);
+          }
+        }}
+      />
     </div>
   );
 }

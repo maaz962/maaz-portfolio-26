@@ -4,7 +4,12 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Shield, X } from "lucide-react";
 
-export function CookieConsent() {
+export interface CookieConsentProps {
+  /** Called immediately after the user accepts, so tracking can start. */
+  onAccept?: () => void;
+}
+
+export function CookieConsent({ onAccept }: CookieConsentProps) {
   const [show, setShow] = useState(false);
 
   useEffect(() => {
@@ -15,6 +20,7 @@ export function CookieConsent() {
   const accept = () => {
     localStorage.setItem("maaz-cookie-consent", "accepted");
     setShow(false);
+    onAccept?.();
   };
 
   const decline = () => {

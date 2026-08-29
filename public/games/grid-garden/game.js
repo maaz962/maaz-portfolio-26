@@ -528,6 +528,9 @@
       var iconHtml = "";
       if (item.area) {
         iconHtml = '<div class="grid-item-area">' + item.area + '</div>';
+        // Assign the item to its named area, otherwise grid-template-areas
+        // has nothing to place and the board never shows the target layout.
+        el.style.gridArea = item.area;
       }
       if (item.span) {
         el.style.gridColumn = "span " + item.span;
@@ -626,6 +629,11 @@
       renderLevel();
       emitProgress();
     }
+  }
+
+  function nextHandler() {
+    var nb = $("next-btn");
+    if (nb && !nb.disabled) nextLevel();
   }
 
   function renderLevel() {
@@ -753,7 +761,6 @@
     if (ta) { ta.removeEventListener("input", handleInput); ta.addEventListener("input", handleInput); }
     if (pb) { pb.removeEventListener("click", prevLevel); pb.addEventListener("click", prevLevel); }
     if (nb) {
-      var nextHandler = function () { if (!nb.disabled) nextLevel(); };
       nb.removeEventListener("click", nextHandler);
       nb.addEventListener("click", nextHandler);
     }

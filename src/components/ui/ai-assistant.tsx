@@ -42,7 +42,7 @@ export function AIAssistant() {
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  // Client-side simple rate limit (max 12 messages per session in local storage)
+  // Client-side simple rate limit (max 20 messages per browser session).
   const [messageCount, setMessageCount] = useState(0);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -305,13 +305,13 @@ export function AIAssistant() {
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 placeholder="Ask a question..."
-                disabled={isLoading}
+                disabled={isLoading || messageCount >= 20}
                 maxLength={1000}
                 className="flex-1 rounded-xl border border-border bg-background px-3 py-2 text-xs text-foreground placeholder:text-muted/60 transition-all duration-200 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary focus-visible:border-primary disabled:opacity-50"
               />
               <button
                 type="submit"
-                disabled={isLoading || !input.trim()}
+                disabled={isLoading || !input.trim() || messageCount >= 20}
                 className={cn(
                   "flex h-8 w-8 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm hover:brightness-110 active:scale-95 disabled:pointer-events-none disabled:opacity-40 transition-all duration-150"
                 )}

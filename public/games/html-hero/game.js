@@ -508,6 +508,10 @@
     }
   }
 
+  function nextHandler() {
+    nextLevel();
+  }
+
   function checkAnswer() {
     var ta = $("html-editor");
     if (!ta) return;
@@ -676,7 +680,6 @@
     if (pb) { pb.removeEventListener("click", prevLevel); pb.addEventListener("click", prevLevel); }
     if (cb) { cb.removeEventListener("click", checkAnswer); cb.addEventListener("click", checkAnswer); }
     if (nb) {
-      var nextHandler = function () { nextLevel(); };
       nb.removeEventListener("click", nextHandler);
       nb.addEventListener("click", nextHandler);
     }

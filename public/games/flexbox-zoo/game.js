@@ -420,9 +420,18 @@
     var board = $("zoo-board");
     if (!board) return;
     for (var i = 0; i < pairs.length; i++) {
-      if (VALID_PROPS.indexOf(pairs[i].property) !== -1) {
-        board.style.setProperty(pairs[i].property, pairs[i].value);
+      if (VALID_PROPS.indexOf(pairs[i].property) === -1) continue;
+      // align-self only works on a flex CHILD, not the container. Apply it
+      // to the special animal (the one the level is targeting) so the
+      // board actually shows the effect instead of silently ignoring it.
+      if (pairs[i].property === "align-self") {
+        var special = board.querySelector(".zoo-item-special");
+        if (special) {
+          special.style.setProperty("align-self", pairs[i].value);
+          continue;
+        }
       }
+      board.style.setProperty(pairs[i].property, pairs[i].value);
     }
   }
 
@@ -555,6 +564,11 @@
     }
   }
 
+  function nextHandler() {
+    var nb = $("next-btn");
+    if (nb && !nb.disabled) nextLevel();
+  }
+
   function renderLevel() {
     var level = LEVELS[STATE.currentLevel];
     if (!level) return renderVictory();
@@ -681,7 +695,6 @@
     if (ta) { ta.removeEventListener("input", handleInput); ta.addEventListener("input", handleInput); }
     if (pb) { pb.removeEventListener("click", prevLevel); pb.addEventListener("click", prevLevel); }
     if (nb) {
-      var nextHandler = function () { if (!nb.disabled) nextLevel(); };
       nb.removeEventListener("click", nextHandler);
       nb.addEventListener("click", nextHandler);
     }
