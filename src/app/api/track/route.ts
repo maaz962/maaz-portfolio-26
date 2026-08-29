@@ -1,46 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import fs from "fs/promises";
-import path from "path";
 import type { VisitorLog, VisitorStats, TrackingEvent } from "@/types/tracking";
 import type { User } from "@/types";
 import { getAdminUser } from "@/lib/auth";
 import { listUsers } from "@/lib/db";
-
-const MAX_LOGS = 500;
-const TRACK_FILE_PATH = path.join(process.cwd(), "src", "data", "tracking.json");
-
-interface TrackingStore {
-  logs: VisitorLog[];
-}
-
-let writePromise: Promise<void> = Promise.resolve();
-
-async function readTrackingFile(): Promise<TrackingStore> {
-  try {
-    const data = await fs.readFile(TRACK_FILE_PATH, "utf-8");
-    return JSON.parse(data);
-  } catch (error: any) {
-    if (error.code === "ENOENT") {
-      const empty: TrackingStore = { logs: [] };
-      await saveTrackingFile(empty);
-      return empty;
-    }
-    console.error("Error reading tracking file:", error);
-    return { logs: [] };
-  }
-}
-
-async function saveTrackingFile(data: TrackingStore): Promise<void> {
-  writePromise = writePromise.then(async () => {
-    try {
-      await fs.mkdir(path.dirname(TRACK_FILE_PATH), { recursive: true });
-      await fs.writeFile(TRACK_FILE_PATH, JSON.stringify(data), "utf-8");
-    } catch (error) {
-      console.error("Error writing tracking file:", error);
-    }
-  });
-  return writePromise;
-}
+import { listLogs, appendLog } from "@/lib/tracking-store";
 
 function generateId(): string {
   return Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
@@ -137,8 +100,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const store = await readTrackingFile();
-  const visitorLogs = store.logs;
+  const visitorLogs = await listLogs();
 
   const uniqueIPs = new Set(visitorLogs.map((v) => v.ip)).size;
 
@@ -245,10 +207,7 @@ export async function POST(req: NextRequest) {
       events: body.events || [],
     };
 
-    const store = await readTrackingFile();
-    store.logs.push(log);
-    if (store.logs.length > MAX_LOGS) store.logs.splice(0, store.logs.length - MAX_LOGS);
-    await saveTrackingFile(store);
+    await appendLog(log);
 
     return NextResponse.json({ success: true, id: log.id });
   } catch {
