@@ -29,13 +29,18 @@ const jetbrainsMono = JetBrains_Mono({
   display: "swap",
 });
 
-const siteUrl =
+const siteUrl = (
   process.env.NEXT_PUBLIC_SITE_URL ||
   process.env.VERCEL_PROJECT_PRODUCTION_URL ||
-  "https://maaz-arif-portfolio.vercel.app";
+  "maaz-arif-portfolio.vercel.app"
+).replace(/^\/+|\/+$/g, "");
+
+const normalizedSiteUrl = siteUrl.startsWith("http")
+  ? siteUrl
+  : `https://${siteUrl}`;
 
 export const metadata: Metadata = {
-  metadataBase: new URL(siteUrl),
+  metadataBase: new URL(normalizedSiteUrl),
   title: `${profile.name} | Full Stack Developer`,
   description: `Portfolio of ${profile.name}, a Full Stack & Flutter Developer specializing in React, Next.js, Flutter, and web development. Available for freelance work and collaborations.`,
   keywords: [
@@ -60,7 +65,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "en_US",
-    url: siteUrl,
+    url: normalizedSiteUrl,
     title: `${profile.name} | Full Stack Developer`,
     description: `Portfolio of ${profile.name}, a Full Stack & Flutter Developer specializing in React, Next.js, Flutter, and web development. Available for freelance work and collaborations.`,
     siteName: `${profile.name} Portfolio`,
