@@ -2,6 +2,7 @@ import { neon } from "@neondatabase/serverless";
 import crypto from "crypto";
 import type { User, Comment, GameProgress } from "@/types";
 import { hashPassword, verifyPassword } from "./password";
+import { getPgConnectionString, usePostgres } from "./pg-connection";
 
 /**
  * Postgres-backed persistent data layer. Used when process.env.DATABASE_URL is
@@ -13,9 +14,8 @@ import { hashPassword, verifyPassword } from "./password";
 // we narrow it to Promise<any[]> since the driver always returns arrays of rows.
 type DbTag = (strings: TemplateStringsArray, ...values: any[]) => Promise<any[]>;
 
-const sql = (
-  process.env.DATABASE_URL ? neon(process.env.DATABASE_URL) : null
-) as unknown as DbTag;
+const conn = getPgConnectionString();
+const sql = (conn ? neon(conn) : null) as unknown as DbTag;
 
 let initPromise: Promise<void> | null = null;
 

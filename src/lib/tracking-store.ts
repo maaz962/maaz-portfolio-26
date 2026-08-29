@@ -2,14 +2,14 @@ import fs from "fs/promises";
 import path from "path";
 import { neon } from "@neondatabase/serverless";
 import type { VisitorLog } from "@/types/tracking";
+import { getPgConnectionString, usePostgres } from "./pg-connection";
 
 /**
  * Persistent visitor-analytics store (dual-mode like the main DB).
- * - Postgres when DATABASE_URL is set (survives deploys/cold starts).
+ * - Postgres when a connection string (POSTGRES_URL / DATABASE_URL) is set,
+ *   i.e. on Vercel (survives deploys/cold starts).
  * - JSON file otherwise (local development).
  */
-
-const usePostgres = Boolean(process.env.DATABASE_URL);
 
 const TRACK_FILE_PATH = path.join(process.cwd(), "src", "data", "tracking.json");
 const MAX_LOGS = 500;

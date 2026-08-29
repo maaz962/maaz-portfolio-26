@@ -1,18 +1,18 @@
 import * as fileDb from "./db-file";
 import * as postgresDb from "./db-postgres";
+import { usePostgres } from "./pg-connection";
 
 /**
  * Database facade.
  *
- * - When process.env.DATABASE_URL is set (i.e. on Vercel) → Postgres
- *   (persistent across deploys/cold starts).
+ * - When a Postgres connection string (POSTGRES_URL / DATABASE_URL) is set,
+ *   i.e. on Vercel → Postgres (persistent across deploys/cold starts).
  * - Otherwise → file-based store (local development without a DB).
  *
  * All module exports are the same either way, so callers (API routes) never
  * need to know which backend is active.
  */
 
-const usePostgres = Boolean(process.env.DATABASE_URL);
 const impl = usePostgres ? postgresDb : fileDb;
 
 export const findUserById = impl.findUserById;
