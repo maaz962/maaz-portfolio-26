@@ -67,7 +67,7 @@ export function Projects() {
           <SectionHeading
             eyebrow="Selected work"
             title="Projects"
-            description="Real applications and builds across mobile, web, and security — filter by stack to see what matches."
+            description="Real applications and builds across mobile, web, and security, filter by stack to see what matches."
           />
         </FadeIn>
 

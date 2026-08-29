@@ -29,7 +29,7 @@ export function Testimonials() {
                 Why work with me
               </h3>
               <p className="mt-2 text-sm text-muted">
-                My approach blends formal computer science education with active leadership, teaching, and real-world project builds.
+                My approach blends formal computer science education with active leadership, teaching, and real world project builds.
               </p>
             </div>
 
@@ -71,7 +71,7 @@ export function Testimonials() {
                     Verified Builds
                   </h4>
                   <p className="mt-1 text-xs text-muted leading-relaxed">
-                    Contributed to the STO UAF website and developed stand-alone mobile applications like Cyber Scam Checker.
+                    Contributed to the STO UAF website and developed stand alone mobile applications like Cyber Scam Checker.
                   </p>
                 </div>
               </StaggerItem>

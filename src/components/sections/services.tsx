@@ -30,7 +30,7 @@ export function Services() {
           <SectionHeading
             eyebrow="Solutions"
             title="Services"
-            description="High-quality web, mobile, and maintenance solutions tailored to your project's specific requirements."
+            description="High quality web, mobile, and maintenance solutions tailored to your project's specific requirements."
           />
         </FadeIn>
 

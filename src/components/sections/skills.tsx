@@ -30,7 +30,7 @@ export function Skills() {
           <SectionHeading
             eyebrow="Toolbox"
             title="Skills"
-            description="Technologies I work with — grouped honestly by how I use them day to day."
+            description="Technologies I work with, grouped honestly by how I use them day to day."
           />
         </FadeIn>
 

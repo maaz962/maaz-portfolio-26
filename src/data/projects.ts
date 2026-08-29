@@ -35,7 +35,7 @@ export const projects: Project[] = [
     slug: "cyber-scam-checker",
     title: "Cyber Scam Checker App",
     description:
-      "Android app that checks URLs and messages for suspicious scam keywords, with clear safe vs. scam results — built for cybersecurity awareness and Android practice.",
+      "Android app that checks URLs and messages for suspicious scam keywords, with clear safe vs. scam results, built for cybersecurity awareness and Android practice.",
     category: "Cybersecurity",
     technologies: ["Java", "Android", "XML"],
     categories: ["cybersecurity"],
@@ -50,7 +50,7 @@ export const projects: Project[] = [
     slug: "move-go",
     title: "Move-Go App",
     description:
-      "Ride-hailing Flutter app for moving people or parcels — client-side flow with mapping and geocoding, inspired by inDrive-style transport apps.",
+      "Ride-hailing Flutter app for moving people or parcels, client-side flow with mapping and geocoding, inspired by inDrive-style transport apps.",
     category: "Mobile",
     technologies: ["Flutter", "Dart"],
     categories: ["flutter"],
@@ -77,7 +77,7 @@ export const projects: Project[] = [
     slug: "e-commerce",
     title: "E-Commerce App",
     description:
-      "Full-featured online store with product browsing, admin dashboard, and PHP/MySQL backend — from the earlier M44Z portfolio build.",
+      "Full-featured online store with product browsing, admin dashboard, and PHP/MySQL backend from the earlier M44Z portfolio build.",
     category: "Web",
     technologies: ["PHP", "MySQL", "JavaScript"],
     categories: ["web", "php"],
@@ -90,7 +90,7 @@ export const projects: Project[] = [
     slug: "scholarship-website",
     title: "Scholarship Website",
     description:
-      "Scholarship listing and management site with search, admin panel, and assistant views — built with PHP and MySQL.",
+      "Scholarship listing and management site with search, admin panel, and assistant views built with PHP and MySQL.",
     category: "Web",
     technologies: ["PHP", "MySQL", "HTML"],
     categories: ["web", "php"],
@@ -119,7 +119,7 @@ export const projects: Project[] = [
     slug: "my-card-view",
     title: "My Card View",
     description:
-      "Android app for presenting a digital card interface — a compact Java project built in Android Studio.",
+      "Android app for presenting a digital card interface, a compact Java project built in Android Studio.",
     category: "Mobile",
     technologies: ["Java", "Android"],
     categories: [],

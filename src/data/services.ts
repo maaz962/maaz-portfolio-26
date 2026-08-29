@@ -15,7 +15,7 @@ export const services: Service[] = [
     slug: "react-nextjs-dev",
     title: "React / Next.js Development",
     description:
-      "High-performance client-side and server-rendered web applications built with clean, component-driven layouts and smooth transitions.",
+      "High performance client-side and server-rendered web applications built with clean, component-driven layouts and smooth transitions.",
     technologies: ["React", "Next.js", "TypeScript", "Tailwind CSS"],
     icon: Cpu,
   },

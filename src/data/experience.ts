@@ -11,7 +11,7 @@ export const experience: ExperienceEntry[] = [
     period: "June 2026 – Present",
     featured: true,
     summary:
-      "Supporting club leadership, coordinating with the team on events and freelancing initiatives, and contributing technically where needed — including mentoring and workshop support around web development.",
+      "Supporting club leadership, coordinating with the team on events and freelancing initiatives, and contributing technically where needed including mentoring and workshop support around web development.",
   },
   {
     role: "General Secretary",
@@ -19,7 +19,7 @@ export const experience: ExperienceEntry[] = [
     affiliation: clubAffiliation,
     period: "May 2025 – May 2026",
     summary:
-      "Led club operations alongside the executive team — organizing activities, supporting members, and contributing to initiatives across campus and online.",
+      "Led club operations alongside the executive team organizing activities, supporting members, and contributing to initiatives across campus and online.",
     highlights: [
       "Led a flood relief camp with the team.",
       "Helped generate significant funds through coordinated team efforts.",
@@ -45,6 +45,6 @@ export const experience: ExperienceEntry[] = [
     affiliation: clubAffiliation,
     period: "Before Joint Secretary",
     summary:
-      "Early involvement with the club — helping with events, meetings, and day-to-day club activities as part of the executive team.",
+      "Early involvement with the club helping with events, meetings, and day-to-day club activities as part of the executive team.",
   },
 ];

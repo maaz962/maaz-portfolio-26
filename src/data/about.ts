@@ -4,7 +4,7 @@
  */
 export const aboutContent = {
   intro:
-    "I'm a Computer Science student who builds across web and mobile — mostly with React, Next.js, and Flutter, with PHP and MySQL on the backend when a project needs it.",
+    "I'm a Computer Science student who builds across web and mobile mostly with React, Next.js, and Flutter, with PHP and MySQL on the backend when a project needs it.",
   identity: {
     title: "How I work",
     body: "Full-stack minded. I like owning a feature from the UI down to the data layer, and I tend to test things until they break so they hold up better in production.",
@@ -15,7 +15,7 @@ export const aboutContent = {
       "Web apps with React and Next.js",
       "Mobile apps with Flutter and Dart",
       "Backend APIs and sites with PHP and MySQL",
-      "Freelance client work — web and mobile",
+      "Freelance client work: web and mobile",
     ],
   },
   aside: {

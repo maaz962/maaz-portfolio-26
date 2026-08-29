@@ -21,6 +21,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { GlassNavbar } from "@/components/layout/glass-navbar";
 import { CommentBlock } from "@/components/comments/comment-block";
 import { AuthGate } from "@/components/games/auth-gate";
+import { getGamesSession, setGamesSession } from "@/lib/games-session";
 import { cn } from "@/lib/utils";
 import type { BlogEngagement, Comment, User } from "@/types";
 import "./game.css";
@@ -40,6 +41,7 @@ export default function GridGardenPage() {
   const [authError, setAuthError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [authLoading, setAuthLoading] = useState(true);
+  const [gamesAuthed, setGamesAuthed] = useState(false);
 
   const [engagement, setEngagement] = useState<BlogEngagement>({
     likesCount: 0,
@@ -54,18 +56,17 @@ export default function GridGardenPage() {
   const [editText, setEditText] = useState("");
 
   useEffect(() => {
+    const authed = getGamesSession();
+    setGamesAuthed(authed);
+    if (!authed) {
+      setAuthMode("register");
+      setAuthError("");
+      setShowAuthModal(true);
+    }
     fetch("/api/auth/me")
       .then((r) => r.json())
-      .then((d) => {
-        if (d.user) {
-          setCurrentUser(d.user);
-        } else {
-          setAuthMode("register");
-          setAuthError("");
-          setShowAuthModal(true);
-        }
-      })
-      .catch(() => { setShowAuthModal(true); })
+      .then((d) => { if (d.user) setCurrentUser(d.user); })
+      .catch(() => {})
       .finally(() => setAuthLoading(false));
     fetch(`/api/blog/likes?slug=${GAME_SLUG}`)
       .then((r) => r.json())
@@ -78,7 +79,7 @@ export default function GridGardenPage() {
   }, []);
 
   useEffect(() => {
-    if (!currentUser) return;
+    if (!gamesAuthed || !currentUser) return;
     const tryInit = () => {
       if (typeof window !== "undefined" && (window as any).__initGridGarden) {
         (window as any).__initGridGarden();
@@ -88,7 +89,7 @@ export default function GridGardenPage() {
     };
     const timer = setTimeout(tryInit, 200);
     return () => clearTimeout(timer);
-  }, [currentUser]);
+  }, [gamesAuthed, currentUser]);
 
   const openAuthModal = () => {
     setAuthMode("login");
@@ -115,6 +116,8 @@ export default function GridGardenPage() {
       setCurrentUser(data);
       setShowAuthModal(false);
       setAuthForm({ name: "", username: "", email: "", password: "" });
+      setGamesSession();
+      setGamesAuthed(true);
     } catch { setAuthError("Server error"); }
   };
 
@@ -238,7 +241,7 @@ export default function GridGardenPage() {
         </div>
 
         {/* GAME SECTION */}
-        {!authLoading && !currentUser ? (
+        {!authLoading && !gamesAuthed ? (
           <AuthGate
             loading={authLoading}
             onSignIn={() => {
@@ -532,7 +535,7 @@ export default function GridGardenPage() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-onClick={() => { if (currentUser) setShowAuthModal(false); }}
+onClick={() => { if (gamesAuthed) setShowAuthModal(false); }}
               className="absolute inset-0 bg-black/60 backdrop-blur-sm"
             />
             <motion.div
@@ -541,7 +544,7 @@ onClick={() => { if (currentUser) setShowAuthModal(false); }}
               exit={{ scale: 0.95, opacity: 0 }}
               className="relative w-full max-w-sm rounded-2xl border border-border bg-card p-6 shadow-glow"
             >
-              <button onClick={() => { if (currentUser) setShowAuthModal(false); }} className="absolute right-4 top-4 text-muted hover:text-foreground">
+              <button onClick={() => { if (gamesAuthed) setShowAuthModal(false); }} className="absolute right-4 top-4 text-muted hover:text-foreground">
                 <X className="h-4 w-4" />
               </button>
               <div className="flex items-center gap-3">

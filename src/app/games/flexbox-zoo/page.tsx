@@ -21,6 +21,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { GlassNavbar } from "@/components/layout/glass-navbar";
 import { CommentBlock } from "@/components/comments/comment-block";
 import { AuthGate } from "@/components/games/auth-gate";
+import { getGamesSession, setGamesSession } from "@/lib/games-session";
 import { cn } from "@/lib/utils";
 import type { BlogEngagement, Comment, User } from "@/types";
 import "./game.css";
@@ -40,6 +41,7 @@ export default function FlexboxZooPage() {
   const [authError, setAuthError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [authLoading, setAuthLoading] = useState(true);
+  const [gamesAuthed, setGamesAuthed] = useState(false);
 
   const [engagement, setEngagement] = useState<BlogEngagement>({
     likesCount: 0,
@@ -54,18 +56,17 @@ export default function FlexboxZooPage() {
   const [editText, setEditText] = useState("");
 
   useEffect(() => {
+    const authed = getGamesSession();
+    setGamesAuthed(authed);
+    if (!authed) {
+      setAuthMode("register");
+      setAuthError("");
+      setShowAuthModal(true);
+    }
     fetch("/api/auth/me")
       .then((r) => r.json())
-      .then((d) => {
-        if (d.user) {
-          setCurrentUser(d.user);
-        } else {
-          setAuthMode("register");
-          setAuthError("");
-          setShowAuthModal(true);
-        }
-      })
-      .catch(() => { setShowAuthModal(true); })
+      .then((d) => { if (d.user) setCurrentUser(d.user); })
+      .catch(() => {})
       .finally(() => setAuthLoading(false));
 
     fetch(`/api/blog/likes?slug=${GAME_SLUG}`)
@@ -80,7 +81,7 @@ export default function FlexboxZooPage() {
   }, []);
 
   useEffect(() => {
-    if (!currentUser) return;
+    if (!gamesAuthed || !currentUser) return;
     const tryInit = () => {
       if (typeof window !== "undefined" && (window as any).__initFlexboxZoo) {
         (window as any).__initFlexboxZoo();
@@ -90,7 +91,7 @@ export default function FlexboxZooPage() {
     };
     const timer = setTimeout(tryInit, 200);
     return () => clearTimeout(timer);
-  }, [currentUser]);
+  }, [gamesAuthed, currentUser]);
 
   const openAuthModal = () => {
     setAuthMode("login");
@@ -123,6 +124,8 @@ export default function FlexboxZooPage() {
       setCurrentUser(data);
       setShowAuthModal(false);
       setAuthForm({ name: "", username: "", email: "", password: "" });
+      setGamesSession();
+      setGamesAuthed(true);
     } catch {
       setAuthError("Server error");
     }
@@ -285,7 +288,7 @@ export default function FlexboxZooPage() {
         </div>
 
         {/* GAME SECTION — html / css / js structure */}
-        {!authLoading && !currentUser ? (
+        {!authLoading && !gamesAuthed ? (
           <AuthGate
             loading={authLoading}
             onSignIn={() => {
@@ -626,7 +629,7 @@ export default function FlexboxZooPage() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              onClick={() => { if (currentUser) setShowAuthModal(false); }}
+              onClick={() => { if (gamesAuthed) setShowAuthModal(false); }}
               className="absolute inset-0 bg-black/60 backdrop-blur-sm"
             />
             <motion.div
@@ -636,7 +639,7 @@ export default function FlexboxZooPage() {
               className="relative w-full max-w-sm rounded-2xl border border-border bg-card p-6 shadow-glow"
             >
               <button
-                onClick={() => { if (currentUser) setShowAuthModal(false); }}
+                onClick={() => { if (gamesAuthed) setShowAuthModal(false); }}
                 aria-label="Close"
                 className="absolute right-4 top-4 text-muted hover:text-foreground"
               >

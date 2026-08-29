@@ -12,11 +12,18 @@ import {
   X,
   Eye,
   EyeOff,
+  UserPlus,
+  LogOut,
 } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { GlassNavbar } from "@/components/layout/glass-navbar";
 import { cn } from "@/lib/utils";
 import { GameDiscussionPanel } from "./game-discussion-panel";
+import {
+  getGamesSession,
+  setGamesSession,
+  clearGamesSession,
+} from "@/lib/games-session";
 import type { BlogEngagement, User } from "@/types";
 
 const games = [
@@ -92,7 +99,7 @@ function GameCard({
   engagement,
   onLike,
   onComments,
-  currentUser,
+  authed,
   openAuthModal,
   onPlay,
 }: {
@@ -100,7 +107,7 @@ function GameCard({
   engagement: BlogEngagement;
   onLike: (slug: string) => void;
   onComments: (slug: string) => void;
-  currentUser: User | null;
+  authed: boolean;
   openAuthModal: () => void;
   onPlay: () => void;
 }) {
@@ -163,7 +170,7 @@ function GameCard({
           <div className="flex items-center gap-3">
             <button
               onClick={() => {
-                if (!currentUser) {
+                if (!authed) {
                   openAuthModal();
                   return;
                 }
@@ -193,7 +200,7 @@ function GameCard({
 
           {game.comingSoon ? (
             <span className="text-xs text-muted">Stay tuned...</span>
-          ) : currentUser ? (
+          ) : authed ? (
             <Link
               href={`/games/${game.slug}`}
               className="rounded-full bg-primary px-4 py-1.5 text-xs font-semibold text-primary-foreground transition-all hover:brightness-110"
@@ -226,6 +233,8 @@ export default function GamesPage() {
   });
   const [authError, setAuthError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [gamesAuthed, setGamesAuthed] = useState(false);
+  const [authLoading, setAuthLoading] = useState(true);
   const [engagements, setEngagements] = useState<
     Record<string, BlogEngagement>
   >({});
@@ -234,22 +243,17 @@ export default function GamesPage() {
   const router = useRouter();
 
   useEffect(() => {
-    let timer: ReturnType<typeof setTimeout> | undefined;
-
     fetch("/api/auth/me")
       .then((r) => r.json())
       .then((d) => {
-        if (d.user) {
-          setCurrentUser(d.user);
-        } else {
-          timer = setTimeout(() => {
-            setAuthMode("register");
-            setAuthError("");
-            setShowAuthModal(true);
-          }, 800);
-        }
+        if (d.user) setCurrentUser(d.user);
       })
-      .catch(() => {});
+      .catch(() => {})
+      .finally(() => setAuthLoading(false));
+
+    if (typeof window !== "undefined") {
+      setGamesAuthed(getGamesSession());
+    }
 
     games.forEach((game) => {
       fetch(`/api/blog/likes?slug=${encodeURIComponent(game.slug)}`)
@@ -259,14 +263,10 @@ export default function GamesPage() {
         )
         .catch(() => {});
     });
-
-    return () => {
-      if (timer) clearTimeout(timer);
-    };
   }, []);
 
   const handleLike = async (slug: string) => {
-    if (!currentUser) return;
+    if (!currentUser || !gamesAuthed) return;
     try {
       const res = await fetch("/api/blog/likes", {
         method: "POST",
@@ -306,6 +306,8 @@ export default function GamesPage() {
       setCurrentUser(data);
       setShowAuthModal(false);
       setAuthForm({ name: "", username: "", email: "", password: "" });
+      setGamesSession();
+      setGamesAuthed(true);
       if (pendingSlug) {
         router.push(`/games/${pendingSlug}`);
         setPendingSlug(null);
@@ -328,20 +330,64 @@ export default function GamesPage() {
           Back to Portfolio
         </Link>
 
-        <div className="mb-10">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
-              <Gamepad2 className="h-5 w-5" />
+        <div className="mb-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                <Gamepad2 className="h-5 w-5" />
+              </div>
+              <div>
+                <h1 className="font-display text-2xl font-bold text-foreground">
+                  Learn Web Dev by Playing
+                </h1>
+                <p className="text-xs text-muted">
+                  Fun interactive games to master HTML, CSS & JavaScript
+                </p>
+              </div>
             </div>
-            <div>
-              <h1 className="font-display text-2xl font-bold text-foreground">
-                Learn Web Dev by Playing
-              </h1>
-              <p className="text-xs text-muted">
-                Fun interactive games to master HTML, CSS & JavaScript
-              </p>
-            </div>
+
+            {gamesAuthed && currentUser ? (
+              <div className="flex items-center gap-2 rounded-full border border-border bg-card py-1.5 pl-3 pr-1.5 text-xs">
+                <span className="text-muted">
+                  Playing as{" "}
+                  <span className="font-semibold text-foreground">
+                    @{currentUser.username}
+                  </span>
+                </span>
+                <button
+                  onClick={() => {
+                    clearGamesSession();
+                    setGamesAuthed(false);
+                    setCurrentUser(null);
+                  }}
+                  title="Sign out of games (login is required again on your next visit)"
+                  className="flex items-center gap-1 rounded-full bg-background-secondary px-2.5 py-1 text-muted transition-colors hover:text-foreground"
+                >
+                  <LogOut className="h-3 w-3" />
+                  Games Logout
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => {
+                  setAuthMode("login");
+                  setAuthError("");
+                  setShowAuthModal(true);
+                }}
+                className="flex items-center gap-1.5 rounded-full bg-gradient-to-r from-primary to-violet-600 px-4 py-2 text-xs font-semibold text-white shadow-lg shadow-primary/25 transition-all hover:brightness-110"
+              >
+                <UserPlus className="h-3.5 w-3.5" />
+                Sign In / Sign Up
+              </button>
+            )}
           </div>
+
+          {!gamesAuthed && (
+            <p className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-amber-500/20 bg-amber-500/10 px-3 py-1.5 text-[0.65rem] text-amber-600">
+              <Sparkles className="h-3 w-3" />
+              A quick sign-in is required before playing — every time you visit.
+            </p>
+          )}
         </div>
 
         <div className="grid gap-5 sm:grid-cols-2">
@@ -358,7 +404,7 @@ export default function GamesPage() {
               }
               onLike={handleLike}
               onComments={(slug) => setDiscussionSlug(slug)}
-              currentUser={currentUser}
+              authed={Boolean(currentUser) && gamesAuthed}
               openAuthModal={() => {
                 setAuthMode("login");
                 setAuthError("");

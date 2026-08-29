@@ -31,7 +31,7 @@ export const profile = {
   // TODO: Add M. Maaz Arif's verified WhatsApp number here when available.
   // Format: Use international format without '+' or leading zeros, e.g., "923001234567"
   // If left empty, the WhatsApp option inside the AI chat will be hidden or fall back gracefully.
-  whatsapp: "",
+  whatsapp: "+923253053207",
 };
 
 export const socialLinks: SocialLink[] = [
