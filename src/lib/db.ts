@@ -240,6 +240,14 @@ export async function findUserById(id: string): Promise<User | null> {
   return user;
 }
 
+/** All registered users (never exposes password hashes), newest first. */
+export async function listUsers(): Promise<User[]> {
+  const db = await readDbFile();
+  return db.users
+    .map(({ passwordHash, ...user }) => user)
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+}
+
 export async function registerUser(
   name: string,
   username: string,

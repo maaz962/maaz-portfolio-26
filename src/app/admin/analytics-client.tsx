@@ -3,14 +3,15 @@
 import { useState, useEffect, useCallback } from "react";
 import {
   Shield, Users, Globe, MousePointerClick, Monitor, Smartphone, Tablet,
-  Eye, Clock, MapPin, RefreshCw, ChevronDown, ChevronUp,
-  Newspaper,
+  Eye, Clock, MapPin, RefreshCw, ChevronDown, ChevronUp, Sparkles, UserCheck,
 } from "lucide-react";
 import type { VisitorLog, VisitorStats } from "@/types/tracking";
+import type { User } from "@/types";
 
 export function AnalyticsClient() {
   const [stats, setStats] = useState<VisitorStats | null>(null);
   const [logs, setLogs] = useState<VisitorLog[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(false);
   const [expandedLog, setExpandedLog] = useState<string | null>(null);
   const [error, setError] = useState("");
@@ -27,6 +28,7 @@ export function AnalyticsClient() {
       const data = await res.json();
       setStats(data.stats);
       setLogs(data.logs);
+      setUsers(data.users || []);
     } catch {
       setError("Failed to load data");
     } finally {
@@ -53,13 +55,6 @@ export function AnalyticsClient() {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <a
-              href="/admin/blog"
-              className="flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-2 text-xs font-medium text-muted transition-colors hover:text-foreground"
-            >
-              <Newspaper className="h-3.5 w-3.5" />
-              Blog Admin
-            </a>
             <button
               onClick={fetchData}
               disabled={loading}
@@ -106,6 +101,28 @@ export function AnalyticsClient() {
                   </span>
                   <span className="text-mono text-xs text-muted">{loc.count}</span>
                 </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Visitor Interests */}
+        {stats && stats.interests.length > 0 && (
+          <div className="rounded-2xl border border-border bg-card p-5">
+            <h3 className="mb-4 flex items-center gap-2 text-sm font-semibold text-foreground">
+              <Sparkles className="h-4 w-4 text-primary" /> Visitor Interests
+            </h3>
+            <div className="flex flex-wrap gap-2">
+              {stats.interests.slice(0, 20).map((it, i) => (
+                <span
+                  key={i}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-border bg-background-secondary/50 px-3 py-1.5 text-xs text-foreground"
+                >
+                  {it.label}
+                  <span className="rounded-full bg-primary/10 px-1.5 py-0.5 text-[0.6rem] font-mono text-primary">
+                    {it.count}
+                  </span>
+                </span>
               ))}
             </div>
           </div>
@@ -224,6 +241,48 @@ export function AnalyticsClient() {
                       )}
                     </div>
                   )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Registered Users */}
+        {users.length > 0 && (
+          <div className="rounded-2xl border border-border bg-card p-5">
+            <h3 className="mb-4 flex items-center gap-2 text-sm font-semibold text-foreground">
+              <UserCheck className="h-4 w-4 text-primary" /> Registered Users ({users.length})
+            </h3>
+            <div className="space-y-2">
+              {users.map((u) => (
+                <div
+                  key={u.id}
+                  className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-background-secondary/30 px-4 py-3"
+                >
+                  <div className="flex min-w-0 items-center gap-3">
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary/10 text-xs font-semibold text-primary">
+                      {u.name.charAt(0).toUpperCase()}
+                    </div>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="truncate text-xs font-medium text-foreground">{u.name}</span>
+                        {u.isAdmin && (
+                          <span className="shrink-0 rounded-full bg-primary/10 px-2 py-0.5 text-[0.6rem] font-medium text-primary">
+                            Admin
+                          </span>
+                        )}
+                      </div>
+                      <p className="truncate text-xs text-muted">
+                        @{u.username} &middot; {u.email}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-3">
+                    <span className="text-mono text-[0.65rem] text-muted/60">
+                      {new Date(u.createdAt).toLocaleDateString()}
+                    </span>
+                    <span className="text-mono text-[0.65rem] text-muted/60">{u.id}</span>
+                  </div>
                 </div>
               ))}
             </div>

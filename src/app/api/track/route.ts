@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import fs from "fs/promises";
 import path from "path";
-import type { VisitorLog, VisitorStats } from "@/types/tracking";
+import type { VisitorLog, VisitorStats, TrackingEvent } from "@/types/tracking";
+import type { User } from "@/types";
 import { getAdminUser } from "@/lib/auth";
+import { listUsers } from "@/lib/db";
 
 const MAX_LOGS = 500;
 const TRACK_FILE_PATH = path.join(process.cwd(), "src", "data", "tracking.json");
@@ -42,6 +44,35 @@ async function saveTrackingFile(data: TrackingStore): Promise<void> {
 
 function generateId(): string {
   return Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+}
+
+/** Turns a click event (target like "a:https://...", data like text) into a human-readable interest label. */
+function parseInterestTarget(target: string, data?: string): { label: string } | null {
+  const text = (data || "").trim();
+  const hrefMatch = target.match(/^a:(.+)$/);
+  const href = hrefMatch ? (hrefMatch[1] ?? "").trim() : undefined;
+
+  if (href) {
+    // Internal anchor → portfolio section interest
+    if (href.startsWith("/#")) {
+      const section = href.split("#")[1];
+      if (section) return { label: `Section: ${section}` };
+    }
+    // Absolute external link → domain + path interest
+    if (/^https?:\/\//i.test(href)) {
+      try {
+        const url = new URL(href);
+        const domain = url.hostname.replace(/^www\./, "");
+        const path = url.pathname === "/" ? "" : url.pathname;
+        return { label: `${domain}${path}`.slice(0, 40) };
+      } catch {
+        /* fall through to text label */
+      }
+    }
+  }
+
+  if (text) return { label: text.slice(0, 40) };
+  return null;
 }
 
 function parseUserAgent(ua: string): { browser: string; os: string; device: string } {
@@ -136,6 +167,27 @@ export async function GET(req: NextRequest) {
 
   const allEvents = visitorLogs.flatMap((v) => v.events);
 
+  // Interest = the things visitors actively engage with: external links they
+  // click, interactive elements (buttons/anchors) they tap, and portfolio
+  // sections they open. Excludes generic internals (time/page targeting).
+  const interestCount: Record<string, number> = {};
+  allEvents.forEach((evt: TrackingEvent) => {
+    if (evt.type === "click") {
+      const target = parseInterestTarget(evt.target, evt.data);
+      if (target) interestCount[target.label] = (interestCount[target.label] || 0) + 1;
+    } else if (evt.type === "pageview") {
+      const section = evt.target.startsWith("#") ? evt.target.slice(1) : "";
+      if (section) {
+        const key = `Section: ${section}`;
+        interestCount[key] = (interestCount[key] || 0) + 1;
+      }
+    }
+  });
+  const interests = Object.entries(interestCount)
+    .map(([label, count]) => ({ label, count }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 20);
+
   const stats: VisitorStats = {
     totalVisitors: visitorLogs.length,
     uniqueIPs,
@@ -154,9 +206,15 @@ export async function GET(req: NextRequest) {
       .sort((a, b) => b.count - a.count),
     locations: locations.sort((a, b) => b.count - a.count),
     recentActivity: allEvents.slice(-50).reverse(),
+    interests,
   };
 
-  return NextResponse.json({ stats, logs: visitorLogs.slice(-100).reverse() });
+  let users: User[] = [];
+  try {
+    users = await listUsers();
+  } catch {}
+
+  return NextResponse.json({ stats, logs: visitorLogs.slice(-100).reverse(), users });
 }
 
 export async function POST(req: NextRequest) {

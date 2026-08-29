@@ -40,4 +40,5 @@ export interface VisitorStats {
   devices: { name: string; count: number }[];
   locations: { country: string; city: string; count: number }[];
   recentActivity: TrackingEvent[];
+  interests: { label: string; count: number }[];
 }

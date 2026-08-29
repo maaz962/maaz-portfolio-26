@@ -23,7 +23,7 @@ function AdminLoginForm() {
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
-  const redirectTo = searchParams.get("from") || "/admin/blog";
+  const redirectTo = searchParams.get("from") || "/admin";
 
   // Already signed in as an admin? Skip the form.
   useEffect(() => {
