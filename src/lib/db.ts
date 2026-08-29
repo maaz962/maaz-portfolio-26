@@ -1,7 +1,15 @@
 import fs from "fs/promises";
 import path from "path";
 import crypto from "crypto";
-import type { User, Comment, Like, BlogCategory, BlogPost, BlogSettings } from "@/types";
+import type {
+  User,
+  Comment,
+  Like,
+  BlogCategory,
+  BlogPost,
+  BlogSettings,
+  GameProgress,
+} from "@/types";
 
 // DB Types
 interface DatabaseSchema {
@@ -9,6 +17,7 @@ interface DatabaseSchema {
   comments: Comment[];
   likes: Like[];
   blogSettings?: BlogSettings;
+  gameProgress: GameProgress[];
 }
 
 const DEFAULT_BLOG_SETTINGS: BlogSettings = {
@@ -66,7 +75,13 @@ async function readDbFile(): Promise<DatabaseSchema> {
       return seeded;
     }
     console.error("Error reading database file:", error);
-    return { users: [], comments: [], likes: [], blogSettings: DEFAULT_BLOG_SETTINGS };
+    return {
+      users: [],
+      comments: [],
+      likes: [],
+      blogSettings: DEFAULT_BLOG_SETTINGS,
+      gameProgress: [],
+    };
   }
 }
 
@@ -196,7 +211,7 @@ function getSeedData(): DatabaseSchema {
     },
   ];
 
-  return { users, comments, likes, blogSettings: DEFAULT_BLOG_SETTINGS };
+  return { users, comments, likes, blogSettings: DEFAULT_BLOG_SETTINGS, gameProgress: [] };
 }
 
 // --- DATABASE FUNCTIONS ---
@@ -292,6 +307,94 @@ export async function validateCredentials(
 
     const { passwordHash, ...user } = found;
     return user;
+  });
+}
+
+// --- GAME PROGRESS ---
+
+const GAME_SLUGS = ["html-hero", "grid-garden", "flexbox-zoo"] as const;
+
+/** All game progress rows for one user, keyed by game slug. */
+export async function getGameProgressForUser(userId: string): Promise<Record<string, GameProgress>> {
+  const db = await readDbFile();
+  const rows = (db.gameProgress ?? []).filter((p) => p.userId === userId);
+  const bySlug: Record<string, GameProgress> = {};
+  rows.forEach((p) => {
+    bySlug[p.gameSlug] = p;
+  });
+  return bySlug;
+}
+
+/** A single game's progress for one user (null when never started). */
+export async function getGameProgress(
+  userId: string,
+  gameSlug: string
+): Promise<GameProgress | null> {
+  const all = await getGameProgressForUser(userId);
+  return all[gameSlug] ?? null;
+}
+
+/**
+ * Persists (upserts) one user's progress for a game, inside the write lock so
+ * a save racing a register/like never clobbers the file.
+ */
+export async function saveGameProgress(
+  userId: string,
+  gameSlug: string,
+  data: {
+    currentLevel: number;
+    score: number;
+    completed: Record<string, boolean>;
+    totalLevels: number;
+  }
+): Promise<GameProgress> {
+  return withDbLock(async () => {
+    const db = await readDbFile();
+
+    const cleanCompleted: Record<string, boolean> = {};
+    if (data.completed && typeof data.completed === "object") {
+      Object.keys(data.completed).forEach((k) => {
+        const idx = Number(k);
+        if (Number.isInteger(idx) && idx >= 0 && data.completed[k]) {
+          cleanCompleted[String(idx)] = true;
+        }
+      });
+    }
+
+    const progress = {
+      userId,
+      gameSlug,
+      currentLevel: Math.max(
+        0,
+        Number.isInteger(data.currentLevel) && data.currentLevel >= 0
+          ? data.currentLevel
+          : 0
+      ),
+      score: Math.max(
+        0,
+        typeof data.score === "number" && Number.isFinite(data.score) ? data.score : 0
+      ),
+      completed: cleanCompleted,
+      totalLevels: Math.max(
+        1,
+        Number.isInteger(data.totalLevels) && data.totalLevels > 0 ? data.totalLevels : 1
+      ),
+      updatedAt: new Date().toISOString(),
+    };
+
+    const existingIndex = (db.gameProgress ?? []).findIndex(
+      (p) => p.userId === userId && p.gameSlug === gameSlug
+    );
+
+    if (existingIndex > -1) {
+      db.gameProgress[existingIndex] = progress;
+    } else {
+      if (!db.gameProgress) db.gameProgress = [];
+      db.gameProgress.push(progress);
+    }
+
+    await saveDbFile(db);
+    return progress;
   });
 }
 

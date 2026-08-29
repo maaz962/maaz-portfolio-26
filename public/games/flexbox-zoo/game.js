@@ -298,6 +298,29 @@
     return POINTS[level.difficulty] || 5;
   }
 
+  function emitProgress() {
+    if (typeof window !== "undefined" && typeof window.__onFlexboxZooProgress === "function") {
+      window.__onFlexboxZooProgress({
+        currentLevel: STATE.currentLevel,
+        score: STATE.score,
+        completed: STATE.completed,
+        totalLevels: LEVELS.length,
+      });
+    }
+  }
+
+  function resumeGame(saved) {
+    if (!saved) return;
+    if (typeof saved.currentLevel === "number" && saved.currentLevel >= 0 && saved.currentLevel < LEVELS.length) {
+      STATE.currentLevel = Math.floor(saved.currentLevel);
+    }
+    if (typeof saved.score === "number") STATE.score = saved.score;
+    if (saved.completed && typeof saved.completed === "object") STATE.completed = saved.completed;
+    var s = $("score-display");
+    if (s) s.textContent = "Score: " + STATE.score;
+    renderLevel();
+  }
+
   function $(id) { return document.getElementById(id); }
   function qs(sel, ctx) { return (ctx || document).querySelector(sel); }
   function randomItem(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
@@ -502,6 +525,8 @@
     var nb = $("next-btn");
     if (nb) { nb.disabled = false; nb.style.opacity = "1"; }
 
+    emitProgress();
+
     showToast("\u2713 Correct! See how the animals moved?", false);
 
     setTimeout(function () {
@@ -515,8 +540,10 @@
     if (STATE.currentLevel < LEVELS.length - 1) {
       STATE.currentLevel++;
       renderLevel();
+      emitProgress();
     } else {
       renderVictory();
+      emitProgress();
     }
   }
 
@@ -524,6 +551,7 @@
     if (STATE.currentLevel > 0) {
       STATE.currentLevel--;
       renderLevel();
+      emitProgress();
     }
   }
 
@@ -671,5 +699,6 @@
 
   if (typeof window !== "undefined") {
     window.__initFlexboxZoo = function () { initGame(); };
+    window.__resumeFlexboxZoo = function (saved) { resumeGame(saved); };
   }
 })();

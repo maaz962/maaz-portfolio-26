@@ -19,7 +19,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { GlassNavbar } from "@/components/layout/glass-navbar";
 import { cn } from "@/lib/utils";
 import { GameDiscussionPanel } from "./game-discussion-panel";
-import type { BlogEngagement, User } from "@/types";
+import type { BlogEngagement, GameProgress, User } from "@/types";
 
 const games = [
   {
@@ -97,6 +97,7 @@ function GameCard({
   authed,
   openAuthModal,
   onPlay,
+  progress,
 }: {
   game: (typeof games)[0];
   engagement: BlogEngagement;
@@ -105,6 +106,7 @@ function GameCard({
   authed: boolean;
   openAuthModal: () => void;
   onPlay: () => void;
+  progress?: GameProgress;
 }) {
   return (
     <motion.div
@@ -160,6 +162,41 @@ function GameCard({
             </span>
           ))}
         </div>
+
+        {authed && !game.comingSoon && (
+          <div className="mt-3">
+            {(() => {
+              const done = progress
+                ? Object.values(progress.completed).filter(Boolean).length
+                : 0;
+              const total = progress?.totalLevels ?? 0;
+              const started = Boolean(progress);
+              const pct = total > 0 ? Math.min(100, Math.round((done / total) * 100)) : 0;
+              return (
+                <>
+                  <div className="flex items-center justify-between text-[0.65rem]">
+                    <span className={cn("font-semibold", game.accentColor)}>
+                      {started
+                        ? done >= total
+                          ? `${game.animal} Completed!`
+                          : `${game.animal} ${done}/${total} levels`
+                        : `${game.animal} Not started`}
+                    </span>
+                    <span className="text-muted">
+                      {progress ? `${progress.score} pts` : "0 pts"}
+                    </span>
+                  </div>
+                  <div className="mt-1 h-1 overflow-hidden rounded-full bg-background-secondary">
+                    <div
+                      className={cn("h-full rounded-full bg-gradient-to-r", game.color)}
+                      style={{ width: `${pct}%` }}
+                    />
+                  </div>
+                </>
+              );
+            })()}
+          </div>
+        )}
 
         <div className="mt-4 flex items-center justify-between border-t border-border/50 pt-3">
           <div className="flex items-center gap-3">
@@ -233,6 +270,7 @@ export default function GamesPage() {
   const [engagements, setEngagements] = useState<
     Record<string, BlogEngagement>
   >({});
+  const [progress, setProgress] = useState<Record<string, GameProgress>>({});
   const [discussionSlug, setDiscussionSlug] = useState<string | null>(null);
   const [pendingSlug, setPendingSlug] = useState<string | null>(null);
   const router = useRouter();
@@ -268,6 +306,21 @@ export default function GamesPage() {
         .catch(() => {});
     });
   }, []);
+
+  useEffect(() => {
+    if (!gamesAuthed || !currentUser) {
+      setProgress({});
+      return;
+    }
+    fetch("/api/games/progress")
+      .then((r) => r.json())
+      .then((d) => {
+        if (d?.progress && typeof d.progress === "object") {
+          setProgress(d.progress);
+        }
+      })
+      .catch(() => {});
+  }, [gamesAuthed, currentUser]);
 
   const handleLike = async (slug: string) => {
     if (!currentUser || !gamesAuthed) return;
@@ -350,27 +403,72 @@ export default function GamesPage() {
             </div>
 
             {gamesAuthed && currentUser ? (
-              <div className="flex items-center gap-2 rounded-full border border-border bg-card py-1.5 pl-3 pr-1.5 text-xs">
-                <span className="text-muted">
-                  Playing as{" "}
-                  <span className="font-semibold text-foreground">
-                    @{currentUser.username}
+              <div className="flex flex-col items-end gap-2">
+                <div className="flex items-center gap-2 rounded-full border border-border bg-card py-1.5 pl-2 pr-1.5 text-xs">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={currentUser.avatarUrl}
+                    alt={currentUser.name}
+                    className="h-6 w-6 rounded-full object-cover"
+                  />
+                  <span className="text-muted">
+                    Hi,{" "}
+                    <span className="font-semibold text-foreground">
+                      {currentUser.name.split(" ")[0]}
+                    </span>
                   </span>
-                </span>
-                <button
-                  onClick={async () => {
-                    try {
-                      await fetch("/api/auth/logout", { method: "POST" });
-                    } catch {}
-                    setGamesAuthed(false);
-                    setCurrentUser(null);
-                  }}
-                  title="Sign out"
-                  className="flex items-center gap-1 rounded-full bg-background-secondary px-2.5 py-1 text-muted transition-colors hover:text-foreground"
-                >
-                  <LogOut className="h-3 w-3" />
-                  Log Out
-                </button>
+                  <button
+                    onClick={async () => {
+                      try {
+                        await fetch("/api/auth/logout", { method: "POST" });
+                      } catch {}
+                      setGamesAuthed(false);
+                      setCurrentUser(null);
+                      setProgress({});
+                    }}
+                    title="Sign out"
+                    className="flex items-center gap-1 rounded-full bg-background-secondary px-2.5 py-1 text-muted transition-colors hover:text-foreground"
+                  >
+                    <LogOut className="h-3 w-3" />
+                    Log Out
+                  </button>
+                </div>
+                <div className="flex flex-wrap justify-end gap-1.5">
+                  {games
+                    .filter((g) => !g.comingSoon)
+                    .map((g) => {
+                      const p = progress[g.slug];
+                      const done = p
+                        ? Object.values(p.completed).filter(Boolean).length
+                        : 0;
+                      const left = p ? Math.max(0, p.totalLevels - done) : null;
+                      return (
+                        <Link
+                          key={g.slug}
+                          href={`/games/${g.slug}`}
+                          className={cn(
+                            "flex items-center gap-1.5 rounded-full border border-border bg-card px-2.5 py-1 text-[0.65rem] transition-colors hover:border-primary/40",
+                            g.accentColor
+                          )}
+                          title={`${g.title} — ${
+                            p ? `${p.score} pts, ${done}/${p.totalLevels} levels` : "not started"
+                          }`}
+                        >
+                          <span>{g.animal}</span>
+                          <span className="font-bold text-foreground">
+                            {p ? p.score : 0} pts
+                          </span>
+                          <span className="text-muted">
+                            {left === null
+                              ? "not started"
+                              : left > 0
+                                ? `${left} left`
+                                : "done ✓"}
+                          </span>
+                        </Link>
+                      );
+                    })}
+                </div>
               </div>
             ) : (
               <button
@@ -422,6 +520,7 @@ export default function GamesPage() {
                 setPendingSlug(game.slug);
                 setShowAuthModal(true);
               }}
+              progress={progress[game.slug]}
             />
           ))}
         </div>

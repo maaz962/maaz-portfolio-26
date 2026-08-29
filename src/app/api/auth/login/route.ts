@@ -22,13 +22,15 @@ export async function POST(req: Request) {
     }
 
     const response = NextResponse.json(user);
-    // Set secure HttpOnly session cookie
+    // Set secure HttpOnly session cookie. Secure is only enabled when the
+    // request actually arrived on HTTPS (a "production build" served over
+    // plain HTTP must still work, otherwise browsers drop the cookie).
     response.cookies.set("session_user_id", user.id, {
       path: "/",
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
+      secure: new URL(req.url).protocol === "https:",
       sameSite: "lax",
-      maxAge: 60 * 60 * 24 * 7, // 1 week
+      maxAge: 60 * 60 * 24 * 365, // 1 year — persistent like Instagram
     });
 
     return response;

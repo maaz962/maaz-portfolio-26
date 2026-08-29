@@ -226,6 +226,29 @@
     return POINTS[level.difficulty] || 3;
   }
 
+  function emitProgress() {
+    if (typeof window !== "undefined" && typeof window.__onHtmlHeroProgress === "function") {
+      window.__onHtmlHeroProgress({
+        currentLevel: STATE.currentLevel,
+        score: STATE.score,
+        completed: STATE.completed,
+        totalLevels: LEVELS.length,
+      });
+    }
+  }
+
+  function resumeGame(saved) {
+    if (!saved) return;
+    if (typeof saved.currentLevel === "number" && saved.currentLevel >= 0 && saved.currentLevel < LEVELS.length) {
+      STATE.currentLevel = Math.floor(saved.currentLevel);
+    }
+    if (typeof saved.score === "number") STATE.score = saved.score;
+    if (saved.completed && typeof saved.completed === "object") STATE.completed = saved.completed;
+    var s = $("score-display");
+    if (s) s.textContent = "Score: " + STATE.score;
+    renderLevel();
+  }
+
   function $(id) { return document.getElementById(id); }
   function qs(sel, ctx) { return (ctx || document).querySelector(sel); }
   function randomItem(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
@@ -447,6 +470,7 @@
     if (nb) { nb.disabled = false; nb.classList.add("ready"); }
 
     renderProgress();
+    emitProgress();
 
     showToast("\u2713 Correct! Your page renders beautifully — see it in the preview.", false);
 
@@ -469,8 +493,10 @@
     if (STATE.currentLevel < LEVELS.length - 1) {
       STATE.currentLevel++;
       renderLevel();
+      emitProgress();
     } else {
       renderVictory();
+      emitProgress();
     }
   }
 
@@ -478,6 +504,7 @@
     if (STATE.currentLevel > 0) {
       STATE.currentLevel--;
       renderLevel();
+      emitProgress();
     }
   }
 
@@ -520,6 +547,7 @@
           if (idx === STATE.currentLevel) return;
           STATE.currentLevel = idx;
           renderLevel();
+          emitProgress();
         });
       })(i);
       box.appendChild(d);
@@ -628,6 +656,7 @@
       var nb = $("next-btn");
       if (nb) nb.classList.remove("ready");
       renderProgress();
+      emitProgress();
     }
   }
 
@@ -672,5 +701,14 @@
 
   if (typeof window !== "undefined") {
     window.__initHtmlHero = function () { initGame(); };
+    window.__resumeHtmlHero = function (saved) { resumeGame(saved); };
+    window.__getHtmlHeroState = function () {
+      return {
+        currentLevel: STATE.currentLevel,
+        score: STATE.score,
+        completed: STATE.completed,
+        totalLevels: LEVELS.length,
+      };
+    };
   }
 })();

@@ -174,6 +174,20 @@ export interface Like {
   createdAt: string;
 }
 
+/** Per-user progress for a single game, so the user can resume where they left off. */
+export interface GameProgress {
+  userId: string;
+  gameSlug: string;
+  /** Zero-based index of the level to resume on next visit. */
+  currentLevel: number;
+  score: number;
+  /** Zero-based level indices that have been completed (object so it round-trips like the engines' STATE.completed). */
+  completed: Record<string, boolean>;
+  /** Total number of levels in this game (used by the hub for "x of y levels"). */
+  totalLevels: number;
+  updatedAt: string;
+}
+
 export interface BlogEngagement {
   likesCount: number;
   commentsCount: number;

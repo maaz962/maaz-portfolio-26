@@ -17,6 +17,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { GlassNavbar } from "@/components/layout/glass-navbar";
 import { AuthGate } from "@/components/games/auth-gate";
 import { GameSocial } from "@/components/games/game-social";
+import { useGameProgress } from "@/hooks/use-game-progress";
 import type { User } from "@/types";
 import "./game.css";
 
@@ -50,18 +51,13 @@ export default function GridGardenPage() {
       .finally(() => setAuthLoading(false));
   }, []);
 
-  useEffect(() => {
-    if (!gamesAuthed || !currentUser) return;
-    const tryInit = () => {
-      if (typeof window !== "undefined" && (window as any).__initGridGarden) {
-        (window as any).__initGridGarden();
-      } else {
-        setTimeout(tryInit, 100);
-      }
-    };
-    const timer = setTimeout(tryInit, 200);
-    return () => clearTimeout(timer);
-  }, [gamesAuthed, currentUser]);
+  useGameProgress({
+    slug: GAME_SLUG,
+    enabled: gamesAuthed && Boolean(currentUser),
+    initKey: "__initGridGarden",
+    resumeKey: "__resumeGridGarden",
+    emitterKey: "__onGridGardenProgress",
+  });
 
   const openAuthModal = () => {
     setAuthMode("login");

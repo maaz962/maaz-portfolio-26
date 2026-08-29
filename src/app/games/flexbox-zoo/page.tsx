@@ -17,6 +17,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { GlassNavbar } from "@/components/layout/glass-navbar";
 import { AuthGate } from "@/components/games/auth-gate";
 import { GameSocial } from "@/components/games/game-social";
+import { useGameProgress } from "@/hooks/use-game-progress";
 import type { User } from "@/types";
 import "./game.css";
 
@@ -37,7 +38,7 @@ export default function FlexboxZooPage() {
 const [authLoading, setAuthLoading] = useState(true);
   const [gamesAuthed, setGamesAuthed] = useState(false);
 
-  useEffect(() => {
+useEffect(() => {
     fetch("/api/auth/me")
       .then((r) => r.json())
       .then((d) => {
@@ -50,18 +51,13 @@ const [authLoading, setAuthLoading] = useState(true);
       .finally(() => setAuthLoading(false));
   }, []);
 
-  useEffect(() => {
-    if (!gamesAuthed || !currentUser) return;
-    const tryInit = () => {
-      if (typeof window !== "undefined" && (window as any).__initFlexboxZoo) {
-        (window as any).__initFlexboxZoo();
-      } else {
-        setTimeout(tryInit, 100);
-      }
-    };
-    const timer = setTimeout(tryInit, 200);
-    return () => clearTimeout(timer);
-  }, [gamesAuthed, currentUser]);
+  useGameProgress({
+    slug: GAME_SLUG,
+    enabled: gamesAuthed && Boolean(currentUser),
+    initKey: "__initFlexboxZoo",
+    resumeKey: "__resumeFlexboxZoo",
+    emitterKey: "__onFlexboxZooProgress",
+  });
 
   const openAuthModal = () => {
     setAuthMode("login");
