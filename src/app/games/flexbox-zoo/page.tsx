@@ -131,8 +131,10 @@ export default function FlexboxZooPage() {
     }
   };
 
+  const canInteract = Boolean(currentUser) && gamesAuthed;
+
   const handleToggleLike = async () => {
-    if (!currentUser) {
+    if (!canInteract) {
       openAuthModal();
       return;
     }
@@ -151,7 +153,7 @@ export default function FlexboxZooPage() {
 
   const handleAddComment = async (e: React.FormEvent, parentId?: string) => {
     e.preventDefault();
-    if (!currentUser) return;
+    if (!canInteract) return;
     const content = parentId ? replyText : newCommentText;
     if (content.trim() === "") return;
     try {
@@ -178,6 +180,7 @@ export default function FlexboxZooPage() {
   };
 
   const handleEditComment = async (commentId: string) => {
+    if (!canInteract) return;
     if (editText.trim() === "") return;
     try {
       const res = await fetch("/api/blog/comments", {
@@ -197,6 +200,7 @@ export default function FlexboxZooPage() {
   };
 
   const handleDeleteComment = async (commentId: string) => {
+    if (!canInteract) return;
     try {
       const res = await fetch(`/api/blog/comments?commentId=${commentId}`, {
         method: "DELETE",
@@ -218,7 +222,7 @@ export default function FlexboxZooPage() {
   };
 
   const handleLikeComment = async (commentId: string) => {
-    if (!currentUser) {
+    if (!canInteract) {
       openAuthModal();
       return;
     }
@@ -303,7 +307,6 @@ export default function FlexboxZooPage() {
             }}
           />
         ) : (
-        <>
         <div className="zoo-game-wrapper">
           {/* LEFT SIDEBAR — html structure */}
           <div className="zoo-sidebar">
@@ -441,6 +444,7 @@ export default function FlexboxZooPage() {
             </div>
           </div>
         </div>
+        )}
 
         {/* LIKE + COMMENTS — reusing blog API */}
         <div className="mx-auto mt-12 max-w-3xl space-y-8">
@@ -482,7 +486,7 @@ export default function FlexboxZooPage() {
               </h2>
             </div>
 
-            {currentUser ? (
+            {canInteract ? (
               <form
                 onSubmit={(e) => handleAddComment(e)}
                 className="mt-5 space-y-2.5"
@@ -526,7 +530,7 @@ export default function FlexboxZooPage() {
                   <div key={parent.id} className="space-y-3.5">
                     <CommentBlock
                       comment={parent}
-                      currentUser={currentUser}
+                      currentUser={canInteract ? currentUser : null}
                       onReplyClick={
                         currentUser
                           ? () => {
@@ -556,7 +560,7 @@ export default function FlexboxZooPage() {
                         <div className="flex-1">
                           <CommentBlock
                             comment={reply}
-                            currentUser={currentUser}
+                            currentUser={canInteract ? currentUser : null}
                             onDeleteClick={() => handleDeleteComment(reply.id)}
                             onEditSubmit={(text) => {
                               setEditText(text);
@@ -575,7 +579,7 @@ export default function FlexboxZooPage() {
                         </div>
                       </div>
                     ))}
-                    {replyingToId === parent.id && currentUser && (
+                    {replyingToId === parent.id && canInteract && (
                       <form
                         onSubmit={(e) => handleAddComment(e, parent.id)}
                         className="mt-1 space-y-2 pl-6"
@@ -615,8 +619,6 @@ export default function FlexboxZooPage() {
             </div>
           </div>
         </div>
-        </>
-        )}
       </main>
 
       <Script src="/games/flexbox-zoo/game.js" strategy="afterInteractive" />

@@ -220,6 +220,12 @@
 
   var STATE = { currentLevel: 0, score: 0, completed: {} };
 
+  var POINTS = { easy: 3, intermediate: 7, advanced: 9 };
+
+  function pointsForLevel(level) {
+    return POINTS[level.difficulty] || 3;
+  }
+
   function $(id) { return document.getElementById(id); }
   function qs(sel, ctx) { return (ctx || document).querySelector(sel); }
   function randomItem(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
@@ -432,7 +438,7 @@
   function completeLevel() {
     if (STATE.completed[STATE.currentLevel]) return;
     STATE.completed[STATE.currentLevel] = true;
-    STATE.score += 10;
+    STATE.score += pointsForLevel(LEVELS[STATE.currentLevel]);
 
     var s = $("score-display");
     if (s) s.textContent = "Score: " + STATE.score;
@@ -616,7 +622,7 @@
     applyHTML(level.starter || "");
     if (STATE.completed[STATE.currentLevel]) {
       STATE.completed[STATE.currentLevel] = false;
-      STATE.score = Math.max(0, STATE.score - 10);
+      STATE.score = Math.max(0, STATE.score - pointsForLevel(level));
       var s = $("score-display");
       if (s) s.textContent = "Score: " + STATE.score;
       var nb = $("next-btn");

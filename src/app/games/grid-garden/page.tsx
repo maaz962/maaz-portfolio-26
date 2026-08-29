@@ -121,8 +121,10 @@ export default function GridGardenPage() {
     } catch { setAuthError("Server error"); }
   };
 
+  const canInteract = Boolean(currentUser) && gamesAuthed;
+
   const handleToggleLike = async () => {
-    if (!currentUser) { openAuthModal(); return; }
+    if (!canInteract) { openAuthModal(); return; }
     try {
       const res = await fetch("/api/blog/likes", {
         method: "POST",
@@ -135,7 +137,7 @@ export default function GridGardenPage() {
 
   const handleAddComment = async (e: React.FormEvent, parentId?: string) => {
     e.preventDefault();
-    if (!currentUser) return;
+    if (!canInteract) return;
     const content = parentId ? replyText : newCommentText;
     if (content.trim() === "") return;
     try {
@@ -155,6 +157,7 @@ export default function GridGardenPage() {
   };
 
   const handleEditComment = async (commentId: string) => {
+    if (!canInteract) return;
     if (editText.trim() === "") return;
     try {
       const res = await fetch("/api/blog/comments", {
@@ -172,6 +175,7 @@ export default function GridGardenPage() {
   };
 
   const handleDeleteComment = async (commentId: string) => {
+    if (!canInteract) return;
     try {
       const res = await fetch(`/api/blog/comments?commentId=${commentId}`, { method: "DELETE" });
       if (res.ok) {
@@ -182,7 +186,7 @@ export default function GridGardenPage() {
   };
 
   const handleLikeComment = async (commentId: string) => {
-    if (!currentUser) {
+    if (!canInteract) {
       openAuthModal();
       return;
     }
@@ -256,7 +260,6 @@ export default function GridGardenPage() {
             }}
           />
         ) : (
-        <>
         <div className="grid-game-wrapper">
           {/* LEFT SIDEBAR */}
           <div className="grid-sidebar">
@@ -382,6 +385,7 @@ export default function GridGardenPage() {
             </div>
           </div>
         </div>
+        )}
 
         {/* LIKE + COMMENTS */}
         <div className="mx-auto mt-12 max-w-3xl space-y-8">
@@ -419,7 +423,7 @@ export default function GridGardenPage() {
               </h2>
             </div>
 
-            {currentUser ? (
+            {canInteract ? (
               <form onSubmit={(e) => handleAddComment(e)} className="mt-5 space-y-2.5">
                 <textarea
                   rows={3}
@@ -458,7 +462,7 @@ export default function GridGardenPage() {
                   <div key={parent.id} className="space-y-3.5">
                     <CommentBlock
                       comment={parent}
-                      currentUser={currentUser}
+                      currentUser={canInteract ? currentUser : null}
                       onReplyClick={
                         currentUser
                           ? () => { setReplyingToId(parent.id); setReplyText(""); }
@@ -479,7 +483,7 @@ export default function GridGardenPage() {
                         <div className="flex-1">
                           <CommentBlock
                             comment={reply}
-                            currentUser={currentUser}
+                            currentUser={canInteract ? currentUser : null}
                             onDeleteClick={() => handleDeleteComment(reply.id)}
                             onEditSubmit={(text) => { setEditText(text); handleEditComment(reply.id); }}
                             isEditing={editingCommentId === reply.id}
@@ -492,7 +496,7 @@ export default function GridGardenPage() {
                         </div>
                       </div>
                     ))}
-                    {replyingToId === parent.id && currentUser && (
+                    {replyingToId === parent.id && canInteract && (
                       <form onSubmit={(e) => handleAddComment(e, parent.id)} className="mt-1 space-y-2 pl-6">
                         <textarea
                           rows={2}
@@ -521,8 +525,6 @@ export default function GridGardenPage() {
             </div>
           </div>
         </div>
-        </>
-        )}
       </main>
 
       <Script src="/games/grid-garden/game.js" strategy="afterInteractive" />

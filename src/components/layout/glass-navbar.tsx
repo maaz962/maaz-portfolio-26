@@ -49,9 +49,7 @@ export function GlassNavbar({ activeSection, onNavigate }: GlassNavbarProps) {
             const isHash = link.href.includes("#");
             const id = isHash ? link.href.replace("/#", "").replace("#", "") : "";
             const isGames = link.href === "/games";
-              const isActive = link.href === "/blog"
-                ? (pathname === "/blog" || pathname.startsWith("/blog/") || activeSection === "blog")
-                : isGames
+              const isActive = isGames
                 ? (pathname === "/games" || pathname.startsWith("/games/"))
                 : (isHomePage && activeSection === id);
 
@@ -142,10 +140,8 @@ export function GlassNavbar({ activeSection, onNavigate }: GlassNavbarProps) {
             {navLinks.map((link) => {
               const isHash = link.href.includes("#");
               const id = isHash ? link.href.replace("/#", "").replace("#", "") : "";
-              const isGames = link.href === "/games";
-              const isActive = link.href === "/blog"
-                ? (pathname === "/blog" || pathname.startsWith("/blog/") || activeSection === "blog")
-                : isGames
+const isGames = link.href === "/games";
+              const isActive = isGames
                 ? (pathname === "/games" || pathname.startsWith("/games/"))
                 : (isHomePage && activeSection === id);
 
