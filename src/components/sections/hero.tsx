@@ -1,3 +1,5 @@
+"use client";
+
 import { ArrowRight, Download, Github, Linkedin } from "lucide-react";
 import { profile, socialLinks } from "@/data/profile";
 import { Container } from "@/components/ui/container";
@@ -5,10 +7,12 @@ import { buttonStyles, iconLinkStyles } from "@/components/ui/button";
 import { ProfilePhoto } from "@/components/ui/profile-photo";
 import { AmbientBackground } from "@/components/animations/ambient-background";
 import { FadeIn } from "@/components/animations/fade-in";
+import { useSectionNavigation } from "@/components/layout/section-navigation-context";
 
 const heroSocialIcons = { GitHub: Github, LinkedIn: Linkedin } as const;
 
 export function Hero() {
+  const navigate = useSectionNavigation();
   const heroSocials = socialLinks.filter(
     (link): link is typeof link & { label: keyof typeof heroSocialIcons } =>
       link.label in heroSocialIcons
@@ -45,12 +49,23 @@ export function Hero() {
           </p>
 
           <div className="mt-9 flex flex-wrap items-center gap-4">
-            <a href="#projects" className={buttonStyles({ size: "lg" })}>
+            <a
+              href="#projects"
+              onClick={(e) => {
+                e.preventDefault();
+                navigate("projects");
+              }}
+              className={buttonStyles({ size: "lg" })}
+            >
               View My Work
               <ArrowRight className="h-4 w-4" strokeWidth={1.75} />
             </a>
             <a
               href="#contact"
+              onClick={(e) => {
+                e.preventDefault();
+                navigate("contact");
+              }}
               className={buttonStyles({ variant: "outline", size: "lg" })}
             >
               Hire Me

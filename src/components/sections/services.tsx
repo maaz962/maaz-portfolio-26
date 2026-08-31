@@ -7,9 +7,15 @@ import { SectionHeading } from "@/components/ui/section-heading";
 import { buttonStyles } from "@/components/ui/button";
 import { FadeIn } from "@/components/animations/fade-in";
 import { StaggerFadeIn, StaggerItem } from "@/components/animations/stagger-fade-in";
+import { useSectionNavigation } from "@/components/layout/section-navigation-context";
 import { cn } from "@/lib/utils";
 
 export function Services() {
+  const navigate = useSectionNavigation();
+  const goToContact = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    e.preventDefault();
+    navigate("contact");
+  };
   return (
     <section
       id="services"
@@ -98,6 +104,7 @@ export function Services() {
                     <div className="mt-6">
                       <a
                         href="#contact"
+                        onClick={goToContact}
                         className="inline-flex items-center gap-1.5 text-xs font-medium text-primary hover:underline hover:text-primary/80"
                       >
                         Inquire about this
@@ -129,6 +136,7 @@ export function Services() {
               <div className="mt-8">
                 <a
                   href="#contact"
+                  onClick={goToContact}
                   className={buttonStyles({ size: "lg" })}
                 >
                   Let&apos;s Work Together

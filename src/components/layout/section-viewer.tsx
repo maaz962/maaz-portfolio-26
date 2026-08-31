@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { GlassNavbar } from "@/components/layout/glass-navbar";
+import { SectionNavigationContext } from "@/components/layout/section-navigation-context";
 
 const sectionIds = [
   "top",
@@ -60,19 +61,21 @@ export function SectionViewer({ children }: { children: React.ReactNode }) {
   return (
     <>
       <GlassNavbar activeSection={activeSection} onNavigate={handleNavigate} />
-      <main ref={mainRef} className="pt-20 sm:pt-20">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={activeSection}
-            variants={pageVariants}
-            initial="initial"
-            animate="animate"
-            exit="exit"
-          >
-            {sectionMap[activeSection] ?? null}
-          </motion.div>
-        </AnimatePresence>
-      </main>
+      <SectionNavigationContext.Provider value={handleNavigate}>
+        <main ref={mainRef} className="pt-20 sm:pt-20">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={activeSection}
+              variants={pageVariants}
+              initial="initial"
+              animate="animate"
+              exit="exit"
+            >
+              {sectionMap[activeSection] ?? null}
+            </motion.div>
+          </AnimatePresence>
+        </main>
+      </SectionNavigationContext.Provider>
     </>
   );
 }
