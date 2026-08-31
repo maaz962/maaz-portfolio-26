@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Check,
@@ -12,6 +11,7 @@ import {
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { CommentBlock } from "@/components/comments/comment-block";
+import { Avatar } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import type { BlogEngagement, Comment, User } from "@/types";
 
@@ -353,29 +353,18 @@ export function GameSocial({
         {likers.length > 0 && (
           <div className="mt-2 flex items-center gap-2">
             <div className="flex -space-x-2">
-              {likers.slice(0, 4).map((l) =>
-                l.avatarUrl ? (
-                  <div
-                    key={l.id}
-                    className="relative h-6 w-6 overflow-hidden rounded-full border-2 border-background bg-background-secondary"
-                  >
-                    <Image
-                      src={l.avatarUrl}
-                      alt={l.name}
-                      fill
-                      sizes="24px"
-                      className="object-cover"
-                    />
-                  </div>
-                ) : (
-                  <div
-                    key={l.id}
-                    className="flex h-6 w-6 items-center justify-center rounded-full border-2 border-background bg-primary/10 text-[0.55rem] font-bold uppercase text-primary"
-                  >
-                    {l.username.charAt(0)}
-                  </div>
-                )
-              )}
+              {likers.slice(0, 4).map((l) => (
+                <div
+                  key={l.id}
+                  className="h-6 w-6 overflow-hidden rounded-full border-2 border-background"
+                >
+                  <Avatar
+                    seed={l.id || l.username}
+                    name={l.name || l.username}
+                    className="h-6 w-6"
+                  />
+                </div>
+              ))}
             </div>
             <p className="truncate text-[0.65rem] text-muted">
               {likers.map((l) => `@${l.username}`).join(", ")}
@@ -403,19 +392,13 @@ export function GameSocial({
             onSubmit={(e) => handleAddComment(e)}
             className="mt-3 flex items-start gap-3 px-5"
           >
-            {currentUser?.avatarUrl ? (
-              <div className="relative mt-0.5 h-8 w-8 shrink-0 overflow-hidden rounded-full border border-primary/10">
-                <Image
-                  src={currentUser.avatarUrl}
-                  alt={currentUser.name}
-                  fill
-                  sizes="32px"
-                  className="object-cover"
+            {currentUser && (
+              <div className="mt-0.5 h-8 w-8 shrink-0">
+                <Avatar
+                  seed={currentUser.id || currentUser.username}
+                  name={currentUser.name}
+                  className="h-8 w-8"
                 />
-              </div>
-            ) : (
-              <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-bold uppercase text-primary">
-                {(currentUser?.username || "?").charAt(0)}
               </div>
             )}
             <div className="flex-1">

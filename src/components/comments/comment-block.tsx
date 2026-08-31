@@ -1,8 +1,8 @@
 "use client";
 
-import Image from "next/image";
 import { CornerDownRight, Edit2, Heart, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Avatar } from "@/components/ui/avatar";
 import type { Comment, User } from "@/types";
 
 export interface CommentBlockProps {
@@ -49,14 +49,8 @@ export function CommentBlock({
     <div className="space-y-2 rounded-xl border border-border/60 bg-card p-3.5 shadow-sm">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <div className="relative h-5 w-5 overflow-hidden rounded-full border border-primary/10">
-            <Image
-              src={comment.userAvatar}
-              alt={comment.userName}
-              fill
-              sizes="20px"
-              className="object-cover"
-            />
+          <div className="relative h-5 w-5 shrink-0">
+            <Avatar seed={comment.userId} name={comment.userName} className="h-5 w-5" />
           </div>
           <span className="text-[0.68rem] font-bold text-foreground/90">{comment.userName}</span>
           {comment.userId === "admin-user-id" && (

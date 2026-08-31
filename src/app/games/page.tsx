@@ -22,6 +22,7 @@ import { GlassNavbar } from "@/components/layout/glass-navbar";
 import { cn } from "@/lib/utils";
 import { GameDiscussionPanel } from "./game-discussion-panel";
 import { AuthModal } from "@/components/games/auth-modal";
+import { Avatar } from "@/components/ui/avatar";
 import { useAuth } from "@/lib/auth-context";
 import type { BlogEngagement, GameProgress } from "@/types";
 
@@ -392,11 +393,10 @@ export default function GamesPage() {
           >
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div className="flex items-center gap-3">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={currentUser.avatarUrl}
-                  alt={currentUser.name}
-                  className="h-14 w-14 rounded-2xl border border-border object-cover"
+                <Avatar
+                  seed={currentUser.id || currentUser.username}
+                  name={currentUser.name}
+                  className="h-14 w-14 rounded-2xl"
                 />
                 <div>
                   <h2 className="font-display text-lg font-bold text-foreground">
