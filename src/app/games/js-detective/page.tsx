@@ -1,11 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import Script from "next/script";
 import {
   ArrowLeft,
+  Check,
+  ChevronDown,
+  FolderOpen,
   Gamepad2,
+  Lock,
   Sparkles,
   Terminal,
 } from "lucide-react";
@@ -18,12 +22,102 @@ import { useAuth } from "@/lib/auth-context";
 import "./game.css";
 
 const GAME_SLUG = "js-detective";
-const TOTAL_LEVELS = 15;
+const FALLBACK_TOTAL_LEVELS = 16;
+
+interface JsLevelMeta {
+  id: number;
+  title: string;
+  tier: string;
+  concepts: string[];
+  points: number;
+  isFinal: boolean;
+  shortDesc: string;
+}
+
+interface JsGameState {
+  currentLevel: number;
+  score: number;
+  completed: Record<number, boolean>;
+  totalLevels: number;
+}
+
+const TIER_ORDER = ["easy", "intermediate", "hard", "mostHard"];
+
+const TIER_META = [
+  { key: "easy", label: "Easy", blurb: "Warm-up — variables, types, operators and control flow." },
+  { key: "intermediate", label: "Intermediate", blurb: "Clues tighten — loops, arrays, functions and objects." },
+  { key: "hard", label: "Hard", blurb: "Real casework — modern syntax, higher-order arrays and the DOM." },
+  { key: "mostHard", label: "Most Hard", blurb: "Final stretch — events, BOM and async bring the boss fight." },
+];
+
+const CONCEPT_LABELS: Record<string, string> = {
+  variables: "Variables",
+  "data-types": "Data types",
+  operators: "Operators",
+  "control-flow": "if/else switch",
+  loops: "Loops",
+  functions: "Functions",
+  "arrow-functions": "Arrows",
+  arrays: "Arrays",
+  objects: "Objects",
+  dom: "DOM",
+  events: "Events",
+  bom: "BOM",
+  async: "Async",
+};
+
+function tierLevelsFor(levels: JsLevelMeta[], tierKey: string): JsLevelMeta[] {
+  return levels.filter((l) => l.tier === tierKey);
+}
+
+function tierDoneFor(
+  levels: JsLevelMeta[],
+  completed: Record<number, boolean>,
+  tierKey: string
+): number {
+  return tierLevelsFor(levels, tierKey).filter((l) => completed[l.id - 1]).length;
+}
+
+function tierOpenFor(
+  levels: JsLevelMeta[],
+  completed: Record<number, boolean>,
+  tierKey: string
+): boolean {
+  const ti = TIER_ORDER.indexOf(tierKey);
+  if (ti <= 0) return true;
+  const prev = TIER_ORDER[ti - 1] ?? "";
+  const prevLevels = tierLevelsFor(levels, prev);
+  const need = prev === "hard" ? prevLevels.length : Math.max(1, prevLevels.length - 1);
+  return prevLevels.length === 0 || tierDoneFor(levels, completed, prev) >= need;
+}
+
+function lockNoteFor(
+  levels: JsLevelMeta[],
+  completed: Record<number, boolean>,
+  tierKey: string
+): string {
+  const ti = TIER_ORDER.indexOf(tierKey);
+  if (ti <= 0) return "";
+  const prev = TIER_ORDER[ti - 1] ?? "";
+  const prevLevels = tierLevelsFor(levels, prev);
+  const need = prev === "hard" ? prevLevels.length : Math.max(1, prevLevels.length - 1);
+  const left = Math.max(0, need - tierDoneFor(levels, completed, prev));
+  const label = TIER_META.find((t) => t.key === prev)?.label || prev;
+  return `Solve ${left} more ${label} case${left === 1 ? "" : "s"} to unlock this tier.`;
+}
 
 export default function JsDetectivePage() {
   const { user: currentUser, loading: authLoading } = useAuth();
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authRequest, setAuthRequest] = useState<"login" | "register">("login");
+  const [showLevelSelect, setShowLevelSelect] = useState(false);
+  const [levels, setLevels] = useState<JsLevelMeta[]>([]);
+  const [gameState, setGameState] = useState<JsGameState>({
+    currentLevel: 0,
+    score: 0,
+    completed: {},
+    totalLevels: FALLBACK_TOTAL_LEVELS,
+  });
 
   const gamesAuthed = Boolean(currentUser) && !authLoading;
 
@@ -34,6 +128,51 @@ export default function JsDetectivePage() {
     resumeKey: "__resumeJsDetective",
     emitterKey: "__onJsDetectiveProgress",
   });
+
+  useEffect(() => {
+    if (!gamesAuthed) return;
+    const w = window as any;
+    let alive = true;
+    let levelsTimer: ReturnType<typeof setTimeout> | undefined;
+    let stateTimer: ReturnType<typeof setTimeout> | undefined;
+
+    const pollLevels = () => {
+      if (!alive) return;
+      if (typeof w.__getJsDetectiveLevels === "function") {
+        const meta = w.__getJsDetectiveLevels();
+        if (Array.isArray(meta) && meta.length) setLevels(meta);
+      } else {
+        levelsTimer = setTimeout(pollLevels, 100);
+      }
+    };
+
+    const pullState = () => {
+      if (!alive) return;
+      if (typeof w.__getJsDetectiveState === "function") {
+        const s = w.__getJsDetectiveState();
+        if (s) setGameState({ ...gameState, ...s });
+      } else {
+        stateTimer = setTimeout(pullState, 120);
+      }
+    };
+
+    const onState = (e: Event) => {
+      const detail = (e as CustomEvent)?.detail;
+      if (detail) setGameState(detail);
+    };
+
+    pollLevels();
+    const bootTimer = setTimeout(pullState, 150);
+    window.addEventListener("jsd-state", onState);
+    return () => {
+      alive = false;
+      clearTimeout(levelsTimer);
+      clearTimeout(stateTimer);
+      clearTimeout(bootTimer);
+      window.removeEventListener("jsd-state", onState);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gamesAuthed]);
 
   const openAuthModal = () => {
     setAuthRequest("login");
@@ -86,6 +225,104 @@ export default function JsDetectivePage() {
           <div className="jsd-game-wrapper">
             {/* LEFT SIDEBAR */}
             <div className="jsd-sidebar">
+              {/* Level Select Drawer */}
+              <div className="jsd-level-select">
+                <button
+                  type="button"
+                  className={"jsd-level-select-toggle" + (showLevelSelect ? " open" : "")}
+                  aria-expanded={showLevelSelect}
+                  onClick={() => setShowLevelSelect((v) => !v)}
+                >
+                  <span className="jsd-ls-label">
+                    <FolderOpen className="h-3 w-3" />
+                    All Cases
+                  </span>
+                  <span className="jsd-ls-count">
+                    {levels.filter((l) => gameState.completed[l.id - 1]).length}/{gameState.totalLevels}
+                  </span>
+                  <ChevronDown
+                    className={"jsd-ls-chevron" + (showLevelSelect ? " open" : "")}
+                  />
+                </button>
+
+                {showLevelSelect && (
+                  <div className="jsd-level-select-body">
+                    {TIER_META.map((tier) => {
+                      const ls = tierLevelsFor(levels, tier.key);
+                      const done = tierDoneFor(levels, gameState.completed, tier.key);
+                      const open = tierOpenFor(levels, gameState.completed, tier.key);
+                      return (
+                        <div
+                          key={tier.key}
+                          className={"jsd-tier-group " + tier.key + (open ? "" : " closed")}
+                        >
+                          <div className="jsd-tier-head">
+                            <span className="jsd-tier-name">{tier.label}</span>
+                            <span className="jsd-tier-count">
+                              {done}/{ls.length}
+                            </span>
+                          </div>
+                          <div className="jsd-tier-blurb">
+                            {open ? tier.blurb : lockNoteFor(levels, gameState.completed, tier.key)}
+                          </div>
+                          <div className="jsd-level-grid">
+                            {ls.map((level) => {
+                              const doneLevel = !!gameState.completed[level.id - 1];
+                              const current = gameState.currentLevel === level.id - 1;
+                              const locked = !doneLevel && !tierOpenFor(levels, gameState.completed, level.tier);
+                              return (
+                                <button
+                                  key={level.id}
+                                  type="button"
+                                  disabled={locked}
+                                  className={
+                                    "jsd-level-card " +
+                                    level.tier +
+                                    (doneLevel ? " done" : "") +
+                                    (current ? " current" : "")
+                                  }
+                                  title={level.shortDesc || level.title}
+                                  onClick={() => {
+                                    const win = window as any;
+                                    if (typeof win.__goToJsDetectiveLevel === "function") {
+                                      win.__goToJsDetectiveLevel(level.id - 1);
+                                    }
+                                    setShowLevelSelect(false);
+                                  }}
+                                >
+                                  <span className="jsd-lk-num">
+                                    {doneLevel ? (
+                                      <Check className="jsd-lk-check" />
+                                    ) : locked ? (
+                                      <Lock className="jsd-lk-lock" />
+                                    ) : (
+                                      level.id
+                                    )}
+                                  </span>
+                                  <span className="jsd-lk-title">{level.title}</span>
+                                  <span className="jsd-lk-meta">
+                                    {level.concepts.slice(0, 3).map((c) => (
+                                      <span key={c} className="jsd-concept-chip">
+                                        {CONCEPT_LABELS[c] || c}
+                                      </span>
+                                    ))}
+                                    <span className="jsd-lk-points">+{level.points} XP</span>
+                                  </span>
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      );
+                    })}
+                    <div className="jsd-ls-legend">
+                      Solve 3 of 4 cases in a tier to unlock the next. All 4{" "}
+                      <strong>Hard</strong> cases unlock <strong>Most Hard</strong>.
+                    </div>
+                  </div>
+                )}
+              </div>
+
               {/* Level Info */}
               <div className="jsd-level-info">
                 <div className="jsd-level-header">
@@ -93,7 +330,7 @@ export default function JsDetectivePage() {
                     <Gamepad2 className="h-3 w-3" />
                     Case <span id="level-number">1</span>
                     <span className="text-muted">/</span>
-                    <span>{TOTAL_LEVELS}</span>
+                    <span id="level-total">{gameState.totalLevels}</span>
                   </span>
                   <span
                     id="level-difficulty"
@@ -250,6 +487,7 @@ export default function JsDetectivePage() {
         />
       </main>
 
+      <Script src="/games/js-detective/levels.js" strategy="afterInteractive" />
       <Script src="/games/js-detective/game.js" strategy="afterInteractive" />
 
       <AuthModal

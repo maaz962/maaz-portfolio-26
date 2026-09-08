@@ -81,9 +81,14 @@
   color: hsl(38 92% 50%);
 }
 
-.jsd-level-difficulty.advanced {
+.jsd-level-difficulty.hard {
   background: hsl(0 84% 60% / 0.12);
   color: hsl(0 84% 60%);
+}
+
+.jsd-level-difficulty.mostHard {
+  background: hsl(262 83% 68% / 0.14);
+  color: hsl(262 83% 72%);
 }
 
 .jsd-instruction {
@@ -734,6 +739,276 @@
 
 .jsd-replay-btn:active {
   transform: translateY(0);
+}
+
+.jsd-hint-reveal {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.3rem 0.7rem;
+  border-radius: 9999px;
+  border: 1px dashed hsl(var(--primary) / 0.45);
+  background: hsl(var(--primary) / 0.08);
+  color: hsl(var(--primary));
+  font-size: 0.68rem;
+  font-weight: 700;
+  font-family: var(--font-mono);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.jsd-hint-reveal:hover {
+  background: hsl(var(--primary) / 0.16);
+  border-style: solid;
+}
+
+/* ---------- Level Select Drawer ---------- */
+
+.jsd-level-select {
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
+  border-radius: 1rem;
+  overflow: hidden;
+}
+
+.jsd-level-select-toggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.625rem 0.875rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: hsl(var(--foreground));
+  font-size: 0.72rem;
+  font-weight: 700;
+  font-family: var(--font-display);
+  transition: background 0.15s ease;
+}
+
+.jsd-level-select-toggle:hover {
+  background: hsl(var(--primary) / 0.06);
+}
+
+.jsd-ls-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.jsd-ls-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2.25rem;
+  padding: 0.125rem 0.5rem;
+  border-radius: 9999px;
+  background: hsl(var(--primary) / 0.12);
+  color: hsl(var(--primary));
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  font-weight: 700;
+}
+
+.jsd-ls-chevron {
+  width: 0.875rem;
+  height: 0.875rem;
+  color: hsl(var(--muted));
+  transition: transform 0.2s ease;
+}
+
+.jsd-ls-chevron.open {
+  transform: rotate(180deg);
+}
+
+.jsd-level-select-body {
+  border-top: 1px solid hsl(var(--border));
+  padding: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+  max-height: 62vh;
+  overflow-y: auto;
+}
+
+.jsd-tier-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  padding-left: 0.625rem;
+  border-left: 3px solid hsl(var(--border));
+}
+
+.jsd-tier-group.easy { border-left-color: hsl(142 70% 45%); }
+.jsd-tier-group.intermediate { border-left-color: hsl(38 92% 50%); }
+.jsd-tier-group.hard { border-left-color: hsl(0 84% 60%); }
+.jsd-tier-group.mostHard { border-left-color: hsl(262 83% 68%); }
+
+.jsd-tier-group.closed { opacity: 0.72; }
+
+.jsd-tier-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.jsd-tier-name {
+  font-family: var(--font-display);
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.jsd-tier-group.easy .jsd-tier-name { color: hsl(142 70% 45%); }
+.jsd-tier-group.intermediate .jsd-tier-name { color: hsl(38 92% 50%); }
+.jsd-tier-group.hard .jsd-tier-name { color: hsl(0 84% 60%); }
+.jsd-tier-group.mostHard .jsd-tier-name { color: hsl(262 83% 72%); }
+
+.jsd-tier-count {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: hsl(var(--muted));
+  background: hsl(var(--background-secondary));
+  padding: 0.125rem 0.4375rem;
+  border-radius: 9999px;
+}
+
+.jsd-tier-blurb {
+  font-size: 0.62rem;
+  line-height: 1.4;
+  color: hsl(var(--muted));
+}
+
+.jsd-level-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.4rem;
+}
+
+.jsd-level-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  align-items: flex-start;
+  padding: 0.5rem 0.55rem;
+  border-radius: 0.65rem;
+  border: 1px solid hsl(var(--border));
+  background: hsl(var(--background-secondary));
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.15s ease;
+}
+
+.jsd-level-card:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.jsd-level-card:hover:not(:disabled) {
+  border-color: hsl(var(--primary) / 0.55);
+  transform: translateY(-1px);
+}
+
+.jsd-level-card.current {
+  border-color: hsl(var(--primary));
+  box-shadow: 0 0 0 3px hsl(var(--primary) / 0.15);
+}
+
+.jsd-level-card.done {
+  border-color: hsl(142 70% 40% / 0.55);
+}
+
+.jsd-level-card.easy .jsd-lk-num { background: hsl(142 70% 45% / 0.14); color: hsl(142 70% 45%); }
+.jsd-level-card.intermediate .jsd-lk-num { background: hsl(38 92% 50% / 0.14); color: hsl(38 92% 50%); }
+.jsd-level-card.hard .jsd-lk-num { background: hsl(0 84% 60% / 0.14); color: hsl(0 84% 60%); }
+.jsd-level-card.mostHard .jsd-lk-num { background: hsl(262 83% 68% / 0.16); color: hsl(262 83% 72%); }
+
+.jsd-lk-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.35rem;
+  height: 1.35rem;
+  border-radius: 9999px;
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  font-weight: 800;
+}
+
+.jsd-lk-check {
+  width: 0.72rem;
+  height: 0.72rem;
+  color: hsl(142 70% 40%);
+}
+
+.jsd-lk-lock {
+  width: 0.72rem;
+  height: 0.72rem;
+  color: hsl(var(--muted));
+}
+
+.jsd-lk-title {
+  font-size: 0.66rem;
+  font-weight: 700;
+  color: hsl(var(--foreground));
+  line-height: 1.25;
+}
+
+.jsd-lk-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+
+.jsd-concept-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.1rem 0.375rem;
+  border-radius: 9999px;
+  background: hsl(var(--primary) / 0.1);
+  color: hsl(var(--primary));
+  font-family: var(--font-mono);
+  font-size: 0.52rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.jsd-lk-points {
+  font-family: var(--font-mono);
+  font-size: 0.55rem;
+  font-weight: 800;
+  color: hsl(38 92% 55%);
+}
+
+.jsd-ls-legend {
+  font-size: 0.6rem;
+  line-height: 1.45;
+  color: hsl(var(--muted));
+  background: hsl(var(--primary) / 0.06);
+  border: 1px solid hsl(var(--primary) / 0.12);
+  border-radius: 0.5rem;
+  padding: 0.4375rem 0.625rem;
+}
+
+.jsd-ls-legend strong {
+  color: hsl(var(--foreground));
+}
+
+/* ---------- Progress dots: locked state ---------- */
+
+.jsd-progress-dot.locked {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.jsd-progress-dot.locked:hover {
+  border-color: hsl(var(--border));
 }
 
 /* ---------- Keyframes ---------- */
