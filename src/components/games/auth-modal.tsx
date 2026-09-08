@@ -100,7 +100,8 @@ export function AuthModal({ open, onClose, onAuthed, initialMode = "login" }: Au
                   {mode === "login" ? "Welcome back" : "Create profile"}
                 </h3>
                 <p className="text-[0.65rem] text-muted">
-                  Sign in once and stay signed in until you log out
+                  Save progress, earn XP, build streaks and climb the
+                  leaderboard — signed in until you log out
                 </p>
               </div>
             </div>

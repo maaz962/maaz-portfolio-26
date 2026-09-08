@@ -195,3 +195,48 @@ export interface BlogEngagement {
   /** Most recent likers (with avatar) so games can show an "Instagram-style" strip. */
   recentLikers?: { id: string; name: string; username: string; avatarUrl: string }[];
 }
+
+/** Persistent per-user gamification stats (derived from game progress). */
+export interface Gamification {
+  userId: string;
+  /** Total XP = sum of scores across all games. */
+  totalXp: number;
+  /** Number of distinct games the user has played (has a progress row for). */
+  gamesPlayed: number;
+  /** Consecutive UTC days on which the user played at least one game. */
+  currentStreak: number;
+  /** Longest streak the user has ever reached. */
+  longestStreak: number;
+  /** UTC date key (YYYY-MM-DD) of the most recent play day, or null if never. */
+  lastPlayedAt: string | null;
+  updatedAt: string;
+}
+
+/** Gamification summary computed for API responses (includes derived level + rank). */
+export interface GamificationSummary {
+  totalXp: number;
+  level: number;
+  /** Minimum XP required to reach the current level. */
+  levelFloor: number;
+  /** XP required to reach the next level. */
+  levelNext: number;
+  /** 0..1 progress through the current level. */
+  levelProgressPct: number;
+  gamesPlayed: number;
+  currentStreak: number;
+  longestStreak: number;
+  /** 1-based rank among all non-admin players; null when unranked. */
+  rank: number | null;
+  /** Whether the user has played at least one game today. */
+  playedToday: boolean;
+}
+
+/** One row of the public leaderboard (top players by XP). */
+export interface LeaderboardEntry {
+  rank: number;
+  user: Pick<User, "id" | "name" | "username" | "avatarUrl">;
+  totalXp: number;
+  level: number;
+  gamesPlayed: number;
+  currentStreak: number;
+}

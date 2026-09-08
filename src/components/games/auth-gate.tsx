@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Gamepad2, Key, ShieldCheck, MessageSquare, Heart } from "lucide-react";
+import { Gamepad2, Key, ShieldCheck, Trophy, Flame, Star } from "lucide-react";
 
 interface AuthGateProps {
   loading?: boolean;
@@ -28,7 +28,7 @@ export function AuthGate({ loading, onSignIn, onRegister }: AuthGateProps) {
         <p className="mt-1.5 text-xs leading-relaxed text-muted">
           {loading
             ? "Just a second…"
-            : "Create a free profile (or sign in) to unlock every game, drop your score and join the discussion with likes and comments."}
+            : "Create a free profile (or sign in) to save your progress, earn XP, build daily streaks and climb the leaderboard."}
         </p>
 
         {!loading && (
@@ -55,15 +55,19 @@ export function AuthGate({ loading, onSignIn, onRegister }: AuthGateProps) {
         <div className="mt-5 flex items-center justify-center gap-4 border-t border-border/50 pt-4 text-[0.65rem] text-muted">
           <span className="flex items-center gap-1">
             <Gamepad2 className="h-3 w-3 text-primary" />
-            Play all games
+            Save progress
           </span>
           <span className="flex items-center gap-1">
-            <Heart className="h-3 w-3 text-primary" />
-            Like
+            <Star className="h-3 w-3 text-primary" />
+            Earn XP
           </span>
           <span className="flex items-center gap-1">
-            <MessageSquare className="h-3 w-3 text-primary" />
-            Comment
+            <Flame className="h-3 w-3 text-primary" />
+            Streaks
+          </span>
+          <span className="flex items-center gap-1">
+            <Trophy className="h-3 w-3 text-primary" />
+            Leaderboard
           </span>
         </div>
       </motion.div>

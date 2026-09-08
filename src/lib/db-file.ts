@@ -9,8 +9,11 @@ import type {
   BlogPost,
   BlogSettings,
   GameProgress,
+  Gamification,
+  LeaderboardEntry,
 } from "@/types";
 import { hashPassword, verifyPassword } from "./password";
+import { dateKeyFromDaysAgo, levelForXp } from "./gamification";
 
 // DB Types
 interface DatabaseSchema {
@@ -19,6 +22,7 @@ interface DatabaseSchema {
   likes: Like[];
   blogSettings?: BlogSettings;
   gameProgress: GameProgress[];
+  gamification: Gamification[];
 }
 
 const DEFAULT_BLOG_SETTINGS: BlogSettings = {
@@ -56,6 +60,7 @@ async function readDbFile(): Promise<DatabaseSchema> {
       likes: [],
       blogSettings: DEFAULT_BLOG_SETTINGS,
       gameProgress: [],
+      gamification: [],
     };
   }
 }
@@ -186,7 +191,7 @@ function getSeedData(): DatabaseSchema {
     },
   ];
 
-  return { users, comments, likes, blogSettings: DEFAULT_BLOG_SETTINGS, gameProgress: [] };
+  return { users, comments, likes, blogSettings: DEFAULT_BLOG_SETTINGS, gameProgress: [], gamification: [] };
 }
 
 // --- DATABASE FUNCTIONS ---
@@ -279,7 +284,7 @@ export async function validateCredentials(
 
 // --- GAME PROGRESS ---
 
-const GAME_SLUGS = ["html-hero", "grid-garden", "flexbox-zoo"] as const;
+const GAME_SLUGS = ["html-hero", "grid-garden", "flexbox-zoo", "js-detective"] as const;
 
 /** All game progress rows for one user, keyed by game slug. */
 export async function getGameProgressForUser(userId: string): Promise<Record<string, GameProgress>> {
@@ -360,9 +365,140 @@ export async function saveGameProgress(
       db.gameProgress.push(progress);
     }
 
+    // Every play session bumps the user's streak / XP (same write lock, so no
+    // nested locking needed here — recompute mutates the already-locked db).
+    recomputeGamificationLocked(db, userId);
+
     await saveDbFile(db);
     return progress;
   });
+}
+
+// --- GAMIFICATION (XP, levels, streaks) ---
+
+/**
+ * Recomputes a user's gamification row from their game-progress rows and
+ * advances the daily streak. Must only be called while holding the DB write
+ * lock (it mutates `db` in place) — i.e. from saveGameProgress' locked task.
+ */
+function recomputeGamificationLocked(
+  db: DatabaseSchema,
+  userId: string
+): Gamification {
+  const rows = (db.gameProgress ?? []).filter((p) => p.userId === userId);
+  const totalXp = rows.reduce((sum, p) => sum + (p.score || 0), 0);
+  const gamesPlayed = new Set(rows.map((p) => p.gameSlug)).size;
+
+  const today = dateKeyFromDaysAgo(0);
+  const yesterday = dateKeyFromDaysAgo(1);
+  const existing = (db.gamification ?? []).find((g) => g.userId === userId);
+
+  let currentStreak = existing?.currentStreak ?? 0;
+  let longestStreak = existing?.longestStreak ?? 0;
+  const lastPlayedAt = existing?.lastPlayedAt ?? null;
+
+  if (lastPlayedAt === today) {
+    // Already counted a play today — streak unchanged.
+  } else if (lastPlayedAt === yesterday) {
+    currentStreak += 1;
+    longestStreak = Math.max(longestStreak, currentStreak);
+  } else {
+    // Missed a day (or first play ever) — streak restarts at 1.
+    currentStreak = 1;
+    longestStreak = Math.max(longestStreak, currentStreak);
+  }
+
+  const gamification: Gamification = {
+    userId,
+    totalXp,
+    gamesPlayed,
+    currentStreak,
+    longestStreak,
+    lastPlayedAt: today,
+    updatedAt: new Date().toISOString(),
+  };
+
+  db.gamification = [
+    ...(db.gamification ?? []).filter((g) => g.userId !== userId),
+    gamification,
+  ];
+  return gamification;
+}
+
+/** Current gamification summary for one user (XP is always recomputed from progress). */
+export async function getGamification(userId: string): Promise<Gamification> {
+  const db = await readDbFile();
+  const rows = (db.gameProgress ?? []).filter((p) => p.userId === userId);
+  const totalXp = rows.reduce((sum, p) => sum + (p.score || 0), 0);
+  const gamesPlayed = new Set(rows.map((p) => p.gameSlug)).size;
+  const stored = (db.gamification ?? []).find((g) => g.userId === userId);
+
+  return {
+    userId,
+    totalXp,
+    gamesPlayed,
+    currentStreak: stored?.currentStreak ?? 0,
+    longestStreak: stored?.longestStreak ?? 0,
+    lastPlayedAt: stored?.lastPlayedAt ?? null,
+    updatedAt: stored?.updatedAt ?? new Date().toISOString(),
+  };
+}
+
+/** Top players by total XP (admins excluded — they're the site owners). */
+export async function getLeaderboard(limit = 10): Promise<LeaderboardEntry[]> {
+  const db = await readDbFile();
+  const scored = db.users
+    .filter((u) => !u.isAdmin)
+    .map((u) => {
+      const gp = (db.gameProgress ?? []).filter((p) => p.userId === u.id);
+      const totalXp = gp.reduce((sum, p) => sum + (p.score || 0), 0);
+      const stored = (db.gamification ?? []).find((g) => g.userId === u.id);
+      return {
+        id: u.id,
+        name: u.name,
+        username: u.username,
+        avatarUrl: u.avatarUrl,
+        createdAt: u.createdAt,
+        totalXp,
+        gamesPlayed: new Set(gp.map((p) => p.gameSlug)).size,
+        currentStreak: stored?.currentStreak ?? 0,
+      };
+    })
+    .sort(
+      (a, b) =>
+        b.totalXp - a.totalXp || a.createdAt.localeCompare(b.createdAt)
+    );
+
+  return scored.slice(0, limit).map((s, i) => ({
+    rank: i + 1,
+    user: { id: s.id, name: s.name, username: s.username, avatarUrl: s.avatarUrl },
+    totalXp: s.totalXp,
+    level: levelForXp(s.totalXp),
+    gamesPlayed: s.gamesPlayed,
+    currentStreak: s.currentStreak,
+  }));
+}
+
+/** 1-based rank among all non-admin players; null for admins / unknown users. */
+export async function getUserRank(userId: string): Promise<number | null> {
+  const db = await readDbFile();
+  const target = db.users.find((u) => u.id === userId);
+  if (!target || target.isAdmin) return null;
+
+  const ranked = db.users
+    .filter((u) => !u.isAdmin)
+    .map((u) => {
+      const gp = (db.gameProgress ?? []).filter((p) => p.userId === u.id);
+      return {
+        id: u.id,
+        xp: gp.reduce((sum, p) => sum + (p.score || 0), 0),
+        createdAt: u.createdAt,
+      };
+    })
+    .sort((a, b) => b.xp - a.xp || a.createdAt.localeCompare(b.createdAt));
+
+  const idx = ranked.findIndex((r) => r.id === userId);
+  return idx > -1 ? idx + 1 : null;
 }
 
 // --- BLOG INTERACTIONS ---

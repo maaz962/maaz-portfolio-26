@@ -13,18 +13,22 @@ import {
   UserPlus,
   LogOut,
   Trophy,
-  ListTodo,
+ListTodo,
   CheckCircle2,
   Award,
+  Star,
+  Flame,
+  Medal,
 } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { GlassNavbar } from "@/components/layout/glass-navbar";
 import { cn } from "@/lib/utils";
 import { GameDiscussionPanel } from "./game-discussion-panel";
 import { AuthModal } from "@/components/games/auth-modal";
+import { LeaderboardPanel } from "@/components/games/leaderboard-panel";
 import { Avatar } from "@/components/ui/avatar";
 import { useAuth } from "@/lib/auth-context";
-import type { BlogEngagement, GameProgress } from "@/types";
+import type { BlogEngagement, GameProgress, GamificationSummary } from "@/types";
 
 const games = [
   {
@@ -67,6 +71,19 @@ const games = [
     comingSoon: false,
   },
   {
+    slug: "js-detective",
+    title: "JS Detective",
+    description:
+      "Solve coding mysteries and master core JavaScript! Variables, loops, arrays, functions, .map, .filter and event handlers through fun console challenges.",
+    difficulty: "All Levels",
+    topics: ["JavaScript", "Variables", "Loops", "Functions"],
+    animal: "🕵️",
+    color: "from-yellow-500/20 to-amber-500/20",
+    borderColor: "border-amber-500/30",
+    accentColor: "text-amber-500",
+    comingSoon: false,
+  },
+  {
     slug: "css selectors",
     title: "Selector Safari",
     description:
@@ -93,6 +110,116 @@ const games = [
     comingSoon: true,
   },
 ];
+
+/**
+ * Zero-network mini "screenshot" of each game, rendered as pure CSS/JSX so
+ * cards show the game in action without a single image request (lighter than
+ * any GIF/video). Coming-soon games just show their mascot over the gradient.
+ */
+function GamePreview({ game }: { game: (typeof games)[0] }) {
+  if (game.comingSoon) {
+    return (
+      <span className="text-7xl transition-transform duration-300 group-hover:scale-110">
+        {game.animal}
+      </span>
+    );
+  }
+
+  return (
+    <div className="h-full w-full">
+      <div className="relative mx-3 mt-4 h-32 overflow-hidden rounded-xl border border-white/15 bg-card/90 p-3 shadow-xl">
+        {game.slug === "html-hero" && (
+          <div className="font-mono text-[0.6rem] leading-relaxed">
+            <div className="mb-2 flex gap-1.5">
+              <span className="h-2 w-2 rounded-full bg-red-400/80" />
+              <span className="h-2 w-2 rounded-full bg-amber-400/80" />
+              <span className="h-2 w-2 rounded-full bg-green-400/80" />
+            </div>
+            <p className="text-pink-400">
+              &lt;h1&gt;<span className="text-slate-200">Hello World</span>
+              &lt;/h1&gt;
+            </p>
+            <p className="text-slate-300">
+              &lt;ul&gt;{" "}
+              <span className="text-indigo-300">
+                &lt;li&gt;HTML&lt;/li&gt;
+              </span>{" "}
+              &lt;/ul&gt;
+            </p>
+            <p className="text-cyan-300">&lt;form action=&quot;...&quot;&gt;</p>
+            <p className="text-slate-400">&lt;button&gt;Send&lt;/button&gt;</p>
+            <div className="mt-1.5 h-1.5 w-3/4 rounded-full bg-gradient-to-r from-indigo-400/60 to-violet-400/60" />
+          </div>
+        )}
+
+        {game.slug === "flexbox-zoo" && (
+          <div className="flex h-full flex-col">
+            <div className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-black/20 p-2">
+              <span className="flex h-9 flex-1 items-center justify-center rounded-lg bg-red-400/25 text-2xl">
+                🦁
+              </span>
+              <span className="flex h-9 flex-1 items-center justify-center rounded-lg bg-sky-400/25 text-2xl">
+                🐰
+              </span>
+              <span className="flex h-9 flex-1 items-center justify-center rounded-lg bg-yellow-400/25 text-2xl">
+                🦊
+              </span>
+            </div>
+            <p className="mt-2 font-mono text-[0.6rem] text-emerald-400">
+              justify-content: <span className="text-slate-300">center;</span>
+            </p>
+          </div>
+        )}
+
+        {game.slug === "grid-garden" && (
+          <div className="flex h-full flex-col">
+            <div className="grid flex-1 grid-cols-3 grid-rows-2 gap-1">
+              <div className="flex items-center justify-center rounded-md border border-emerald-400/50 bg-emerald-500/30 text-xl">
+                🌱
+              </div>
+              <div className="rounded-md bg-emerald-200/10" />
+              <div className="rounded-md bg-emerald-200/10" />
+              <div className="flex items-center justify-center rounded-md bg-emerald-500/20 text-sm">
+                🧺
+              </div>
+              <div className="rounded-md bg-emerald-200/10" />
+              <div className="rounded-md bg-emerald-200/10" />
+            </div>
+            <p className="mt-2 font-mono text-[0.6rem] text-emerald-400">
+              repeat(3, 1fr) / <span className="text-slate-300">100px</span>
+            </p>
+          </div>
+        )}
+
+        {game.slug === "js-detective" && (
+          <div className="font-mono text-[0.6rem] leading-relaxed">
+            <div className="mb-2 flex gap-1.5">
+              <span className="h-2 w-2 rounded-full bg-red-400/80" />
+              <span className="h-2 w-2 rounded-full bg-amber-400/80" />
+              <span className="h-2 w-2 rounded-full bg-green-400/80" />
+            </div>
+            <p className="text-slate-500">{"// detective-console.js"}</p>
+            <p className="text-slate-300">
+              {"const"} <span className="text-amber-300">clue</span> ={" "}
+              <span className="text-emerald-300">&quot;mystery&quot;</span>;
+            </p>
+            <p className="text-slate-300">
+              {"titleCase"}(
+              <span className="text-amber-300">clue</span>)
+            </p>
+            <p className="text-emerald-400">→ &quot;Mystery solved!&quot;</p>
+            <p className="text-slate-500">
+              ▍<span className="animate-pulse">_</span>
+            </p>
+          </div>
+        )}
+      </div>
+      <span className="absolute bottom-1.5 right-3 text-5xl opacity-80 drop-shadow-lg transition-transform duration-300 group-hover:scale-110">
+        {game.animal}
+      </span>
+    </div>
+  );
+}
 
 function GameCard({
   game,
@@ -124,13 +251,11 @@ function GameCard({
     >
       <div
         className={cn(
-          "relative flex h-40 items-center justify-center bg-gradient-to-br",
+          "relative h-40 overflow-hidden bg-gradient-to-br",
           game.color
         )}
       >
-        <span className="text-7xl transition-transform duration-300 group-hover:scale-110">
-          {game.animal}
-        </span>
+        <GamePreview game={game} />
         {game.comingSoon && (
           <div className="absolute right-3 top-3 rounded-full bg-background/80 px-3 py-1 text-[0.65rem] font-semibold text-muted backdrop-blur-sm">
             Coming Soon
@@ -168,29 +293,51 @@ function GameCard({
           ))}
         </div>
 
+        {!game.comingSoon && (
+          <div className="mt-3 grid grid-cols-2 gap-2">
+            <div className="rounded-lg border border-border bg-background-secondary/60 px-2.5 py-1.5">
+              <p className="text-[0.55rem] font-semibold uppercase tracking-wider text-muted">
+                Score
+              </p>
+              <p className="mt-0.5 flex items-center gap-1.5 text-sm font-bold text-foreground">
+                <Star className={cn("h-3.5 w-3.5", game.accentColor)} />
+                {progress ? progress.score.toLocaleString() : "0"}
+                <span className="text-[0.6rem] font-medium text-muted">
+                  pts
+                </span>
+              </p>
+            </div>
+            <div className="rounded-lg border border-border bg-background-secondary/60 px-2.5 py-1.5">
+              <p className="text-[0.55rem] font-semibold uppercase tracking-wider text-muted">
+                Completed
+              </p>
+              <p className="mt-0.5 flex items-center gap-1.5 text-sm font-bold text-foreground">
+                <CheckCircle2 className={cn("h-3.5 w-3.5", game.accentColor)} />
+                {progress
+                  ? `${Object.values(progress.completed).filter(Boolean).length}/${progress.totalLevels}`
+                  : "—"}
+              </p>
+            </div>
+          </div>
+        )}
+
         {authed && !game.comingSoon && (
-          <div className="mt-3">
+          <div className="mt-2">
             {(() => {
               const done = progress
                 ? Object.values(progress.completed).filter(Boolean).length
                 : 0;
               const total = progress?.totalLevels ?? 0;
-              const started = Boolean(progress);
               const pct = total > 0 ? Math.min(100, Math.round((done / total) * 100)) : 0;
               return (
                 <>
-                  <div className="flex items-center justify-between text-[0.65rem]">
-                    <span className={cn("font-semibold", game.accentColor)}>
-                      {started
-                        ? done >= total
-                          ? `${game.animal} Completed!`
-                          : `${game.animal} ${done}/${total} levels`
+                  <span className="text-[0.6rem] font-semibold text-muted">
+                    {done >= total
+                      ? `${game.animal} Completed!`
+                      : done > 0
+                        ? `${game.animal} Playing — ${done}/${total} levels`
                         : `${game.animal} Not started`}
-                    </span>
-                    <span className="text-muted">
-                      {progress ? `${progress.score} pts` : "0 pts"}
-                    </span>
-                  </div>
+                  </span>
                   <div className="mt-1 h-1 overflow-hidden rounded-full bg-background-secondary">
                     <div
                       className={cn("h-full rounded-full bg-gradient-to-r", game.color)}
@@ -266,6 +413,9 @@ export default function GamesPage() {
     Record<string, BlogEngagement>
   >({});
   const [progress, setProgress] = useState<Record<string, GameProgress>>({});
+  const [gamification, setGamification] = useState<GamificationSummary | null>(
+    null
+  );
   const [discussionSlug, setDiscussionSlug] = useState<string | null>(null);
   const router = useRouter();
 
@@ -286,6 +436,7 @@ export default function GamesPage() {
   useEffect(() => {
     if (!gamesAuthed || !currentUser) {
       setProgress({});
+      setGamification(null);
       return;
     }
     fetch("/api/games/progress")
@@ -293,6 +444,9 @@ export default function GamesPage() {
       .then((d) => {
         if (d?.progress && typeof d.progress === "object") {
           setProgress(d.progress);
+        }
+        if (d?.gamification && typeof d.gamification === "object") {
+          setGamification(d.gamification);
         }
       })
       .catch(() => {});
@@ -320,6 +474,7 @@ export default function GamesPage() {
   const handleLogout = async () => {
     await logout();
     setProgress({});
+    setGamification(null);
   };
 
   const playerGames = games.filter((g) => !g.comingSoon);
@@ -330,6 +485,11 @@ export default function GamesPage() {
     return done < (p.totalLevels || 0);
   });
   const totalScore = playerGames.reduce((sum, g) => sum + (progress[g.slug]?.score ?? 0), 0);
+  const completedGames = playerGames.filter((g) => {
+    const p = progress[g.slug];
+    if (!p) return false;
+    return Object.values(p.completed).filter(Boolean).length >= (p.totalLevels || 0);
+  }).length;
 
   return (
     <div className="relative min-h-screen bg-background">
@@ -378,10 +538,18 @@ export default function GamesPage() {
           {!gamesAuthed && (
             <p className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-amber-500/20 bg-amber-500/10 px-3 py-1.5 text-[0.65rem] text-amber-600">
               <Sparkles className="h-3 w-3" />
-              A quick sign-in is required before playing games. You stay signed
-              in until you log out.
+              A quick sign-in saves your progress, earns XP, builds daily
+              streaks and gets you on the leaderboard. You stay signed in until
+              you log out.
             </p>
           )}
+        </div>
+
+        <div className="mb-6">
+          <LeaderboardPanel
+            currentUserId={gamesAuthed ? (currentUser?.id ?? null) : null}
+            onSignIn={() => setShowAuthModal(true)}
+          />
         </div>
 
         {gamesAuthed && currentUser && (
@@ -416,14 +584,54 @@ export default function GamesPage() {
               </button>
             </div>
 
-            <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
+            <div className="mt-4 rounded-xl border border-border bg-background-secondary/60 p-3.5">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="flex flex-wrap items-center gap-2.5">
+                  <span className="rounded-lg bg-gradient-to-r from-primary to-violet-600 px-2.5 py-1 text-[0.65rem] font-bold text-white shadow-lg shadow-primary/25">
+                    LEVEL {gamification?.level ?? 1}
+                  </span>
+                  <span className="text-[0.7rem] font-semibold text-foreground">
+                    {(gamification?.totalXp ?? totalScore).toLocaleString()} XP
+                  </span>
+                  {gamification &&
+                    gamification.levelNext > gamification.totalXp && (
+                      <span className="text-[0.65rem] text-muted">
+                        {(gamification.levelNext - gamification.totalXp).toLocaleString()}{" "}
+                        XP to level {gamification.level + 1}
+                      </span>
+                    )}
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="flex items-center gap-1 rounded-full bg-orange-500/10 px-2.5 py-1 text-[0.65rem] font-semibold text-orange-500">
+                    <Flame className="h-3 w-3" />
+                    {gamification?.currentStreak ?? 0} day streak
+                  </span>
+                  {gamification?.rank != null && (
+                    <span className="flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-1 text-[0.65rem] font-semibold text-primary">
+                      <Medal className="h-3 w-3" />
+                      Rank #{gamification.rank}
+                    </span>
+                  )}
+                </div>
+              </div>
+              <div className="mt-2.5 h-2 overflow-hidden rounded-full bg-background">
+                <div
+                  className="h-full rounded-full bg-gradient-to-r from-primary to-violet-600 transition-all duration-500"
+                  style={{
+                    width: `${Math.round((gamification?.levelProgressPct ?? 0) * 100)}%`,
+                  }}
+                />
+              </div>
+            </div>
+
+            <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
               <div className="flex items-center gap-2.5 rounded-xl border border-border bg-background-secondary/60 p-3">
-                <Trophy className="h-5 w-5 shrink-0 text-primary" />
+                <Star className="h-5 w-5 shrink-0 text-primary" />
                 <div>
                   <p className="text-lg font-bold leading-none text-foreground">
-                    {totalScore}
+                    {(gamification?.totalXp ?? totalScore).toLocaleString()}
                   </p>
-                  <p className="mt-0.5 text-[0.65rem] text-muted">Total points</p>
+                  <p className="mt-0.5 text-[0.65rem] text-muted">Total XP</p>
                 </div>
               </div>
               <div className="flex items-center gap-2.5 rounded-xl border border-border bg-background-secondary/60 p-3">
@@ -432,23 +640,29 @@ export default function GamesPage() {
                   <p className="text-lg font-bold leading-none text-foreground">
                     {pendingGames.length}
                   </p>
-                  <p className="mt-0.5 text-[0.65rem] text-muted">Games in progress</p>
+                  <p className="mt-0.5 text-[0.65rem] text-muted">
+                    Games in progress
+                  </p>
                 </div>
               </div>
               <div className="flex items-center gap-2.5 rounded-xl border border-border bg-background-secondary/60 p-3">
                 <Award className="h-5 w-5 shrink-0 text-primary" />
                 <div>
                   <p className="text-lg font-bold leading-none text-foreground">
-                    {playerGames.filter((g) => {
-                      const p = progress[g.slug];
-                      if (!p) return false;
-                      return (
-                        Object.values(p.completed).filter(Boolean).length >=
-                        (p.totalLevels || 0)
-                      );
-                    }).length}
+                    {completedGames}
                   </p>
                   <p className="mt-0.5 text-[0.65rem] text-muted">Completed</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2.5 rounded-xl border border-border bg-background-secondary/60 p-3">
+                <Flame className="h-5 w-5 shrink-0 text-orange-500" />
+                <div>
+                  <p className="text-lg font-bold leading-none text-foreground">
+                    {gamification?.longestStreak ?? 0}
+                  </p>
+                  <p className="mt-0.5 text-[0.65rem] text-muted">
+                    Longest streak
+                  </p>
                 </div>
               </div>
             </div>

@@ -3,15 +3,38 @@ import {
   getGameProgress,
   getGameProgressForUser,
   saveGameProgress,
+  getGamification,
+  getUserRank,
 } from "@/lib/db";
 import { getSessionUser } from "@/lib/auth";
+import { levelStatsForXp, dateKey } from "@/lib/gamification";
+import type { Gamification, GamificationSummary } from "@/types";
 
-const GAME_SLUGS = ["html-hero", "grid-garden", "flexbox-zoo"];
+const GAME_SLUGS = ["html-hero", "grid-garden", "flexbox-zoo", "js-detective"];
+
+function buildGamificationSummary(
+  gam: Gamification,
+  rank: number | null
+): GamificationSummary {
+  const { level, floor, next, progressPct } = levelStatsForXp(gam.totalXp);
+  return {
+    totalXp: gam.totalXp,
+    level,
+    levelFloor: floor,
+    levelNext: next,
+    levelProgressPct: progressPct,
+    gamesPlayed: gam.gamesPlayed,
+    currentStreak: gam.currentStreak,
+    longestStreak: gam.longestStreak,
+    rank,
+    playedToday: gam.lastPlayedAt === dateKey(new Date()),
+  };
+}
 
 /**
  * GET /api/games/progress
  *   ?slug=html-hero      → { progress: {...} | null }
- *   (no slug)             → { progress: { [gameSlug]: {...} } }
+ *   (no slug)             → { progress: { [gameSlug]: {...} }, gamification: {...} }
  * Requires an active session.
  */
 export async function GET(req: Request) {
@@ -35,8 +58,15 @@ export async function GET(req: Request) {
       return NextResponse.json({ progress });
     }
 
-    const progress = await getGameProgressForUser(user.id);
-    return NextResponse.json({ progress });
+    const [progress, gamification, rank] = await Promise.all([
+      getGameProgressForUser(user.id),
+      getGamification(user.id),
+      getUserRank(user.id),
+    ]);
+    return NextResponse.json({
+      progress,
+      gamification: buildGamificationSummary(gamification, rank),
+    });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
@@ -67,7 +97,15 @@ export async function POST(req: Request) {
       totalLevels: Number(totalLevels ?? 1),
     });
 
-    return NextResponse.json({ progress });
+    const [gamification, rank] = await Promise.all([
+      getGamification(user.id),
+      getUserRank(user.id),
+    ]);
+
+    return NextResponse.json({
+      progress,
+      gamification: buildGamificationSummary(gamification, rank),
+    });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }

@@ -1,8 +1,15 @@
 import { neon } from "@neondatabase/serverless";
 import crypto from "crypto";
-import type { User, Comment, GameProgress } from "@/types";
+import type {
+  User,
+  Comment,
+  GameProgress,
+  Gamification,
+  LeaderboardEntry,
+} from "@/types";
 import { hashPassword, verifyPassword } from "./password";
 import { getPgConnectionString, usePostgres } from "./pg-connection";
+import { dateKeyFromDaysAgo, levelForXp } from "./gamification";
 
 /**
  * Postgres-backed persistent data layer. Used when process.env.DATABASE_URL is
@@ -74,6 +81,17 @@ async function initDb(): Promise<void> {
         is_deleted BOOLEAN NOT NULL DEFAULT false,
         created_at TEXT NOT NULL,
         updated_at TEXT
+      )
+    `;
+    await sql`
+      CREATE TABLE IF NOT EXISTS gamification (
+        user_id TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+        total_xp INT NOT NULL DEFAULT 0,
+        games_played INT NOT NULL DEFAULT 0,
+        current_streak INT NOT NULL DEFAULT 0,
+        longest_streak INT NOT NULL DEFAULT 0,
+        last_played_at TEXT,
+        updated_at TEXT NOT NULL
       )
     `;
   })();
@@ -259,7 +277,108 @@ export async function saveGameProgress(
     RETURNING *
   `;
 
+  // Keep gamification (XP / streak) in sync with the fresh progress write.
+  const [sumRow] = await sql`
+    SELECT COALESCE(SUM(score), 0)::int AS total_xp,
+           COUNT(DISTINCT game_slug)::int AS games_played
+    FROM game_progress WHERE user_id = ${userId}
+  `;
+  const today = dateKeyFromDaysAgo(0);
+  const yesterday = dateKeyFromDaysAgo(1);
+  const [streakRow] = await sql`
+    SELECT * FROM gamification WHERE user_id = ${userId} LIMIT 1
+  `;
+
+  let currentStreak = streakRow?.current_streak ?? 0;
+  if (streakRow?.last_played_at !== today) {
+    currentStreak = streakRow?.last_played_at === yesterday ? currentStreak + 1 : 1;
+  }
+  const longestStreak = Math.max(streakRow?.longest_streak ?? 0, currentStreak);
+
+  await sql`
+    INSERT INTO gamification (user_id, total_xp, games_played, current_streak, longest_streak, last_played_at, updated_at)
+    VALUES (${userId}, ${sumRow?.total_xp ?? 0}, ${sumRow?.games_played ?? 0}, ${currentStreak}, ${longestStreak}, ${today}, ${nowISO()})
+    ON CONFLICT (user_id)
+    DO UPDATE SET
+      total_xp = EXCLUDED.total_xp,
+      games_played = EXCLUDED.games_played,
+      current_streak = EXCLUDED.current_streak,
+      longest_streak = EXCLUDED.longest_streak,
+      last_played_at = EXCLUDED.last_played_at,
+      updated_at = EXCLUDED.updated_at
+  `;
+
   return rowToGameProgress(rows[0]);
+}
+
+// --- GAMIFICATION (XP, levels, streaks) ---
+
+/** Current gamification summary for one user (XP always recomputed from progress). */
+export async function getGamification(userId: string): Promise<Gamification> {
+  await initDb();
+  const [sumRow] = await sql`
+    SELECT COALESCE(SUM(score), 0)::int AS total_xp,
+           COUNT(DISTINCT game_slug)::int AS games_played
+    FROM game_progress WHERE user_id = ${userId}
+  `;
+  const [stored] = await sql`
+    SELECT * FROM gamification WHERE user_id = ${userId} LIMIT 1
+  `;
+  return {
+    userId,
+    totalXp: sumRow?.total_xp ?? 0,
+    gamesPlayed: sumRow?.games_played ?? 0,
+    currentStreak: stored?.current_streak ?? 0,
+    longestStreak: stored?.longest_streak ?? 0,
+    lastPlayedAt: stored?.last_played_at ?? null,
+    updatedAt: stored?.updated_at ?? nowISO(),
+  };
+}
+
+/** Top players by total XP (admins excluded — they're the site owners). */
+export async function getLeaderboard(limit = 10): Promise<LeaderboardEntry[]> {
+  await initDb();
+  const rows = await sql`
+    SELECT u.id, u.name, u.username, u.avatar_url, u.created_at,
+           COALESCE(SUM(gp.score), 0)::int AS total_xp,
+           COUNT(DISTINCT gp.game_slug)::int AS games_played,
+           COALESCE(g.current_streak, 0)::int AS current_streak
+    FROM users u
+    LEFT JOIN game_progress gp ON gp.user_id = u.id
+    LEFT JOIN gamification g ON g.user_id = u.id
+    WHERE u.is_admin = false
+    GROUP BY u.id, u.created_at, g.current_streak
+    ORDER BY total_xp DESC, u.created_at ASC
+    LIMIT ${limit}
+  `;
+  return rows.map((r: any, i: number) => ({
+    rank: i + 1,
+    user: { id: r.id, name: r.name, username: r.username, avatarUrl: r.avatar_url },
+    totalXp: r.total_xp,
+    level: levelForXp(r.total_xp),
+    gamesPlayed: r.games_played,
+    currentStreak: r.current_streak,
+  }));
+}
+
+/** 1-based rank among all non-admin players; null for admins / unknown users. */
+export async function getUserRank(userId: string): Promise<number | null> {
+  await initDb();
+  const rows = await sql`
+    SELECT u.id, u.created_at,
+           COALESCE(SUM(gp.score), 0)::int AS xp
+    FROM users u
+    LEFT JOIN game_progress gp ON gp.user_id = u.id
+    WHERE u.is_admin = false
+    GROUP BY u.id, u.created_at
+  `;
+  const ranked = rows
+    .sort(
+      (a: any, b: any) => b.xp - a.xp || a.created_at.localeCompare(b.created_at)
+    )
+    .map((r: any) => r.id);
+  const idx = ranked.indexOf(userId);
+  return idx > -1 ? idx + 1 : null;
 }
 
 // --- LIKES & COMMENTS ---

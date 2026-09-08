@@ -24,6 +24,10 @@ export const getGameProgressForUser = impl.getGameProgressForUser;
 export const getGameProgress = impl.getGameProgress;
 export const saveGameProgress = impl.saveGameProgress;
 
+export const getGamification = impl.getGamification;
+export const getLeaderboard = impl.getLeaderboard;
+export const getUserRank = impl.getUserRank;
+
 export const getBlogEngagement = impl.getBlogEngagement;
 export const getComments = impl.getComments;
 export const toggleCommentLike = impl.toggleCommentLike;

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { validateCredentials } from "@/lib/db";
+import { createSessionToken, SESSION_COOKIE, SESSION_MAX_AGE } from "@/lib/session";
 
 export async function POST(req: Request) {
   try {
@@ -22,15 +23,15 @@ export async function POST(req: Request) {
     }
 
     const response = NextResponse.json(user);
-    // Set secure HttpOnly session cookie. Secure is only enabled when the
-    // request actually arrived on HTTPS (a "production build" served over
-    // plain HTTP must still work, otherwise browsers drop the cookie).
-    response.cookies.set("session_user_id", user.id, {
+    // Set a secure HttpOnly signed session cookie. The token is self-contained,
+    // so it survives navigations, refreshes and cold starts. It is only ever
+    // cleared by an explicit logout.
+    response.cookies.set(SESSION_COOKIE, createSessionToken(user), {
       path: "/",
       httpOnly: true,
       secure: new URL(req.url).protocol === "https:",
       sameSite: "lax",
-      maxAge: 60 * 60 * 24 * 365, // 1 year — persistent like Instagram
+      maxAge: SESSION_MAX_AGE, // 1 year — persistent like Instagram
     });
 
     return response;
