@@ -29,18 +29,15 @@ function applyThemeClass(theme: Theme) {
 }
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  // Default matches the inline no-flash script in layout.tsx and the
-  // dark-first brand identity described in the design brief.
+  // Dark is the first-run default (matches the inline no-flash script in
+  // layout.tsx and the dark-first brand identity). Only a stored choice
+  // overrides it — the OS preference is intentionally ignored.
   const [theme, setThemeState] = useState<Theme>("dark");
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     const stored = window.localStorage.getItem(STORAGE_KEY) as Theme | null;
-    const initial =
-      stored ??
-      (window.matchMedia("(prefers-color-scheme: light)").matches
-        ? "light"
-        : "dark");
+    const initial = stored === "light" || stored === "dark" ? stored : "dark";
     setThemeState(initial);
     applyThemeClass(initial);
     setMounted(true);

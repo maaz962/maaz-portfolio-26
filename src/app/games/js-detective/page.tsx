@@ -140,7 +140,12 @@ export default function JsDetectivePage() {
       if (!alive) return;
       if (typeof w.__getJsDetectiveLevels === "function") {
         const meta = w.__getJsDetectiveLevels();
-        if (Array.isArray(meta) && meta.length) setLevels(meta);
+        if (Array.isArray(meta) && meta.length) {
+          setLevels(meta);
+        } else {
+          // Engine is up but level data not parsed yet — keep polling.
+          levelsTimer = setTimeout(pollLevels, 120);
+        }
       } else {
         levelsTimer = setTimeout(pollLevels, 100);
       }
@@ -150,7 +155,11 @@ export default function JsDetectivePage() {
       if (!alive) return;
       if (typeof w.__getJsDetectiveState === "function") {
         const s = w.__getJsDetectiveState();
-        if (s) setGameState({ ...gameState, ...s });
+        if (s && s.totalLevels > 0) {
+          setGameState({ ...gameState, ...s });
+        } else {
+          stateTimer = setTimeout(pullState, 120);
+        }
       } else {
         stateTimer = setTimeout(pullState, 120);
       }

@@ -1,6 +1,8 @@
 /* ==========================================================================
    JS DETECTIVE — Level Data (16 cases across 4 difficulty tiers)
-   Loaded BEFORE game.js so the engine reads window.LJS_LEVELS.
+   Sets window.LJS_LEVELS for the browser. game.js no longer depends on this
+   executing first — it re-reads window.LJS_LEVELS lazily and polls until the
+   data arrives, so script execution order between the two files is safe.
    Also usable from Node (module.exports) so levels can be validated
    headlessly with the same stubs + check functions the browser uses.
    ========================================================================== */

@@ -82,12 +82,14 @@ export const metadata: Metadata = {
 
 // Runs before hydration so the correct theme class is present on first
 // paint — sets it both ways (light removes 'dark', dark adds it) to prevent
-// a light/dark flash regardless of stored preference or system setting.
+// a light/dark flash regardless of stored preference. Dark is the brand
+// default for every first-time visitor, ignoring the OS preference; only a
+// stored toggle choice overrides it.
 const noFlashThemeScript = `
 (function () {
   try {
     var stored = localStorage.getItem('maaz-portfolio-theme');
-    var theme = stored || (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+    var theme = stored || 'dark';
     document.documentElement.classList.toggle('dark', theme === 'dark');
   } catch (e) {}
 })();

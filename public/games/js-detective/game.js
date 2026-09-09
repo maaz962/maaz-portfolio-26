@@ -1,9 +1,40 @@
 (function () {
   "use strict";
 
-  var LEVELS =
-    (typeof window !== "undefined" && window.LJS_LEVELS && window.LJS_LEVELS.slice()) ||
-    [];
+  // LEVELS starts empty. levels.js sets window.LJS_LEVELS before/after this
+  // script (both load with strategy="afterInteractive", so execution order is
+  // not guaranteed) — tryLoadLevels/ensureLevels populate it when ready and
+  // every render/state access re-checks so an empty array can never win.
+  var LEVELS = [];
+
+  var LEVEL_LOAD_TRY_MS = 80;
+  var LEVEL_LOAD_MAX_TRIES = 60; // ~4.8s before giving up and surfacing a toast
+
+  function tryLoadLevels() {
+    if (LEVELS.length > 0) return true;
+    if (
+      typeof window !== "undefined" &&
+      window.LJS_LEVELS &&
+      window.LJS_LEVELS.length > 0
+    ) {
+      LEVELS = window.LJS_LEVELS.slice();
+      return true;
+    }
+    return false;
+  }
+
+  function ensureLevels(done) {
+    if (typeof window === "undefined") { done(); return; }
+    if (tryLoadLevels()) { done(); return; }
+    var tries = 0;
+    var timer = setInterval(function () {
+      tries++;
+      if (tryLoadLevels() || tries >= LEVEL_LOAD_MAX_TRIES) {
+        clearInterval(timer);
+        done();
+      }
+    }, LEVEL_LOAD_TRY_MS);
+  }
 
   var TIERS = ["easy", "intermediate", "hard", "mostHard"];
 
@@ -122,26 +153,29 @@
   }
 
   function resumeGame(saved) {
-    if (!saved || LEVELS.length === 0) return;
-    if (typeof saved.currentLevel === "number") {
-      var cl = Math.floor(saved.currentLevel);
-      if (cl >= 0 && cl < LEVELS.length) STATE.currentLevel = cl;
-    }
-    if (typeof saved.score === "number") STATE.score = saved.score;
-    if (saved.completed && typeof saved.completed === "object") {
-      var clean = {};
-      for (var k in saved.completed) {
-        if (saved.completed[k] && k >= 0 && k < LEVELS.length) clean[k] = true;
+    if (!saved) return;
+    ensureLevels(function () {
+      if (LEVELS.length === 0) return;
+      if (typeof saved.currentLevel === "number") {
+        var cl = Math.floor(saved.currentLevel);
+        if (cl >= 0 && cl < LEVELS.length) STATE.currentLevel = cl;
       }
-      STATE.completed = clean;
-    }
-    while (STATE.currentLevel > 0 && !isLevelUnlocked(STATE.currentLevel)) {
-      STATE.currentLevel--;
-    }
-    var s = $("score-display");
-    if (s) s.textContent = "Score: " + STATE.score;
-    renderLevel();
-    publishState();
+      if (typeof saved.score === "number") STATE.score = saved.score;
+      if (saved.completed && typeof saved.completed === "object") {
+        var clean = {};
+        for (var k in saved.completed) {
+          if (saved.completed[k] && k >= 0 && k < LEVELS.length) clean[k] = true;
+        }
+        STATE.completed = clean;
+      }
+      while (STATE.currentLevel > 0 && !isLevelUnlocked(STATE.currentLevel)) {
+        STATE.currentLevel--;
+      }
+      var s = $("score-display");
+      if (s) s.textContent = "Score: " + STATE.score;
+      renderLevel();
+      publishState();
+    });
   }
 
   function $(id) { return document.getElementById(id); }
@@ -543,6 +577,7 @@
   }
 
   function renderVictory() {
+    if (LEVELS.length === 0) return;
     var done = 0;
     for (var k in STATE.completed) if (STATE.completed[k]) done++;
     var stars = done >= LEVELS.length ? "\u2B50\u2B50\u2B50" : done >= LEVELS.length * 0.7 ? "\u2B50\u2B50" : "\u2B50";
@@ -555,7 +590,7 @@
 
     if (t) t.textContent = "You Did It!";
     if (n) n.textContent = "\uD83C\uDF1F";
-    if (i) i.textContent = "All 16 cases closed — Easy, Intermediate, Hard and Most Hard. You mastered the core of JavaScript.";
+    if (i) i.textContent = "All " + LEVELS.length + " cases closed — Easy, Intermediate, Hard and Most Hard. You mastered the core of JavaScript.";
     if (h) h.innerHTML = "Hint: You can now write variables, loops, functions, objects, DOM handlers, storage and async code. Share your score!";
     if (d) { d.textContent = "Detective Master"; d.className = "jsd-level-difficulty mostHard"; }
 
@@ -655,13 +690,20 @@
     var s = $("score-display");
     if (s) s.textContent = "Score: 0";
 
-    renderLevel();
+    ensureLevels(function () {
+      if (LEVELS.length === 0) {
+        showToast("Case files still loading — if this keeps up, reload the page.", true);
+        return;
+      }
+      renderLevel();
+    });
   }
 
   if (typeof window !== "undefined") {
     window.__initJsDetective = function () { initGame(); };
     window.__resumeJsDetective = function (saved) { resumeGame(saved); };
     window.__getJsDetectiveState = function () {
+      tryLoadLevels();
       return {
         currentLevel: STATE.currentLevel,
         score: STATE.score,
@@ -672,6 +714,7 @@
     window.__runJsDetective = function () { runCode(); };
     window.__goToJsDetectiveLevel = function (index) { gotoLevel(index); };
     window.__getJsDetectiveLevels = function () {
+      tryLoadLevels();
       return LEVELS.map(function (lv) {
         return {
           id: lv.id,
