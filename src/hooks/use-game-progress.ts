@@ -49,6 +49,8 @@ export function useGameProgress({
           currentLevel: evt.currentLevel,
           score: evt.score,
           completed: evt.completed,
+          solutions: evt.solutions,
+          hints: evt.hints,
           totalLevels: evt.totalLevels,
         }),
       }).catch(() => {});

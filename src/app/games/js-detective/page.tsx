@@ -22,7 +22,7 @@ import { useAuth } from "@/lib/auth-context";
 import "./game.css";
 
 const GAME_SLUG = "js-detective";
-const FALLBACK_TOTAL_LEVELS = 16;
+const FALLBACK_TOTAL_LEVELS = 17;
 
 interface JsLevelMeta {
   id: number;
@@ -364,6 +364,7 @@ export default function JsDetectivePage() {
                     <code>console.log(&quot;Ready!&quot;)</code>
                   </span>
                 </div>
+                <div id="jsd-solved-note" className="jsd-solved-note" hidden />
               </div>
 
               {/* Code Editor */}
@@ -395,6 +396,7 @@ export default function JsDetectivePage() {
                     </div>
                   </div>
                 </div>
+                <div id="jsd-result" className="jsd-result" hidden />
                 <div id="toast" className="jsd-status-toast" />
                 <div className="jsd-editor-actions">
                   <button

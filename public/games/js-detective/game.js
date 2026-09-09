@@ -45,6 +45,8 @@
     mostHard: "Most Hard",
   };
 
+  var MAX_HINTS_PER_DAY = 3;
+
   var SUCCESS_MSGS = [
     "That's exactly right! The case is closed.",
     "Nailed it, detective! Sharp instincts.",
@@ -64,9 +66,29 @@
     "Keep digging! The answer should match what the task asks for.",
   ];
 
-  var STATE = { currentLevel: 0, score: 0, completed: {} };
+  var STATE = {
+    currentLevel: 0,
+    score: 0,
+    completed: {},
+    solutions: {},
+    hintsDate: null,
+    hintsUsed: 0,
+  };
 
   var POINTS = { easy: 5, intermediate: 10, hard: 15, mostHard: 20 };
+
+  function todayKey() {
+    var d = new Date();
+    var mm = String(d.getMonth() + 1);
+    var dd = String(d.getDate());
+    return (
+      d.getFullYear() +
+      "-" +
+      (mm.length < 2 ? "0" : "") + mm +
+      "-" +
+      (dd.length < 2 ? "0" : "") + dd
+    );
+  }
 
   function tierLabel(tier) {
     return TIER_LABELS[tier] || tier || "Easy";
@@ -131,6 +153,8 @@
         currentLevel: STATE.currentLevel,
         score: STATE.score,
         completed: STATE.completed,
+        solutions: STATE.solutions,
+        hints: { date: STATE.hintsDate, used: STATE.hintsUsed },
         totalLevels: LEVELS.length,
       });
     }
@@ -145,6 +169,8 @@
             currentLevel: STATE.currentLevel,
             score: STATE.score,
             completed: STATE.completed,
+            solutions: STATE.solutions,
+            hints: { date: STATE.hintsDate, used: STATE.hintsUsed },
             totalLevels: LEVELS.length,
           },
         })
@@ -167,6 +193,26 @@
           if (saved.completed[k] && k >= 0 && k < LEVELS.length) clean[k] = true;
         }
         STATE.completed = clean;
+      }
+      if (saved.solutions && typeof saved.solutions === "object") {
+        var sols = {};
+        for (var sk in saved.solutions) {
+          var si = Number(sk);
+          if (
+            Number.isInteger(si) && si >= 0 && si < LEVELS.length &&
+            typeof saved.solutions[sk] === "string"
+          ) {
+            sols[si] = saved.solutions[sk];
+          }
+        }
+        STATE.solutions = sols;
+      }
+      if (saved.hints && typeof saved.hints === "object") {
+        var hu = Number(saved.hints.used);
+        if (typeof saved.hints.date === "string" && saved.hints.date.length === 10 && Number.isInteger(hu) && hu >= 0) {
+          STATE.hintsDate = saved.hints.date;
+          STATE.hintsUsed = Math.min(hu, MAX_HINTS_PER_DAY);
+        }
       }
       while (STATE.currentLevel > 0 && !isLevelUnlocked(STATE.currentLevel)) {
         STATE.currentLevel--;
@@ -193,9 +239,89 @@
     return String(v);
   }
 
+  // --- Sandboxing: the user's code runs as an async function whose first
+  //       argument is the solve-time ctx and second is the captured console.
+  //       We skip injecting a ctx key the user re-declares at top level (e.g.
+  //       `let badge`) so their own declaration wins instead of colliding with
+  //       our injected var.
+  function stripCodeNoise(code) {
+    // Blank out strings, template literals and comments (keeping newlines) so the
+    // declaration scanner can't be fooled by keywords living inside them.
+    return String(code).replace(
+      /\\.|"(?:\\.|[^"\\\n])*"|'(?:\\.|[^'\\\n])*'|`(?:\\.|[^`\\])*`|\/\/[^\n]*|\/\*[\s\S]*?\*\//g,
+      function (m) { return m.replace(/[^\n]/g, " "); }
+    );
+  }
+
+  function topLevelDeclaredNames(code) {
+    var names = [];
+    var clean = stripCodeNoise(code);
+    var depth = 0;
+    var re = /\b(var|let|const)\b|\{|\}/g;
+    var m;
+    while ((m = re.exec(clean)) !== null) {
+      if (m[0] === "{") { depth++; continue; }
+      if (m[0] === "}") { depth = Math.max(0, depth - 1); continue; }
+      if (depth !== 0) continue;
+      var soFar = clean.slice(0, m.index).replace(/\s+$/, "");
+      if (soFar.charAt(soFar.length - 1) === "(") continue; // `for (let ...)` head
+      var rest = clean.slice(re.lastIndex).replace(/^\s+/, "");
+      var idm = /^[A-Za-z_$][$\w]*/.exec(rest);
+      if (idm) names.push(idm[0]);
+    }
+    return names;
+  }
+
+  function buildSnippet(code, ctx, declaredNames) {
+    var skip = {};
+    for (var i = 0; i < declaredNames.length; i++) skip[declaredNames[i]] = true;
+    var prefixLines = ["var ctx = arguments[0];", "var console = arguments[1];"];
+    for (var key in ctx) {
+      if (Object.prototype.hasOwnProperty.call(ctx, key) && !skip[key]) {
+        prefixLines.push("var " + key + " = ctx." + key + ";");
+      }
+    }
+    var src =
+      prefixLines.join("\n") +
+      "\n" +
+      (code || "") +
+      "\n//# sourceURL=student-solution.js\n";
+    return { src: src, prefixLines: prefixLines };
+  }
+
+  // The V8 SyntaxError from `new AsyncFunction` never carries a line, so we
+  // localize it by finding the first user line whose addition breaks parsing.
+  function locateSyntaxErrorLine(prefixLines, code) {
+    var AsyncFunction = Object.getPrototypeOf(async function () {}).constructor;
+    var lines = String(code).split("\n");
+    for (var i = 0; i < lines.length; i++) {
+      var partial =
+        prefixLines.join("\n") +
+        "\n" +
+        lines.slice(0, i + 1).join("\n") +
+        "\n//# sourceURL=student-solution.js\n";
+      try { new AsyncFunction(partial); } catch (e) { return i + 1; }
+    }
+    return null;
+  }
+
+  // V8 reports runtime errors from `new AsyncFunction` bodies at the end of
+  // the constructed script, which lands exactly (prefix lines + user lines + 2)
+  // in both Node and Chrome (verified empirically), so we subtract that offset
+  // and clamp to the user code's own line range as a safety net.
+  function parseErrorLine(e, prefixLineCount, userLineCount) {
+    if (!e || !e.stack) return null;
+    var m = e.stack.match(/student-solution\.js:(\d+)/);
+    if (!m) return null;
+    var line = Number(m[1]) - prefixLineCount - 2;
+    return line >= 1 && line <= userLineCount ? line : null;
+  }
+
   function evaluateUserCodeAsync(code, setUp) {
     var ctx = {};
     var logs = [];
+    var AsyncFunction = Object.getPrototypeOf(async function () {}).constructor;
+    var setupError = null;
 
     function capLog(value) {
       logs.push({ value: value, text: stringifyValue(value) });
@@ -221,22 +347,12 @@
         }
       } catch (e) {
         logs.push({ value: undefined, text: "✕ Error: " + safeError(e), isError: true });
+        setupError = { kind: "setup", message: safeError(e), line: null };
       }
     }
 
-    function buildCode() {
-      var varDecls = "";
-      for (var key in ctx) {
-        if (Object.prototype.hasOwnProperty.call(ctx, key)) {
-          varDecls += "var " + key + " = ctx." + key + ";\n";
-        }
-      }
-      return (
-        "var ctx = arguments[0];\n" +
-        "var console = arguments[1];\n" +
-        varDecls +
-        (code || "") + "\n"
-      );
+    function runtimeError(e, prefixLineCount, userLineCount) {
+      return { kind: "runtime", message: safeError(e), line: parseErrorLine(e, prefixLineCount, userLineCount) };
     }
 
     function settle() {
@@ -245,15 +361,19 @@
 
     runSetUp();
 
-    var AsyncFunction = Object.getPrototypeOf(async function () {}).constructor;
+    var built = buildSnippet(code, ctx, topLevelDeclaredNames(code));
     var fn;
     try {
-      fn = new AsyncFunction(buildCode());
+      fn = new AsyncFunction(built.src);
     } catch (e) {
       return Promise.resolve({
-        error: "Could not build your code: " + safeError(e),
         logs: logs,
         ctx: ctx,
+        error: {
+          kind: "syntax",
+          message: safeError(e),
+          line: locateSyntaxErrorLine(built.prefixLines, code),
+        },
       });
     }
 
@@ -261,10 +381,11 @@
       .then(function () { return fn(ctx, capturedConsole); })
       .catch(function (e) {
         logs.push({ value: undefined, text: "✕ Error: " + safeError(e), isError: true });
+        if (!setupError) setupError = runtimeError(e, built.prefixLines.length, String(code).split("\n").length);
       })
       .then(settle)
       .then(function () {
-        return { logs: logs, ctx: ctx, error: null };
+        return { logs: logs, ctx: ctx, error: setupError };
       });
   }
 
@@ -272,6 +393,71 @@
     if (!e) return "Something went wrong";
     if (e instanceof Error) return e.message;
     try { return String(e); } catch (_) { return "Unknown error"; }
+  }
+
+  function errorLabel(kind) {
+    if (kind === "syntax") return "Syntax Error";
+    if (kind === "runtime") return "Runtime Error";
+    if (kind === "setup") return "Setup Error";
+    return "Error";
+  }
+
+  function errorText(err) {
+    var text = err && err.message ? err.message : "Your code failed to run.";
+    if (err && err.line) text += " (line " + err.line + ")";
+    return text;
+  }
+
+  // Prominent, always-visible result panel under the editor (never a blank
+  // screen, never console-only: pass / fail / syntax / runtime all land here).
+  function renderResult(o) {
+    var el = $("jsd-result");
+    if (!el) return;
+    el.innerHTML = "";
+    if (!o || !o.text) {
+      el.hidden = true;
+      el.className = "jsd-result";
+      return;
+    }
+    el.hidden = false;
+    el.className = "jsd-result " + (o.state || "");
+    var icon = document.createElement("span");
+    icon.className = "jsd-result-icon";
+    icon.textContent = o.icon || "";
+    var body = document.createElement("span");
+    body.className = "jsd-result-body";
+    if (o.title) {
+      var title = document.createElement("strong");
+      title.textContent = o.title + " ";
+      body.appendChild(title);
+    }
+    body.appendChild(document.createTextNode(o.text));
+    el.appendChild(icon);
+    el.appendChild(body);
+  }
+
+  function renderLineNumbers() {
+    var el = $("jsd-line-numbers");
+    var ta = $("js-editor");
+    if (!el || !ta) return;
+    var count = ta.value.split("\n").length || 1;
+    if (count < 8) count = 8;
+    if (count > 60) count = 60;
+    var html = "";
+    for (var i = 1; i <= count; i++) html += i + (i < count ? "<br>" : "");
+    el.innerHTML = html;
+  }
+
+  function updateSolvedNote() {
+    var note = $("jsd-solved-note");
+    if (!note) return;
+    if (STATE.completed[STATE.currentLevel]) {
+      note.hidden = false;
+      note.textContent = "✓ Solved — this is your passing solution. Tweak it and hit Check to retry anytime.";
+    } else {
+      note.hidden = true;
+      note.textContent = "";
+    }
   }
 
   function runCode() {
@@ -284,6 +470,16 @@
     }
     evaluateUserCodeAsync(ta.value, level.setUp).then(function (result) {
       renderConsole(result.logs);
+      if (result.error) {
+        renderResult({
+          state: "error",
+          icon: "⚠️",
+          title: errorLabel(result.error.kind),
+          text: errorText(result.error),
+        });
+      } else {
+        renderResult(null);
+      }
     });
   }
 
@@ -457,18 +653,26 @@
       setButtonsDisabled(false);
       renderConsole(result.logs);
 
-      if (STATE.completed[STATE.currentLevel]) {
-        nextLevel();
-        return;
-      }
-
       if (result.error) {
-        showToast(result.error, true);
+        var msg = errorText(result.error);
+        renderResult({
+          state: "error",
+          icon: "⚠️",
+          title: errorLabel(result.error.kind),
+          text: msg,
+        });
+        showToast(msg, true);
         return;
       }
 
       var crashed = result.logs.some(function (l) { return l.isError; });
       if (crashed) {
+        renderResult({
+          state: "error",
+          icon: "⚠️",
+          title: "Console Error",
+          text: "Your code logged an error — read the console and fix it.",
+        });
         showToast("Your code threw an error. Read the console and fix it.", true);
         return;
       }
@@ -481,8 +685,33 @@
       }
 
       if (passed) {
+        if (ta) STATE.solutions[STATE.currentLevel] = ta.value;
+        if (STATE.completed[STATE.currentLevel]) {
+          // Revisiting a solved case: show a clear result, never auto-advance,
+          // and never award XP twice.
+          renderResult({
+            state: "pass",
+            icon: "✓",
+            title: "Still Correct!",
+            text: "This case was already solved — your solution still passes, so no extra XP.",
+          });
+          showToast("Still correct! This case was already solved.", false);
+          return;
+        }
+        renderResult({
+          state: "pass",
+          icon: "✓",
+          title: "Solved!",
+          text: "All checks passed. Great work, detective.",
+        });
         completeLevel();
       } else {
+        renderResult({
+          state: "fail",
+          icon: "✕",
+          title: "Not Solved Yet",
+          text: randomItem(WRONG_MSGS),
+        });
         showToast(randomItem(WRONG_MSGS), true);
       }
     }).catch(function () {
@@ -530,6 +759,57 @@
     }
   }
 
+  function renderHintUsage(parent) {
+    var left = Math.max(0, MAX_HINTS_PER_DAY - STATE.hintsUsed);
+    var info = document.createElement("div");
+    info.className = "jsd-hint-usage";
+    info.textContent = "Hints left today: " + left;
+    if (parent) parent.appendChild(info);
+  }
+
+  function renderHintArea(level, hintEl) {
+    if (STATE.hintsDate !== todayKey()) {
+      STATE.hintsDate = todayKey();
+      STATE.hintsUsed = 0;
+    }
+
+    if (STATE.hintsUsed >= MAX_HINTS_PER_DAY) {
+      var exhausted = document.createElement("span");
+      exhausted.textContent = "You've used all 3 hints for today — come back tomorrow!";
+      hintEl.appendChild(exhausted);
+      return;
+    }
+
+    var reveal = document.createElement("button");
+    reveal.type = "button";
+    reveal.className = "jsd-hint-reveal";
+    reveal.textContent = "\uD83D\uDCA1 Show Hint";
+    reveal.onclick = function () {
+      hintEl.innerHTML = "";
+      var spark = document.createElement("span");
+      spark.textContent = "\uD83D\uDCA1 ";
+      hintEl.appendChild(spark);
+      var label = document.createElement("strong");
+      label.textContent = "Hint: ";
+      hintEl.appendChild(label);
+      var hintSpan = document.createElement("span");
+      hintSpan.innerHTML = level.hint;
+      hintEl.appendChild(hintSpan);
+      STATE.hintsUsed += 1;
+      renderHintUsage(hintEl);
+      uploadHintBalance();
+      updateSolvedNote();
+      handleInput();
+    };
+    hintEl.appendChild(reveal);
+    renderHintUsage(hintEl);
+  }
+
+  function uploadHintBalance() {
+    emitProgress();
+    publishState();
+  }
+
   function renderLevel() {
     var level = LEVELS[STATE.currentLevel];
     if (!level) return renderVictory();
@@ -548,35 +828,11 @@
     if (numEl) numEl.textContent = level.id;
     if (instrEl) instrEl.innerHTML = level.instruction;
 
-    // Hard / Most Hard cases gate their hint behind a reveal button.
+    // Hints are nudges, hidden behind a reveal button on every tier (Bug 2),
+    // with a daily budget enforced by the hint area itself.
     if (hintEl) {
       hintEl.innerHTML = "";
-      var gated = level.tier === "hard" || level.tier === "mostHard";
-      if (gated) {
-        var reveal = document.createElement("button");
-        reveal.type = "button";
-        reveal.className = "jsd-hint-reveal";
-        reveal.textContent = "\uD83D\uDCA1 Reveal hint (" + tierLabel(level.tier) + " case)";
-        reveal.onclick = function () {
-          hintEl.innerHTML = "";
-          var spark = document.createElement("span");
-          spark.innerHTML = "\uD83D\uDCA1 ";
-          hintEl.appendChild(spark);
-          hintEl.appendChild(document.createTextNode("Hint: "));
-          var hintSpan = document.createElement("span");
-          hintSpan.innerHTML = level.hint;
-          hintEl.appendChild(hintSpan);
-        };
-        hintEl.appendChild(reveal);
-      } else {
-        var spark = document.createElement("span");
-        spark.innerHTML = "\uD83D\uDCA1 ";
-        hintEl.appendChild(spark);
-        hintEl.appendChild(document.createTextNode("Hint: "));
-        var hintSpan = document.createElement("span");
-        hintSpan.innerHTML = level.hint;
-        hintEl.appendChild(hintSpan);
-      }
+      renderHintArea(level, hintEl);
     }
 
     if (diffEl) {
@@ -584,7 +840,10 @@
       diffEl.className = "jsd-level-difficulty " + level.tier;
     }
     if (ta) {
-      ta.value = level.starter || "";
+      ta.value =
+        STATE.completed[STATE.currentLevel] && STATE.solutions[STATE.currentLevel]
+          ? STATE.solutions[STATE.currentLevel]
+          : level.starter || "";
       ta.placeholder = level.isFinal ? "Fix the boss case, detective!" : "Write your JavaScript here...";
     }
     if (pb) { pb.disabled = STATE.currentLevel === 0; pb.style.opacity = STATE.currentLevel === 0 ? "0.4" : "1"; }
@@ -593,6 +852,9 @@
 
     renderProgress();
     renderConsole([]);
+    renderResult(null);
+    updateSolvedNote();
+    renderLineNumbers();
     hideOverlay();
     hideToast();
     publishState();
@@ -626,7 +888,7 @@
     }
 
     var ta = $("js-editor");
-    if (ta) ta.value = "";
+    if (ta) { ta.value = ""; renderLineNumbers(); }
 
     var nb = $("next-btn");
     if (nb) { nb.disabled = true; nb.classList.remove("ready"); }
@@ -636,6 +898,9 @@
     if (cb) cb.classList.remove("ready");
 
     hideOverlay();
+    renderResult(null);
+    var solvedNote = $("jsd-solved-note");
+    if (solvedNote) { solvedNote.hidden = true; solvedNote.textContent = ""; }
     renderProgress();
     publishState();
   }
@@ -649,6 +914,7 @@
     var hint = $("jsd-editor-hint");
     if (!ta || !hint) return;
     hint.classList.toggle("has-value", ta.value.trim().length > 0);
+    renderLineNumbers();
     if (STATE.completed[STATE.currentLevel]) {
       hideToast();
     }
@@ -661,8 +927,10 @@
     ta.value = level.starter || "";
     handleInput();
     renderConsole([]);
+    renderResult(null);
     hideToast();
     if (STATE.completed[STATE.currentLevel]) {
+      delete STATE.solutions[STATE.currentLevel];
       STATE.completed[STATE.currentLevel] = false;
       STATE.score = Math.max(0, STATE.score - pointsForLevel(level));
       var s = $("score-display");
@@ -671,6 +939,7 @@
       if (nb) nb.classList.remove("ready");
       var cb = $("check-btn");
       if (cb) cb.classList.remove("ready");
+      updateSolvedNote();
       renderProgress();
       emitProgress();
       publishState();
@@ -708,6 +977,9 @@
     STATE.currentLevel = 0;
     STATE.score = 0;
     STATE.completed = {};
+    STATE.solutions = {};
+    STATE.hintsDate = null;
+    STATE.hintsUsed = 0;
 
     var s = $("score-display");
     if (s) s.textContent = "Score: 0";

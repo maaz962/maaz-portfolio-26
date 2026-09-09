@@ -84,17 +84,38 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json();
-    const { slug, currentLevel, score, completed, totalLevels } = body;
+    const { slug, currentLevel, score, completed, totalLevels, solutions, hints } = body;
 
     if (!slug || !GAME_SLUGS.includes(slug)) {
       return NextResponse.json({ error: "Unknown game" }, { status: 400 });
     }
+
+    const cleanSolutions: Record<string, string> = {};
+    if (solutions && typeof solutions === "object") {
+      Object.keys(solutions).forEach((k) => {
+        const idx = Number(k);
+        const v = solutions[k];
+        if (Number.isInteger(idx) && idx >= 0 && typeof v === "string" && v.length <= 20000) {
+          cleanSolutions[String(idx)] = v;
+        }
+      });
+    }
+
+    const cleanHints =
+      hints && typeof hints === "object" && typeof hints.date === "string"
+        ? {
+            date: hints.date.slice(0, 10),
+            used: Math.min(3, Math.max(0, Number(hints.used) || 0)),
+          }
+        : undefined;
 
     const progress = await saveGameProgress(user.id, slug, {
       currentLevel: Number(currentLevel ?? 0),
       score: Number(score ?? 0),
       completed: completed && typeof completed === "object" ? completed : {},
       totalLevels: Number(totalLevels ?? 1),
+      solutions: Object.keys(cleanSolutions).length ? cleanSolutions : undefined,
+      hints: cleanHints,
     });
 
     const [gamification, rank] = await Promise.all([

@@ -94,6 +94,9 @@ async function initDb(): Promise<void> {
         updated_at TEXT NOT NULL
       )
     `;
+    // Migration for older rows created before the solutions/hints columns existed.
+    await sql`ALTER TABLE game_progress ADD COLUMN IF NOT EXISTS solutions JSONB NOT NULL DEFAULT '{}'`;
+    await sql`ALTER TABLE game_progress ADD COLUMN IF NOT EXISTS hints JSONB NOT NULL DEFAULT '{}'`;
   })();
   return initPromise;
 }
@@ -132,12 +135,18 @@ function rowToComment(row: any, likesCount = 0, userLiked = false): Comment {
 }
 
 function rowToGameProgress(row: any): GameProgress {
+  const hints = row.hints && typeof row.hints === "object" ? row.hints : {};
   return {
     userId: row.user_id,
     gameSlug: row.game_slug,
     currentLevel: row.current_level,
     score: row.score,
     completed: row.completed ?? {},
+    solutions: row.solutions ?? {},
+    hints: {
+      date: typeof hints.date === "string" ? hints.date : "",
+      used: Number.isInteger(hints.used) ? hints.used : 0,
+    },
     totalLevels: row.total_levels,
     updatedAt: row.updated_at,
   };
@@ -236,6 +245,8 @@ export async function saveGameProgress(
     score: number;
     completed: Record<string, boolean>;
     totalLevels: number;
+    solutions?: Record<string, string>;
+    hints?: { date: string; used: number };
   }
 ): Promise<GameProgress> {
   await initDb();
@@ -249,6 +260,25 @@ export async function saveGameProgress(
       }
     });
   }
+
+  const cleanSolutions: Record<string, string> = {};
+  if (data.solutions && typeof data.solutions === "object") {
+    Object.keys(data.solutions).forEach((k) => {
+      const idx = Number(k);
+      const v = data.solutions?.[k];
+      if (Number.isInteger(idx) && idx >= 0 && typeof v === "string" && v.length <= 20000) {
+        cleanSolutions[String(idx)] = v;
+      }
+    });
+  }
+
+  const cleanHints =
+    data.hints && typeof data.hints === "object" && typeof data.hints.date === "string"
+      ? {
+          date: data.hints.date.slice(0, 10),
+          used: Math.min(3, Math.max(0, Number(data.hints.used) || 0)),
+        }
+      : { date: "", used: 0 };
 
   const currentLevel = Math.max(
     0,
@@ -265,13 +295,15 @@ export async function saveGameProgress(
   const updatedAt = nowISO();
 
   const rows = await sql`
-    INSERT INTO game_progress (user_id, game_slug, current_level, score, completed, total_levels, updated_at)
-    VALUES (${userId}, ${gameSlug}, ${currentLevel}, ${score}, ${JSON.stringify(cleanCompleted)}, ${totalLevels}, ${updatedAt})
+    INSERT INTO game_progress (user_id, game_slug, current_level, score, completed, solutions, hints, total_levels, updated_at)
+    VALUES (${userId}, ${gameSlug}, ${currentLevel}, ${score}, ${JSON.stringify(cleanCompleted)}, ${JSON.stringify(cleanSolutions)}, ${JSON.stringify(cleanHints)}, ${totalLevels}, ${updatedAt})
     ON CONFLICT (user_id, game_slug)
     DO UPDATE SET
       current_level = EXCLUDED.current_level,
       score = EXCLUDED.score,
       completed = EXCLUDED.completed,
+      solutions = EXCLUDED.solutions,
+      hints = EXCLUDED.hints,
       total_levels = EXCLUDED.total_levels,
       updated_at = EXCLUDED.updated_at
     RETURNING *

@@ -318,6 +318,8 @@ export async function saveGameProgress(
     score: number;
     completed: Record<string, boolean>;
     totalLevels: number;
+    solutions?: Record<string, string>;
+    hints?: { date: string; used: number };
   }
 ): Promise<GameProgress> {
   return withDbLock(async () => {
@@ -333,6 +335,25 @@ export async function saveGameProgress(
       });
     }
 
+    const cleanSolutions: Record<string, string> = {};
+    if (data.solutions && typeof data.solutions === "object") {
+      Object.keys(data.solutions).forEach((k) => {
+        const idx = Number(k);
+        const v = data.solutions?.[k];
+        if (Number.isInteger(idx) && idx >= 0 && typeof v === "string" && v.length <= 20000) {
+          cleanSolutions[String(idx)] = v;
+        }
+      });
+    }
+
+    const cleanHints =
+      data.hints && typeof data.hints === "object" && typeof data.hints.date === "string"
+        ? {
+            date: data.hints.date.slice(0, 10),
+            used: Math.min(3, Math.max(0, Number(data.hints.used) || 0)),
+          }
+        : { date: "", used: 0 };
+
     const progress = {
       userId,
       gameSlug,
@@ -347,6 +368,8 @@ export async function saveGameProgress(
         typeof data.score === "number" && Number.isFinite(data.score) ? data.score : 0
       ),
       completed: cleanCompleted,
+      solutions: cleanSolutions,
+      hints: cleanHints,
       totalLevels: Math.max(
         1,
         Number.isInteger(data.totalLevels) && data.totalLevels > 0 ? data.totalLevels : 1
