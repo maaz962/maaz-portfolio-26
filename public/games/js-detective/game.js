@@ -45,8 +45,6 @@
     mostHard: "Most Hard",
   };
 
-  var MAX_HINTS_PER_DAY = 3;
-
   var SUCCESS_MSGS = [
     "That's exactly right! The case is closed.",
     "Nailed it, detective! Sharp instincts.",
@@ -76,19 +74,6 @@
   };
 
   var POINTS = { easy: 5, intermediate: 10, hard: 15, mostHard: 20 };
-
-  function todayKey() {
-    var d = new Date();
-    var mm = String(d.getMonth() + 1);
-    var dd = String(d.getDate());
-    return (
-      d.getFullYear() +
-      "-" +
-      (mm.length < 2 ? "0" : "") + mm +
-      "-" +
-      (dd.length < 2 ? "0" : "") + dd
-    );
-  }
 
   function tierLabel(tier) {
     return TIER_LABELS[tier] || tier || "Easy";
@@ -211,7 +196,7 @@
         var hu = Number(saved.hints.used);
         if (typeof saved.hints.date === "string" && saved.hints.date.length === 10 && Number.isInteger(hu) && hu >= 0) {
           STATE.hintsDate = saved.hints.date;
-          STATE.hintsUsed = Math.min(hu, MAX_HINTS_PER_DAY);
+          STATE.hintsUsed = hu;
         }
       }
       while (STATE.currentLevel > 0 && !isLevelUnlocked(STATE.currentLevel)) {
@@ -446,6 +431,134 @@
     var html = "";
     for (var i = 1; i <= count; i++) html += i + (i < count ? "<br>" : "");
     el.innerHTML = html;
+    renderHighlight();
+  }
+
+  // VS Code-style token colors: comments, strings, numbers, keywords,
+  // booleans/null, variables and the rest fall through to the plain text.
+  var JS_KEYWORDS = {
+    "var": 1, "let": 1, "const": 1, "function": 1, "return": 1, "if": 1,
+    "else": 1, "for": 1, "while": 1, "do": 1, "switch": 1, "case": 1,
+    "break": 1, "continue": 1, "new": 1, "class": 1, "extends": 1,
+    "this": 1, "typeof": 1, "instanceof": 1, "in": 1, "of": 1, "try": 1,
+    "catch": 1, "finally": 1, "throw": 1, "async": 1, "await": 1,
+    "yield": 1, "import": 1, "export": 1, "default": 1, "delete": 1,
+    "void": 1, "super": 1, "static": 1, "get": 1, "set": 1, "debugger": 1
+  };
+  var JS_LITERALS = { "true": 1, "false": 1, "null": 1, "undefined": 1 };
+
+  function escHtml(s) {
+    return String(s)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;");
+  }
+
+  function highlightJs(code) {
+    var out = "";
+    var i = 0;
+    var n = code.length;
+
+    function span(cls, text) {
+      return '<span class="tok-' + cls + '">' + escHtml(text) + "</span>";
+    }
+
+    while (i < n) {
+      var ch = code[i];
+
+      // line comment //
+      if (ch === "/" && code[i + 1] === "/") {
+        var j = code.indexOf("\n", i);
+        if (j === -1) j = n;
+        out += span("comment", code.slice(i, j));
+        i = j;
+        continue;
+      }
+      // block comment
+      if (ch === "/" && code[i + 1] === "*") {
+        var k = code.indexOf("*/", i + 2);
+        if (k === -1) k = n - 2;
+        out += span("comment", code.slice(i, k + 2));
+        i = k + 2;
+        continue;
+      }
+      // template string
+      if (ch === "`") {
+        var startT = i;
+        i++;
+        while (i < n && code[i] !== "`") {
+          if (code[i] === "\\") i++;
+          i++;
+        }
+        i++;
+        out += span("string", code.slice(startT, i));
+        continue;
+      }
+      // single-line strings
+      if (ch === '"' || ch === "'") {
+        var startS = i;
+        var quote = ch;
+        i++;
+        while (i < n) {
+          if (code[i] === "\\") { i += 2; continue; }
+          if (code[i] === quote) { i++; break; }
+          i++;
+        }
+        out += span("string", code.slice(startS, i));
+        continue;
+      }
+      // number
+      if (/[0-9]/.test(ch) || (ch === "." && /[0-9]/.test(code[i + 1] || ""))) {
+        var startNum = i;
+        while (i < n && /[0-9a-fxA-FxX._eE+-]/.test(code[i])) {
+          // don't consume a trailing + or - unless it's part of an exponent
+          if ((code[i] === "+" || code[i] === "-") && !/[eE]/.test(code[i - 1] || "")) break;
+          if ((code[i] === ".") && !/[0-9]/.test(code[i + 1] || "") && /[^.0-9]/.test(code[i + 1] || "")) break;
+          i++;
+        }
+        out += span("number", code.slice(startNum, i));
+        continue;
+      }
+      // identifier / keyword
+      if (/[A-Za-z_$]/.test(ch)) {
+        var startId = i;
+        while (i < n && /[A-Za-z0-9_$]/.test(code[i])) i++;
+        var word = code.slice(startId, i);
+        if (JS_KEYWORDS[word]) out += span("keyword", word);
+        else if (JS_LITERALS[word]) out += span("literal", word);
+        else out += span("variable", word);
+        continue;
+      }
+      // whitespace
+      if (/\s/.test(ch)) {
+        out += escHtml(ch);
+        i++;
+        continue;
+      }
+      // everything else (operators, punctuation)
+      out += escHtml(ch);
+      i++;
+    }
+    return out;
+  }
+
+  function renderHighlight() {
+    var hl = $("jsd-highlight");
+    var ta = $("js-editor");
+    if (!hl || !ta) return;
+    hl.innerHTML = "";
+    hl.appendChild(document.createTextNode(ta.value));
+    hl.innerHTML = highlightJs(ta.value) || "\u00a0";
+    hl.scrollTop = ta.scrollTop;
+    hl.scrollLeft = ta.scrollLeft;
+  }
+
+  function syncEditorScroll() {
+    var hl = $("jsd-highlight");
+    var ta = $("js-editor");
+    if (!hl || !ta) return;
+    hl.scrollTop = ta.scrollTop;
+    hl.scrollLeft = ta.scrollLeft;
   }
 
   function updateSolvedNote() {
@@ -759,27 +872,9 @@
     }
   }
 
-  function renderHintUsage(parent) {
-    var left = Math.max(0, MAX_HINTS_PER_DAY - STATE.hintsUsed);
-    var info = document.createElement("div");
-    info.className = "jsd-hint-usage";
-    info.textContent = "Hints left today: " + left;
-    if (parent) parent.appendChild(info);
-  }
-
   function renderHintArea(level, hintEl) {
-    if (STATE.hintsDate !== todayKey()) {
-      STATE.hintsDate = todayKey();
-      STATE.hintsUsed = 0;
-    }
-
-    if (STATE.hintsUsed >= MAX_HINTS_PER_DAY) {
-      var exhausted = document.createElement("span");
-      exhausted.textContent = "You've used all 3 hints for today — come back tomorrow!";
-      hintEl.appendChild(exhausted);
-      return;
-    }
-
+    // Hints are nudges hidden behind a reveal button on every tier. There is no
+    // daily limit on reveals — a hint is only shown after the button is tapped.
     var reveal = document.createElement("button");
     reveal.type = "button";
     reveal.className = "jsd-hint-reveal";
@@ -795,19 +890,10 @@
       var hintSpan = document.createElement("span");
       hintSpan.innerHTML = level.hint;
       hintEl.appendChild(hintSpan);
-      STATE.hintsUsed += 1;
-      renderHintUsage(hintEl);
-      uploadHintBalance();
       updateSolvedNote();
       handleInput();
     };
     hintEl.appendChild(reveal);
-    renderHintUsage(hintEl);
-  }
-
-  function uploadHintBalance() {
-    emitProgress();
-    publishState();
   }
 
   function renderLevel() {
@@ -828,8 +914,7 @@
     if (numEl) numEl.textContent = level.id;
     if (instrEl) instrEl.innerHTML = level.instruction;
 
-    // Hints are nudges, hidden behind a reveal button on every tier (Bug 2),
-    // with a daily budget enforced by the hint area itself.
+    // Hints are nudges, hidden behind a reveal button on every tier.
     if (hintEl) {
       hintEl.innerHTML = "";
       renderHintArea(level, hintEl);
@@ -965,6 +1050,8 @@
       ta.addEventListener("input", handleInput);
       ta.removeEventListener("keydown", handleKey);
       ta.addEventListener("keydown", handleKey);
+      ta.removeEventListener("scroll", syncEditorScroll);
+      ta.addEventListener("scroll", syncEditorScroll);
     }
     if (pb) { pb.removeEventListener("click", prevLevel); pb.addEventListener("click", prevLevel); }
     if (cb) { cb.removeEventListener("click", checkAnswer); cb.addEventListener("click", checkAnswer); }

@@ -204,34 +204,66 @@
 .jsd-code-area {
   flex: 1;
   position: relative;
-  overflow: auto;
+  overflow: hidden;
 }
 
+/* Syntax-highlight overlay sits underneath the (transparent) textarea. */
+.jsd-editor-highlight,
 .jsd-editor-textarea {
-  width: 100%;
-  height: 100%;
-  min-height: 360px;
+  position: absolute;
+  inset: 0;
+  overflow: auto;
   padding: 0.75rem;
-  background: transparent;
-  border: none;
-  outline: none;
-  resize: vertical;
+  margin: 0;
+  white-space: pre;
+  word-wrap: normal;
+  overflow-wrap: normal;
+  tab-size: 2;
   font-family: var(--font-mono);
   font-size: 0.78rem;
   line-height: 1.7;
-  color: hsl(52 100% 62%);
-  caret-color: hsl(var(--primary));
-  tab-size: 2;
-  position: relative;
-  z-index: 2;
-  display: block;
+  border: none;
   box-sizing: border-box;
+  height: 100%;
+}
+
+.jsd-editor-textarea {
+  min-height: 360px;
+  background: transparent;
+  outline: none;
+  resize: vertical;
+  color: transparent;
+  caret-color: hsl(var(--primary));
+  display: block;
+  z-index: 2;
+  -webkit-text-fill-color: transparent;
 }
 
 .jsd-editor-textarea::placeholder {
   color: hsl(0 0% 100% / 0.18);
+  -webkit-text-fill-color: hsl(0 0% 100% / 0.18);
   font-style: italic;
 }
+
+.jsd-editor-highlight {
+  z-index: 1;
+  pointer-events: none;
+  color: hsl(52 100% 62%);
+  overflow: auto;
+  scrollbar-width: none;
+}
+
+.jsd-editor-highlight::-webkit-scrollbar {
+  display: none;
+}
+
+/* Token colors (VS Code-like). */
+.jsd-editor-highlight .tok-comment  { color: hsl(120 20% 50%); font-style: italic; }
+.jsd-editor-highlight .tok-string   { color: hsl(9 95% 62%); }
+.jsd-editor-highlight .tok-number   { color: hsl(200 95% 68%); }
+.jsd-editor-highlight .tok-keyword  { color: hsl(262 85% 74%); }
+.jsd-editor-highlight .tok-literal  { color: hsl(200 90% 60%); }
+.jsd-editor-highlight .tok-variable { color: hsl(230 50% 85%); }
 
 .jsd-editor-hint {
   font-family: var(--font-mono);

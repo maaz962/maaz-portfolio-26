@@ -22,7 +22,7 @@ import { useAuth } from "@/lib/auth-context";
 import "./game.css";
 
 const GAME_SLUG = "js-detective";
-const FALLBACK_TOTAL_LEVELS = 17;
+const FALLBACK_TOTAL_LEVELS = 16;
 
 interface JsLevelMeta {
   id: number;
@@ -382,6 +382,11 @@ export default function JsDetectivePage() {
                     1<br />2<br />3<br />4<br />5<br />6<br />7<br />8
                   </div>
                   <div className="jsd-code-area">
+                    <pre
+                      id="jsd-highlight"
+                      className="jsd-editor-highlight"
+                      aria-hidden="true"
+                    ></pre>
                     <textarea
                       id="js-editor"
                       className="jsd-editor-textarea"

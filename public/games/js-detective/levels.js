@@ -1,5 +1,5 @@
 /* ==========================================================================
-   JS DETECTIVE — Level Data (17 cases across 4 difficulty tiers)
+   JS DETECTIVE — Level Data (16 cases across 4 difficulty tiers)
    Sets window.LJS_LEVELS for the browser. game.js no longer depends on this
    executing first — it re-reads window.LJS_LEVELS lazily and polls until the
    data arrives, so script execution order between the two files is safe.
@@ -592,71 +592,6 @@ var LJS_LEVELS = [
       return detail.textContent === "Grace caught";
     },
     successNote: "You fixed async, DOM and events in one boss case. Detective rank: MASTER.",
-  },
-  {
-    id: 17,
-    title: "The Cold Case",
-    tier: "mostHard",
-    concepts: ["async", "dom", "events", "arrays", "objects"],
-    shortDesc: "capstone: async + DOM + events + error handling",
-    instruction:
-      'COLD CASE. A case file froze years ago — reopen it, detective. The stubbed <code>fetch("/case")</code> returns <code>{ id: "CC-7", status: "cold", witnesses: [...] }</code> where each witness is <code>{ name, seen }</code>. In one <code>async</code> function: <code>await fetch("/case")</code>, destructure <code>{ id, witnesses }</code>, <code>filter</code> to witnesses where <code>seen === true</code>, render each as an <code>&lt;li&gt;</code> with text like <code>Janitor (seen)</code> into <code>#cold-case</code>, and log <code>Case CC-7 reopened</code>. Then <code>await fetch("/corrupt")</code> inside a <code>try/catch</code> (that URL always rejects) and log <code>"reopened"</code> on error. Finally attach ONE delegated click listener on <code>#cold-case</code> so clicking a row sets <code>#case-detail</code> to <code>"&lt;name&gt; confirmed"</code>.',
-    hint:
-      'Work it one step at a time: fetch the file, destructure the id and witnesses, filter the <code>seen</code> ones, render them, and log. The corrupt URL is your <code>try/catch</code> lesson — log <code>"reopened"</code> from the catch. The listener belongs on the CONTAINER and reads <code>e.target.textContent</code>. Every skill from the casebook comes together here.',
-    starter:
-      "// COLD CASE — reopen the file and confirm the witnesses.\n" +
-      "// 1. fetch(\"/case\") -> res.json() -> destructure { id, witnesses }\n" +
-      "// 2. filter witnesses where seen === true, render <li> \"Name (seen)\" into #cold-case\n" +
-      "// 3. await fetch(\"/corrupt\") inside try/catch, log \"reopened\" on error\n" +
-      "// 4. ONE delegated click listener on #cold-case -> #case-detail = \"<name> confirmed\"\n" +
-      "async function reopenCase() {\n" +
-      "  // your work here\n" +
-      "}\n" +
-      "reopenCase();\n",
-    setUp: function (ctx) {
-      ctx.document = mkDocument(["cold-case", "case-detail"]);
-      ctx.fetch = function (url) {
-        if (String(url).indexOf("corrupt") > -1) {
-          return Promise.reject(new Error("Evidence lost"));
-        }
-        return Promise.resolve({
-          ok: true,
-          status: 200,
-          json: function () {
-            return Promise.resolve({
-              id: "CC-7",
-              status: "cold",
-              witnesses: [
-                { name: "Janitor", seen: true },
-                { name: "Guard", seen: false },
-                { name: "Cook", seen: true },
-              ],
-            });
-          },
-        });
-      };
-    },
-    isFinal: true,
-    check: function (ctx, logs) {
-      var reopened = false, caseOk = false;
-      logs.forEach(function (l) {
-        if (String(l.value) === "reopened") reopened = true;
-        if (String(l.value) === "Case CC-7 reopened") caseOk = true;
-      });
-      if (!reopened || !caseOk) return false;
-      var doc = ctx.document;
-      var list = doc && doc.getElementById("cold-case");
-      var detail = doc && doc.getElementById("case-detail");
-      if (!list || !detail) return false;
-      if (!list.children || list.children.length !== 2) return false;
-      if (list.children[0].textContent !== "Janitor (seen)" || list.children[1].textContent !== "Cook (seen)") return false;
-      if (!list.listeners.click || !list.listeners.click.length) return false;
-      var childListeners = list.children.some(function (c) { return !!(c.listeners.click && c.listeners.click.length); });
-      if (childListeners) return false;
-      list.dispatch("click", { target: list.children[1] });
-      return detail.textContent === "Cook confirmed";
-    },
-    successNote: "Every skill in one cold case — async, arrays, objects, DOM, events and graceful error handling. Rank: LEGEND.",
   },
 ];
 
