@@ -278,7 +278,10 @@
     var ta = $("js-editor");
     if (!ta) return;
     var level = LEVELS[STATE.currentLevel];
-    if (!level) return;
+    if (!level) {
+      showToast("Case data not loaded yet — try again in a moment.", true);
+      return;
+    }
     evaluateUserCodeAsync(ta.value, level.setUp).then(function (result) {
       renderConsole(result.logs);
     });
@@ -432,14 +435,27 @@
     var ta = $("js-editor");
     if (!ta) return;
     var level = LEVELS[STATE.currentLevel];
-    if (!level) return;
+    if (!level) {
+      // Never silently swallow a Check click. If the level data is still
+      // loading, wait for it and re-run; otherwise surface a clear message.
+      ensureLevels(function () {
+        if (LEVELS.length === 0) {
+          showToast("Case data not loaded yet — reload the page if this persists.", true);
+        } else {
+          checkAnswer();
+        }
+      });
+      return;
+    }
     STATE.thinking = true;
     setButtonsDisabled(true);
 
     evaluateUserCodeAsync(ta.value, level.setUp).then(function (result) {
-      renderConsole(result.logs);
+      // Reset the busy state before doing anything else so a check can never
+      // leave the buttons wedged, even if a later step misbehaves.
       STATE.thinking = false;
       setButtonsDisabled(false);
+      renderConsole(result.logs);
 
       if (STATE.completed[STATE.currentLevel]) {
         nextLevel();
@@ -469,6 +485,12 @@
       } else {
         showToast(randomItem(WRONG_MSGS), true);
       }
+    }).catch(function () {
+      // Belt and braces: ensure the UI never stays locked after an edge-case
+      // failure in the async chain above.
+      STATE.thinking = false;
+      setButtonsDisabled(false);
+      showToast("Something went wrong running your code — try again.", true);
     });
   }
 
