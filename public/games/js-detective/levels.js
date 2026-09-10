@@ -17,6 +17,7 @@ function mkElement(tag) {
     attrs: {},
     listeners: {},
     _classes: [],
+    _className: "",
     textContent: "",
     innerHTML: "",
     style: {},
@@ -56,21 +57,39 @@ function mkElement(tag) {
       }
       return st;
     },
-    classList: {
-      add: function (c) { if (el._classes.indexOf(c) === -1) el._classes.push(c); return el; },
-      remove: function (c) {
-        var i = el._classes.indexOf(c);
-        if (i > -1) el._classes.splice(i, 1);
-        return el;
-      },
-      toggle: function (c, force) {
-        var on = force !== undefined ? !!force : el._classes.indexOf(c) === -1;
-        if (on) el.classList.add(c); else el.classList.remove(c);
-        return on;
-      },
-      contains: function (c) { return el._classes.indexOf(c) > -1; },
-    },
   };
+  el._syncClassName = function () {
+    el._className = el._classes.join(" ");
+  };
+  Object.defineProperty(el, "className", {
+    get: function () { return el._className; },
+    set: function (v) {
+      el._className = String(v || "");
+      el._classes = el._className.length ? el._className.split(/\s+/) : [];
+    },
+  });
+  Object.defineProperty(el, "classList", {
+    get: function () {
+      return {
+        add: function (c) {
+          c = String(c);
+          if (el._classes.indexOf(c) === -1) { el._classes.push(c); el._syncClassName(); }
+          return el;
+        },
+        remove: function (c) {
+          var i = el._classes.indexOf(String(c));
+          if (i > -1) { el._classes.splice(i, 1); el._syncClassName(); }
+          return el;
+        },
+        toggle: function (c, force) {
+          var on = force !== undefined ? !!force : el._classes.indexOf(String(c)) === -1;
+          if (on) el.classList.add(c); else el.classList.remove(c);
+          return on;
+        },
+        contains: function (c) { return el._classes.indexOf(String(c)) > -1; },
+      };
+    },
+  });
   return el;
 }
 
@@ -317,7 +336,7 @@ var LJS_LEVELS = [
   {
     id: 9,
     title: "Copy, Swap, Rest",
-    tier: "hard",
+    tier: "intermediate",
     concepts: ["objects", "operators", "data-types"],
     shortDesc: "shorthand, spread, rest, destructure, ??",
     instruction:
@@ -339,7 +358,7 @@ var LJS_LEVELS = [
   {
     id: 10,
     title: "The Records Room",
-    tier: "hard",
+    tier: "intermediate",
     concepts: ["arrays", "functions"],
     shortDesc: "filter, find, sort, reduce",
     instruction:
@@ -366,7 +385,7 @@ var LJS_LEVELS = [
   {
     id: 11,
     title: "The Hoisted Alibi",
-    tier: "hard",
+    tier: "intermediate",
     concepts: ["variables", "functions", "loops"],
     shortDesc: "debug hoisting + closure counter",
     instruction:

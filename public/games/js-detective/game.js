@@ -103,8 +103,8 @@
     return out;
   }
 
-  // Progressive gating: finish 3 of 4 cases in a tier to unlock the next;
-  // all 4 Hard cases must be solved before Most Hard opens.
+  // Progressive gating: finish most cases in a tier to unlock the next;
+  // all Hard cases must be solved before Most Hard opens.
   function isLevelUnlocked(index) {
     if (!LEVELS[index]) return false;
     if (STATE.completed[index]) return true;

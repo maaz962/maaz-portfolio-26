@@ -106,6 +106,21 @@ function lockNoteFor(
   return `Solve ${left} more ${label} case${left === 1 ? "" : "s"} to unlock this tier.`;
 }
 
+function tierLegendFor(levels: JsLevelMeta[]): string {
+  const parts: string[] = [];
+  for (let ti = 1; ti < TIER_ORDER.length; ti++) {
+    const prev = TIER_ORDER[ti - 1] ?? "";
+    const next = TIER_ORDER[ti] ?? "";
+    const prevLevels = tierLevelsFor(levels, prev);
+    if (!prevLevels.length) continue;
+    const need = prev === "hard" ? prevLevels.length : Math.max(1, prevLevels.length - 1);
+    const prevLabel = TIER_META.find((t) => t.key === prev)?.label || prev;
+    const nextLabel = TIER_META.find((t) => t.key === next)?.label || next;
+    parts.push(`Solve ${need} of ${prevLevels.length} ${prevLabel} cases to unlock ${nextLabel}`);
+  }
+  return parts.join(". ");
+}
+
 export default function JsDetectivePage() {
   const { user: currentUser, loading: authLoading } = useAuth();
   const [showAuthModal, setShowAuthModal] = useState(false);
@@ -325,8 +340,7 @@ export default function JsDetectivePage() {
                       );
                     })}
                     <div className="jsd-ls-legend">
-                      Solve 3 of 4 cases in a tier to unlock the next. All 4{" "}
-                      <strong>Hard</strong> cases unlock <strong>Most Hard</strong>.
+                      {tierLegendFor(levels)}
                     </div>
                   </div>
                 )}
