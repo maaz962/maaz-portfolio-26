@@ -14,8 +14,12 @@ interface Message {
 }
 
 const SUGGESTED_QUESTIONS = [
+  "Which coding games has Maaz built?",
+  "How many levels does each game have and how much XP can I earn?",
+  "What do I need to write to pass JS Detective level by level?",
+  "How does unlocking tiers and saving progress work in the games?",
+  "Which HTML tags must I use to beat HTML Hero?",
   "What technologies does Maaz use?",
-  "Tell me about his projects",
   "Can Maaz build a Flutter app?",
   "How can I hire Maaz?",
 ];
@@ -35,7 +39,7 @@ export function AIAssistant() {
   const [messages, setMessages] = useState<Message[]>([
     {
       role: "model",
-      content: "Hi! I'm Maaz's AI assistant. Ask me about his skills, projects, experience, services, or how to contact him.",
+      content: "Hi! I'm Maaz's AI assistant. Ask me about his coding games, skills, projects, experience, services, or how to contact him.",
     },
   ]);
   const [input, setInput] = useState("");
@@ -123,7 +127,7 @@ export function AIAssistant() {
     setMessages([
       {
         role: "model",
-        content: "Hi! I'm Maaz's AI assistant. Ask me about his skills, projects, experience, services, or how to contact him.",
+        content: "Hi! I'm Maaz's AI assistant. Ask me about his coding games, skills, projects, experience, services, or how to contact him.",
       },
     ]);
     setErrorMsg(null);
