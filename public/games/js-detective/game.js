@@ -388,7 +388,9 @@
       });
     }
 
-    return Promise.resolve()
+    var TIMEOUT_MS = 5000;
+
+    var outcome = Promise.resolve()
       .then(function () { return fn(ctx, capturedConsole); })
       .catch(function (e) {
         logs.push({ value: undefined, text: "✕ Error: " + safeError(e), isError: true });
@@ -401,6 +403,39 @@
         }
         return { logs: logs, ctx: ctx, error: setupError };
       });
+
+    // A learner's promise can hang forever (e.g. `await new Promise(() => {})`
+    // or a never-settling fetch). Without a guard the Check/Run chain stalls,
+    // the busy state never clears and the buttons stay wedged. Race the
+    // evaluation against a timeout so the UI always recovers with a clear
+    // message. (A synchronous `while (true) {}` freezes the tab itself — no
+    // in-page timer can fire then — but never-resolving awaits are the common
+    // hang and ARE recoverable this way.)
+    return new Promise(function (resolve) {
+      var timer = setTimeout(function () {
+        if (uhrHandler && typeof window !== "undefined") {
+          window.removeEventListener("unhandledrejection", uhrHandler);
+        }
+        logs.push({
+          value: undefined,
+          text:
+            "✕ Timed out after " + (TIMEOUT_MS / 1000) + "s — your code never finished." +
+            " Check for an infinite loop or an await that never resolves.",
+          isError: true,
+        });
+        if (!setupError) {
+          setupError = {
+            kind: "timeout",
+            message:
+              "Your code took too long (over " + (TIMEOUT_MS / 1000) + "s) and was stopped —" +
+              " look for an infinite loop or an await that never settles.",
+            line: null,
+          };
+        }
+        resolve({ logs: logs, ctx: ctx, error: setupError });
+      }, TIMEOUT_MS);
+      outcome.then(function (result) { clearTimeout(timer); resolve(result); });
+    });
   }
 
   function safeError(e) {
@@ -413,6 +448,7 @@
     if (kind === "syntax") return "Syntax Error";
     if (kind === "runtime") return "Runtime Error";
     if (kind === "setup") return "Setup Error";
+    if (kind === "timeout") return "Timed Out";
     return "Error";
   }
 
