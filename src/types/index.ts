@@ -185,7 +185,7 @@ export interface GameProgress {
   completed: Record<string, boolean>;
   /** Zero-based level indices → the last passing code the user submitted (restored on revisit). */
   solutions?: Record<string, string>;
-  /** Daily hint budget: client-local date key (YYYY-MM-DD) + how many hints used that day. */
+  /** Hint reveals (no daily limit): client-local date key (YYYY-MM-DD) + how many hints used that day. */
   hints?: { date: string; used: number };
   /** Total number of levels in this game (used by the hub for "x of y levels"). */
   totalLevels: number;

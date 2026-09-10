@@ -431,6 +431,7 @@
     var html = "";
     for (var i = 1; i <= count; i++) html += i + (i < count ? "<br>" : "");
     el.innerHTML = html;
+    el.scrollTop = ta.scrollTop || 0;
     renderHighlight();
   }
 
@@ -546,8 +547,6 @@
     var hl = $("jsd-highlight");
     var ta = $("js-editor");
     if (!hl || !ta) return;
-    hl.innerHTML = "";
-    hl.appendChild(document.createTextNode(ta.value));
     hl.innerHTML = highlightJs(ta.value) || "\u00a0";
     hl.scrollTop = ta.scrollTop;
     hl.scrollLeft = ta.scrollLeft;
@@ -555,10 +554,11 @@
 
   function syncEditorScroll() {
     var hl = $("jsd-highlight");
+    var ln = $("jsd-line-numbers");
     var ta = $("js-editor");
-    if (!hl || !ta) return;
-    hl.scrollTop = ta.scrollTop;
-    hl.scrollLeft = ta.scrollLeft;
+    if (!ta) return;
+    if (hl) { hl.scrollTop = ta.scrollTop; hl.scrollLeft = ta.scrollLeft; }
+    if (ln) ln.scrollTop = ta.scrollTop;
   }
 
   function updateSolvedNote() {
@@ -1035,6 +1035,20 @@
     if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
       e.preventDefault();
       checkAnswer();
+      return;
+    }
+    var ta = $("js-editor");
+    if (e.key === "Tab" && ta && !e.ctrlKey && !e.metaKey && !e.altKey) {
+      e.preventDefault();
+      var selStart = ta.selectionStart != null ? ta.selectionStart : ta.value.length;
+      var selEnd = ta.selectionEnd != null ? ta.selectionEnd : ta.value.length;
+      var before = ta.value.slice(0, selStart);
+      var after = ta.value.slice(selEnd);
+      ta.value = before + "  " + after;
+      try {
+        ta.selectionStart = ta.selectionEnd = before.length + 2;
+      } catch (err) { /* non-editable stub environments */ }
+      handleInput();
     }
   }
 

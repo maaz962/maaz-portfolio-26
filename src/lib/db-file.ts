@@ -350,7 +350,7 @@ export async function saveGameProgress(
       data.hints && typeof data.hints === "object" && typeof data.hints.date === "string"
         ? {
             date: data.hints.date.slice(0, 10),
-            used: Math.min(3, Math.max(0, Number(data.hints.used) || 0)),
+            used: Math.max(0, Number(data.hints.used) || 0),
           }
         : { date: "", used: 0 };
 

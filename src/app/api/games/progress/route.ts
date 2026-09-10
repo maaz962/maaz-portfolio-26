@@ -105,7 +105,7 @@ export async function POST(req: Request) {
       hints && typeof hints === "object" && typeof hints.date === "string"
         ? {
             date: hints.date.slice(0, 10),
-            used: Math.min(3, Math.max(0, Number(hints.used) || 0)),
+            used: Math.max(0, Number(hints.used) || 0),
           }
         : undefined;
 

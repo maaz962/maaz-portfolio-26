@@ -131,6 +131,7 @@
   flex: 1;
   display: flex;
   flex-direction: column;
+  position: relative;
 }
 
 .jsd-editor-header {
@@ -195,6 +196,7 @@
   padding-left: 0.625rem;
   border-right: 1px solid hsl(0 0% 100% / 0.06);
   background: hsl(225 15% 8%);
+  overflow: hidden;
 }
 
 .dark .jsd-line-numbers {
@@ -231,12 +233,17 @@
   min-height: 360px;
   background: transparent;
   outline: none;
-  resize: vertical;
+  resize: none;
   color: transparent;
   caret-color: hsl(var(--primary));
   display: block;
   z-index: 2;
   -webkit-text-fill-color: transparent;
+  scrollbar-width: none;
+}
+
+.jsd-editor-textarea::-webkit-scrollbar {
+  display: none;
 }
 
 .jsd-editor-textarea::placeholder {
