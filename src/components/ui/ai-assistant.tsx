@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, type ReactNode } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { MessageSquare, Send, X, Trash2, Loader2, Mail, Linkedin, ArrowRight } from "lucide-react";
 import { profile } from "@/data/profile";
@@ -23,6 +23,211 @@ const SUGGESTED_QUESTIONS = [
   "Can Maaz build a Flutter app?",
   "How can I hire Maaz?",
 ];
+
+interface MdBlock {
+  type: "p" | "h1" | "h2" | "h3" | "h4" | "quote" | "code" | "ul" | "ol" | "hr";
+  text?: string;
+  items?: string[];
+}
+
+function parseMarkdown(text: string): MdBlock[] {
+  const lines = text.replace(/\r\n/g, "\n").split("\n");
+  const blocks: MdBlock[] = [];
+  let i = 0;
+  while (i < lines.length) {
+    const line = lines[i];
+    if (line === undefined) break;
+    const trimmed = line.trim();
+    if (!trimmed) {
+      i++;
+      continue;
+    }
+    const heading = trimmed.match(/^(#{1,4})\s+(.*)$/);
+    if (heading) {
+      const n = heading[1]!.length;
+      const type = n === 1 ? "h1" : n === 2 ? "h2" : n === 3 ? "h3" : "h4";
+      blocks.push({ type, text: heading[2]! });
+      i++;
+      continue;
+    }
+    if (/^(-{3,}|\*{3,})$/.test(trimmed)) {
+      blocks.push({ type: "hr" });
+      i++;
+      continue;
+    }
+    if (trimmed.startsWith("```")) {
+      const buf: string[] = [];
+      i++;
+      while (i < lines.length) {
+        const codeLine = lines[i];
+        if (codeLine === undefined) break;
+        if (codeLine.trim().startsWith("```")) break;
+        buf.push(codeLine);
+        i++;
+      }
+      i++;
+      blocks.push({ type: "code", text: buf.join("\n") });
+      continue;
+    }
+    if (/^>\s?/.test(line)) {
+      blocks.push({ type: "quote", text: line.replace(/^>\s?/, "") });
+      i++;
+      continue;
+    }
+    const ulMatch = /^\s*[-*+]\s+(.*)$/.exec(line);
+    const olMatch = /^\s*\d+\.\s+(.*)$/.exec(line);
+    if (ulMatch || olMatch) {
+      const isUl = Boolean(ulMatch);
+      const items: string[] = [];
+      let j = i;
+      while (j < lines.length) {
+        const target = lines[j];
+        if (!target) break;
+        const m = isUl
+          ? /^\s*[-*+]\s+(.*)$/.exec(target)
+          : /^\s*\d+\.\s+(.*)$/.exec(target);
+        if (m) {
+          items.push(m[1]!);
+          j++;
+        } else {
+          break;
+        }
+      }
+      blocks.push({ type: isUl ? "ul" : "ol", items });
+      i = j;
+      continue;
+    }
+    const buf: string[] = [];
+    while (i < lines.length) {
+      const cur = lines[i];
+      if (!cur) break;
+      if (
+        !cur.trim() ||
+        /^(#{1,4})\s+/.test(cur.trim()) ||
+        cur.trim().startsWith("```") ||
+        /^\s*[-*+]\s+/.test(cur) ||
+        /^\s*\d+\.\s+/.test(cur) ||
+        /^>\s?/.test(cur)
+      ) {
+        break;
+      }
+      buf.push(cur.trim());
+      i++;
+    }
+    blocks.push({ type: "p", text: buf.join(" ") });
+  }
+  return blocks;
+}
+
+function renderInline(text: string, keyBase: string): ReactNode[] {
+  const parts = text.split(/(\*\*[^*]+\*\*|`[^`]+`|\*[^*]+\*)/g);
+  return parts.map((part, index) => {
+    if (!part) return null;
+    if (part.startsWith("**") && part.endsWith("**") && part.length > 4) {
+      return (
+        <strong key={`${keyBase}-${index}`} className="font-semibold">
+          {part.slice(2, -2)}
+        </strong>
+      );
+    }
+    if (part.startsWith("`") && part.endsWith("`") && part.length > 2) {
+      return (
+        <code
+          key={`${keyBase}-${index}`}
+          className="rounded bg-border/50 px-1 py-px font-mono text-[0.85em]"
+        >
+          {part.slice(1, -1)}
+        </code>
+      );
+    }
+    if (part.startsWith("*") && part.endsWith("*") && part.length > 2) {
+      return (
+        <em key={`${keyBase}-${index}`} className="italic">
+          {part.slice(1, -1)}
+        </em>
+      );
+    }
+    return <span key={`${keyBase}-${index}`}>{part}</span>;
+  });
+}
+
+function Markdown({ text }: { text: string }) {
+  const blocks = parseMarkdown(text);
+  return (
+    <div className="space-y-3">
+      {blocks.map((block, blockIndex) => {
+        switch (block.type) {
+          case "h1":
+            return (
+              <p key={blockIndex} className="text-base font-bold">
+                {renderInline(block.text ?? "", `h1-${blockIndex}`)}
+              </p>
+            );
+          case "h2":
+            return (
+              <p key={blockIndex} className="text-[15px] font-bold">
+                {renderInline(block.text ?? "", `h2-${blockIndex}`)}
+              </p>
+            );
+          case "h3":
+            return (
+              <p key={blockIndex} className="text-sm font-semibold">
+                {renderInline(block.text ?? "", `h3-${blockIndex}`)}
+              </p>
+            );
+          case "h4":
+            return (
+              <p key={blockIndex} className="text-sm font-medium">
+                {renderInline(block.text ?? "", `h4-${blockIndex}`)}
+              </p>
+            );
+          case "ul":
+            return (
+              <ul key={blockIndex} className="list-disc space-y-1.5 pl-5">
+                {block.items?.map((item, itemIndex) => (
+                  <li key={itemIndex}>
+                    {renderInline(item, `ul-${blockIndex}-${itemIndex}`)}
+                  </li>
+                ))}
+              </ul>
+            );
+          case "ol":
+            return (
+              <ol key={blockIndex} className="list-decimal space-y-1.5 pl-5">
+                {block.items?.map((item, itemIndex) => (
+                  <li key={itemIndex}>
+                    {renderInline(item, `ol-${blockIndex}-${itemIndex}`)}
+                  </li>
+                ))}
+              </ol>
+            );
+          case "quote":
+            return (
+              <blockquote
+                key={blockIndex}
+                className="border-l-2 border-primary/50 pl-3 italic text-muted"
+              >
+                {renderInline(block.text ?? "", `quote-${blockIndex}`)}
+              </blockquote>
+            );
+          case "code":
+            return (
+              <pre
+                key={blockIndex}
+                className="overflow-x-auto rounded-lg border border-border bg-background p-2.5 font-mono text-[0.85em] leading-relaxed"
+              >
+                {block.text}
+              </pre>
+            );
+          case "hr":
+            return <hr key={blockIndex} className="border-border" />;
+          default:
+            return <p key={blockIndex}>{renderInline(block.text ?? "", `p-${blockIndex}`)}</p>;
+        }
+      })}
+    </div>
+  );
+}
 
 function TypingIndicator() {
   return (
@@ -220,7 +425,11 @@ export function AIAssistant() {
                           : "self-end bg-primary text-primary-foreground rounded-tr-none"
                       )}
                     >
-                      {msg.content}
+                      {isModel && !msg.isError ? (
+                        <Markdown text={msg.content} />
+                      ) : (
+                        msg.content
+                      )}
                     </div>
                   </div>
                 );
