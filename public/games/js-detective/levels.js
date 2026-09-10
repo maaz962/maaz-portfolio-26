@@ -459,6 +459,7 @@ var LJS_LEVELS = [
       ["Bit 1: the key", "Bit 2: the safe", "Bit 3: the vault"].forEach(function (t) {
         var e = ctx.document.createElement("section");
         e.textContent = t;
+        e.classList.add("entry");
         box.appendChild(e);
       });
     },

@@ -414,19 +414,21 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.625rem 1.25rem;
-  border-radius: 9999px;
+  padding: 0.625rem 1rem;
+  border-radius: 0.8rem;
   font-family: var(--font-mono);
   font-size: 0.75rem;
   font-weight: 700;
+  line-height: 1.45;
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   box-shadow: 0 6px 24px -4px rgba(0, 0, 0, 0.35);
   pointer-events: none;
   opacity: 0;
   transition: opacity 0.3s ease;
-  white-space: nowrap;
-  max-width: 90%;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  max-width: min(90%, 36rem);
   text-align: center;
 }
 
