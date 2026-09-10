@@ -344,6 +344,32 @@
       return new Promise(function (resolve) { setTimeout(resolve, 60); });
     }
 
+    // Async case files reject promises their fetches can't fulfill (e.g.
+    // fetch("/broken")). A learner's first attempt often leaves that rejection
+    // unhandled, which makes the BROWSER throw an "Uncaught (in promise)" —
+    // scary and misleading on the page. While a solution is evaluating we
+    // therefore swallow unhandled rejections and turn them into an ordinary,
+    // readable console line with a hint instead.
+    var uhrHandler = null;
+    if (typeof window !== "undefined" && typeof window.addEventListener === "function") {
+      uhrHandler = function (event) {
+        if (event && typeof event.preventDefault === "function") event.preventDefault();
+        var reason = event && event.reason;
+        var msg =
+          reason && typeof reason === "object" && reason.message
+            ? String(reason.message)
+            : String(reason === undefined ? "unknown" : reason);
+        logs.push({
+          value: undefined,
+          text:
+            "✕ Unhandled promise rejection: " + msg +
+            " — every rejected promise needs catching. Wrap await fetch('/broken') in try/catch.",
+          isError: true,
+        });
+      };
+      window.addEventListener("unhandledrejection", uhrHandler);
+    }
+
     runSetUp();
 
     var built = buildSnippet(code, ctx, topLevelDeclaredNames(code));
@@ -370,6 +396,9 @@
       })
       .then(settle)
       .then(function () {
+        if (uhrHandler && typeof window !== "undefined") {
+          window.removeEventListener("unhandledrejection", uhrHandler);
+        }
         return { logs: logs, ctx: ctx, error: setupError };
       });
   }
@@ -592,6 +621,18 @@
         });
       } else {
         renderResult(null);
+        var noLogs = !result.logs || result.logs.length === 0;
+        if (noLogs) {
+          var consoleEl = $("jsd-console");
+          if (consoleEl) {
+            consoleEl.innerHTML = "";
+            var hint = document.createElement("div");
+            hint.className = "jsd-console-empty";
+            hint.textContent = "Code ran successfully. Click Check to verify your solution.";
+            consoleEl.appendChild(hint);
+          }
+          showToast("Code executed. Click Check to verify.", false);
+        }
       }
     });
   }
