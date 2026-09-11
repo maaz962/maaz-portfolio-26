@@ -97,6 +97,23 @@ async function initDb(): Promise<void> {
     // Migration for older rows created before the solutions/hints columns existed.
     await sql`ALTER TABLE game_progress ADD COLUMN IF NOT EXISTS solutions JSONB NOT NULL DEFAULT '{}'`;
     await sql`ALTER TABLE game_progress ADD COLUMN IF NOT EXISTS hints JSONB NOT NULL DEFAULT '{}'`;
+    // Idempotent seed of the site owner's admin account — mirrors the file-store
+    // seed so /admin is reachable on first production deploy too. ON CONFLICT
+    // makes it safe on every cold start / redeploy.
+    await sql`
+      INSERT INTO users (id, name, username, email, is_admin, avatar_url, created_at, password_hash)
+      VALUES (
+        'admin-user-id',
+        'M. Maaz Arif',
+        'maaz_admin',
+        'muhammadmaaz4405@gmail.com',
+        true,
+        'https://api.dicebear.com/7.x/bottts/svg?seed=maaz_admin',
+        '2026-08-01T12:00:00.000Z',
+        ${hashPassword("maaz-analytics-2026")}
+      )
+      ON CONFLICT DO NOTHING
+    `;
   })();
   return initPromise;
 }

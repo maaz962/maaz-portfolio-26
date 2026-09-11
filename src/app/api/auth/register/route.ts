@@ -13,6 +13,18 @@ export async function POST(req: Request) {
       );
     }
 
+    if (
+      typeof name !== "string" ||
+      typeof username !== "string" ||
+      typeof email !== "string" ||
+      typeof password !== "string"
+    ) {
+      return NextResponse.json(
+        { error: "Invalid field types" },
+        { status: 400 }
+      );
+    }
+
     const trimmedUsername = username.trim();
     if (trimmedUsername.length < 3 || trimmedUsername.length > 30) {
       return NextResponse.json(

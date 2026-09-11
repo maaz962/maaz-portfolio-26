@@ -7,6 +7,8 @@ import {
   claimsToUser,
 } from "@/lib/session";
 
+const DEFAULT_SECRET_MIN_LENGTH = 16;
+
 /**
  * Resolves the signed-in user from the signed session cookie.
  *
@@ -43,8 +45,28 @@ export async function getSessionUser(): Promise<User | null> {
 /**
  * Resolves the signed-in user and enforces admin privileges.
  * Returns null when the session is missing or the user is not an admin.
+ *
+ * Fail-closed in production: session tokens are HMAC-signed with
+ * SESSION_SECRET. When that env var is missing (or too short) we fall back to
+ * the dev default in session-constants.ts — a key that ships in source code,
+ * so anyone could forge a token claiming isAdmin=true. On Vercel we never
+ * trust that default: admin access is disabled and the operator is told to set
+ * a real SESSION_SECRET (this does NOT break regular player sessions).
  */
 export async function getAdminUser(): Promise<User | null> {
   const user = await getSessionUser();
-  return user?.isAdmin ? user : null;
+  if (!user?.isAdmin) return null;
+
+  if (
+    process.env.NODE_ENV === "production" &&
+    (!process.env.SESSION_SECRET || process.env.SESSION_SECRET.length < DEFAULT_SECRET_MIN_LENGTH)
+  ) {
+    console.error(
+      "[auth] SESSION_SECRET is not set in production — admin access is disabled. " +
+        "Set a strong SESSION_SECRET env var to enable the /admin dashboard."
+    );
+    return null;
+  }
+
+  return user;
 }

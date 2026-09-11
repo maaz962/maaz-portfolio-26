@@ -6,7 +6,12 @@ export async function POST(req: Request) {
   try {
     const { emailOrUsername, password } = await req.json();
 
-    if (!emailOrUsername || !password) {
+    if (
+      typeof emailOrUsername !== "string" ||
+      typeof password !== "string" ||
+      !emailOrUsername.trim() ||
+      !password
+    ) {
       return NextResponse.json(
         { error: "Missing username/email or password" },
         { status: 400 }
