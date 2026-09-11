@@ -53,7 +53,26 @@ export function AuthModal({ open, onClose, onAuthed, initialMode = "login" }: Au
     setSubmitting(true);
     try {
       if (mode === "register") {
-        await register({ name, username, email, password });
+        try {
+          await register({ name, username, email, password });
+        } catch (err: any) {
+          const message: string = err?.message || "";
+          // Duplicate account — the email/username is already registered. Drop
+          // the user straight into the login tab with what they typed so one
+          // more click signs them in, instead of leaving them stuck seeing a
+          // register error they can't act on.
+          if (/already registered/i.test(message) || /already taken/i.test(message)) {
+            setMode("login");
+            setUsername(email.trim() || username.trim());
+            setPassword("");
+            setError(
+              "That account already exists — your email is filled in, just press Sign In with your password."
+            );
+            setSubmitting(false);
+            return;
+          }
+          throw err;
+        }
       } else {
         await login({ emailOrUsername: username || email, password });
       }
