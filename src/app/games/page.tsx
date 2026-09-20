@@ -36,7 +36,7 @@ const games = [
     title: "HTML Hero",
     description:
       "Become an HTML Master! Write real tags for headings, lists, tables, forms and full pages across easy to advanced challenges.",
-    difficulty: "All Levels",
+    difficulty: "Beginner → Advanced",
     topics: ["HTML", "Tags", "Semantics", "Forms"],
     animal: "🦸",
     color: "from-indigo-500/20 to-violet-500/20",
@@ -75,7 +75,7 @@ const games = [
     title: "JS Detective",
     description:
       "Solve coding mysteries and master core JavaScript! Variables, loops, arrays, functions, .map, .filter and event handlers through fun console challenges.",
-    difficulty: "All Levels",
+    difficulty: "Beginner → Advanced",
     topics: ["JavaScript", "Variables", "Loops", "Functions"],
     animal: "🕵️",
     color: "from-yellow-500/20 to-amber-500/20",
@@ -119,7 +119,10 @@ const games = [
 function GamePreview({ game }: { game: (typeof games)[0] }) {
   if (game.comingSoon) {
     return (
-      <span className="text-7xl transition-transform duration-300 group-hover:scale-110">
+      <span
+        aria-hidden="true"
+        className="text-7xl transition-transform duration-300 group-hover:scale-110"
+      >
         {game.animal}
       </span>
     );
@@ -214,7 +217,10 @@ function GamePreview({ game }: { game: (typeof games)[0] }) {
           </div>
         )}
       </div>
-      <span className="absolute bottom-1.5 right-3 text-5xl opacity-80 drop-shadow-lg transition-transform duration-300 group-hover:scale-110">
+      <span
+        aria-hidden="true"
+        className="absolute bottom-1.5 right-3 text-5xl opacity-80 drop-shadow-lg transition-transform duration-300 group-hover:scale-110"
+      >
         {game.animal}
       </span>
     </div>
@@ -269,6 +275,11 @@ function GameCard({
             {game.title}
           </h3>
           <span
+            title={
+              game.difficulty.includes("→")
+                ? "Multiple difficulty tiers inside one game — easy to advanced challenges"
+                : undefined
+            }
             className={cn(
               "rounded-full bg-primary/10 px-2.5 py-0.5 text-[0.65rem] font-semibold",
               game.accentColor
@@ -332,11 +343,12 @@ function GameCard({
               return (
                 <>
                   <span className="text-[0.6rem] font-semibold text-muted">
+                    <span aria-hidden="true">{game.animal}</span>
                     {done >= total
-                      ? `${game.animal} Completed!`
+                      ? " Completed!"
                       : done > 0
-                        ? `${game.animal} Playing — ${done}/${total} levels`
-                        : `${game.animal} Not started`}
+                        ? ` Playing — ${done}/${total} levels`
+                        : " Not started"}
                   </span>
                   <div className="mt-1 h-1 overflow-hidden rounded-full bg-background-secondary">
                     <div
