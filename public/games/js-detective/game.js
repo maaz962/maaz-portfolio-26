@@ -73,7 +73,9 @@
     hintsUsed: 0,
   };
 
-  var POINTS = { easy: 5, intermediate: 10, hard: 15, mostHard: 20 };
+  // Per-tier points. With 15 levels (4 easy + 7 intermediate + 1 hard +
+  // 3 mostHard) the full run scores exactly 4*5 + 7*6 + 8 + 3*10 = 100.
+  var POINTS = { easy: 5, intermediate: 6, hard: 8, mostHard: 10 };
 
   function tierLabel(tier) {
     return TIER_LABELS[tier] || tier || "Easy";
@@ -171,13 +173,19 @@
         var cl = Math.floor(saved.currentLevel);
         if (cl >= 0 && cl < LEVELS.length) STATE.currentLevel = cl;
       }
-      if (typeof saved.score === "number") STATE.score = saved.score;
       if (saved.completed && typeof saved.completed === "object") {
         var clean = {};
         for (var k in saved.completed) {
           if (saved.completed[k] && k >= 0 && k < LEVELS.length) clean[k] = true;
         }
         STATE.completed = clean;
+        // Rebuild the score from the completed set instead of trusting the
+        // stored running total — so existing saves converge on the current
+        // per-level points (e.g. after a level is removed or points rescale).
+        STATE.score = 0;
+        for (var sk in clean) {
+          STATE.score += pointsForLevel(LEVELS[sk]);
+        }
       }
       if (saved.solutions && typeof saved.solutions === "object") {
         var sols = {};

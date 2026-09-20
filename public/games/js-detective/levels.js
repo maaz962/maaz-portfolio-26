@@ -546,72 +546,8 @@ var LJS_LEVELS = [
       });
       return countOk && recOk && allOk;
     },
-    successNote: "await pauses until a promise settles; try/catch tames rejections; Promise.all runs many at once.",
-  },
-  {
-    id: 16,
-    title: "The Final Boss",
-    tier: "mostHard",
-    concepts: ["async", "dom", "events", "arrays", "objects"],
-    shortDesc: "boss: async + DOM + events + reduce",
-    instruction:
-      'THE FINAL BOSS. Fix the break-in script. The stubbed <code>fetch("/leads")</code> returns suspects with <code>name</code> and <code>bounty</code>. The script should: filter to <code>bounty &gt;= 150</code>, sort by bounty DESCENDING (Linus, then Grace), sum the bounties with <code>reduce</code> and log <code>"TOTAL: 500 and 2 suspects."</code>, render each as an <code>&lt;li&gt;</code> with text like <code>Linus - 250</code> into <code>#case-list</code>, and attach ONE delegated click listener on <code>#case-list</code> so clicking a row sets <code>#detail</code> to <code>"&lt;name&gt; caught"</code>. The starter has been corrupted — repair it.',
-    hint:
-      "Watch four things: the filter direction, the sort direction, the reduce accumulator, and the listener (it belongs on the LIST container, and reads <code>e.target.textContent</code>).",
-    starter:
-      "// CORRUPTED — repair the filter, sort, reduce and rendering below\n" +
-      "async function loadCase() {\n" +
-      "  const res = await fetch(\"/leads\");\n" +
-      "  const data = await res.json();\n" +
-      "  let leads = data.suspects;\n" +
-      "\n" +
-      "  // BUG: wrong filter\n" +
-      "  leads = leads.filter((s) => s.bounty < 150);\n" +
-      "\n" +
-      "  // BUG: wrong sort order\n" +
-      "  leads = leads.sort((a, b) => a.bounty - b.bounty);\n" +
-      "\n" +
-      "  // BUG: reduce never adds\n" +
-      "  const total = leads.reduce((acc, s) => acc, 0);\n" +
-      "  console.log(\"TOTAL: \" + total + \" and \" + leads.length + \" suspects.\");\n" +
-      "\n" +
-      "  const list = document.getElementById(\"case-list\");\n" +
-      "  list.innerHTML = \"\";\n" +
-      "  leads.forEach((s) => {\n" +
-      "    const li = document.createElement(\"li\");\n" +
-      "    // BUG: only renders a name, and no listener is attached\n" +
-      "    li.textContent = s.name;\n" +
-      "    list.appendChild(li);\n" +
-      "  });\n" +
-      "}\n" +
-      "loadCase();\n",
-    setUp: function (ctx) {
-      ctx.document = mkDocument(["case-list", "detail"]);
-      ctx.fetch = mkFetch({
-        suspects: [
-          { name: "Ada", bounty: 100 },
-          { name: "Linus", bounty: 300 },
-          { name: "Grace", bounty: 200 },
-        ],
-      });
-    },
     isFinal: true,
-    check: function (ctx, logs) {
-      var totalOk = logs.some(function (l) { return String(l.value) === "TOTAL: 500 and 2 suspects."; });
-      if (!totalOk) return false;
-      var doc = ctx.document;
-      var list = doc && doc.getElementById("case-list");
-      var detail = doc && doc.getElementById("detail");
-      if (!list || !detail) return false;
-      if (!list.children || list.children.length !== 2) return false;
-      if (list.children[0].textContent !== "Linus - 300" || list.children[1].textContent !== "Grace - 200") return false;
-      if (!list.listeners.click || !list.listeners.click.length) return false;
-      var childListeners = list.children.some(function (c) { return !!(c.listeners.click && c.listeners.click.length); });
-      if (childListeners) return false;
-      list.dispatch("click", { target: list.children[1] });
-      return detail.textContent === "Grace caught";
-    },
-    successNote: "You fixed async, DOM and events in one boss case. Detective rank: MASTER.",
+    successNote: "THE FINAL CASE — await pauses until a promise settles, try/catch tames rejections and Promise.all runs many at once. Detective rank: MASTER.",
   },
 ];
 
