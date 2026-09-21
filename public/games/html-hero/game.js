@@ -76,7 +76,7 @@
         "Make one word <strong>bold</strong> and another <em>italic</em> inside a paragraph.",
       hint: "<code>&lt;strong&gt;</code> makes text bold, <code>&lt;em&gt;</code> makes it italic.",
       accept: { tags: ["strong", "em", "p"] },
-      starter: "<p>This is a <strong>bold</strong> word... and this is the gray one.</p>",
+      starter: "",
       placeholder: "<p>HTML is <strong>powerful</strong> and <em>elegant</em>.</p>",
     },
     {
@@ -87,7 +87,7 @@
         "Headings have levels! Use <h1>, <h2> and <h3> — biggest first.",
       hint: "<code>&lt;h1&gt;</code> is the biggest, <code>&lt;h2&gt;</code> smaller, <code>&lt;h3&gt;</code> smaller still. Structure your page as a news site would.",
       accept: { tags: ["h1", "h2", "h3"] },
-      starter: "<h1>My News Site</h1>",
+      starter: "",
       placeholder: "<h1>Site Title</h1>\n<h2>Section</h2>\n<h3>Story</h3>",
     },
     {
@@ -120,7 +120,7 @@
         "Use <div> to group things into a box and <span> to highlight a small piece of text inline.",
       hint: "<code>&lt;div&gt;</code> is a block container, <code>&lt;span&gt;</code> wraps text inline. Both need closing tags.",
       accept: { tags: ["div", "span"] },
-      starter: "<h2>My Hobbies</h2>",
+      starter: "",
       placeholder: "<div>\n  <h2>Hobbies</h2>\n  <p>I love <span>coding</span> and <span>design</span>.</p>\n</div>",
     },
     {
@@ -190,8 +190,7 @@
           "h1", "p", "img", "ul", "a", "button",
         ],
       },
-      starter:
-        "<header>\n  <h1>Maaz the Builder</h1>\n  <nav>\n    <a href=\"#work\">Work</a>\n    <a href=\"#about\">About</a>\n  </nav>\n</header>\n<main>\n  <section>\n    <article>\n      <h2>My latest project</h2>\n      <p>I built a game that teaches HTML!</p>\n      <img src=\"https://picsum.photos/240\" alt=\"Project screenshot\">\n      <ul>\n        <li>HTML</li>\n        <li>CSS</li>\n      </ul>\n      <a href=\"#\">Read more</a>\n      <button>Get in touch</button>\n    </article>\n  </section>\n</main>\n<footer>\n  <p>Made with love</p>\n</footer>",
+      starter: "",
       placeholder: "A complete page — you got this!",
       isFinal: true,
     },

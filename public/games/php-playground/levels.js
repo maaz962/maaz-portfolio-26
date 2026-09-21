@@ -45,7 +45,7 @@ window.__phpPlaygroundLevels = [
     instruction:
       'Using <code>$a = 12</code>, <code>$b = 8</code> and <code>$c = 4</code>, print the result of <code>$a * $b + $c</code>.',
     hint: "PHP follows normal math precedence — multiplication before addition.",
-    starter: '<?php\n$a = 12;\n$b = 8;\n$c = 4;\n\n// Print $a * $b + $c\n',
+    starter: '<?php\n\n// Declare $a = 12, $b = 8, $c = 4, then print $a * $b + $c\n',
     passValue: "100",
     isFinal: false,
   },
@@ -59,7 +59,7 @@ window.__phpPlaygroundLevels = [
     instruction:
       'Given <code>$a = 5</code> and <code>$b = 11</code>, use an <code>if/else</code> to print the greater number. You should see <code>11</code>.',
     hint: 'Compare with <code>&gt;</code>, and remember <code>==</code> is "equal to", <code>=</code> is assignment.',
-    starter: '<?php\n$a = 5;\n$b = 11;\n\n// Print the greater of $a and $b\n',
+    starter: '<?php\n\n// Declare $a = 5, $b = 11, then print the greater one\n',
     passValue: "11",
     isFinal: false,
   },
@@ -73,7 +73,7 @@ window.__phpPlaygroundLevels = [
     instruction:
       'Print each city from <code>$cities = ["Lahore", "Karachi", "Islamabad"]</code>, one per line, with a <code>foreach</code> loop.',
     hint: "Write <code>foreach ($cities as $c)</code> and end each <code>echo</code> with <code>\"\\n\"</code>.",
-    starter: '<?php\n$cities = ["Lahore", "Karachi", "Islamabad"];\n\n// Print each city on its own line\n',
+    starter: '<?php\n\n// Declare $cities, then print each city on its own line\n',
     passValue: "Lahore\nKarachi\nIslamabad",
     isFinal: false,
   },
@@ -103,7 +103,7 @@ window.__phpPlaygroundLevels = [
     instruction:
       'Print <code>count()</code> and <code>array_sum()</code> of <code>$prices = [10, 20, 30]</code>, space-separated. Expected: <code>3 60</code>.',
     hint: "Both are built-ins — <code>echo count($prices) . \" \" . array_sum($prices);</code>",
-    starter: '<?php\n$prices = [10, 20, 30];\n\n// Print count($prices) and array_sum($prices)\n',
+    starter: '<?php\n\n// Declare $prices = [10, 20, 30], then print count() and array_sum()\n',
     passValue: "3 60",
     isFinal: false,
   },
@@ -117,7 +117,7 @@ window.__phpPlaygroundLevels = [
     instruction:
       'Print <code>strtoupper(trim("   php   "))</code> — the expected output is <code>PHP</code>.',
     hint: "Trim first (removes the spaces), then uppercase. Nesting order matters.",
-    starter: '<?php\n\n// Print strtoupper(trim("   php   "))\n',
+    starter: '<?php\n\n// Trim the whitespace, then print the string in uppercase\n',
     passValue: "PHP",
     isFinal: false,
   },
@@ -131,7 +131,7 @@ window.__phpPlaygroundLevels = [
     instruction:
       'From <code>$user = ["name" =&gt; "Maaz", "age" =&gt; 22]</code>, print the name then a space then the age. Output: <code>Maaz 22</code>.',
     hint: 'Access by key: <code>$user["name"]</code> and <code>$user["age"]</code>.',
-    starter: '<?php\n$user = ["name" => "Maaz", "age" => 22];\n\n// Print "Maaz 22"\n',
+    starter: '<?php\n\n// Declare $user, then print "Maaz 22"\n',
     passValue: "Maaz 22",
     isFinal: false,
   },
@@ -161,7 +161,7 @@ window.__phpPlaygroundLevels = [
     instruction:
       'Print <code>Hi, NAME</code> where the name comes from <code>$_GET["name"]</code> in the page URL, falling back to <code>guest</code> when it is missing. Expected here: <code>Hi, guest</code>.',
     hint: 'The null-coalescing operator handles missing keys: <code>$_GET["name"] ?? "guest"</code>',
-    starter: '<?php\n\n// Print "Hi, " plus $_GET["name"] ?? "guest"\n',
+    starter: '<?php\n\n// Print "Hi, NAME" using $_GET["name"], falling back to "guest"\n',
     passValue: "Hi, guest",
     isFinal: false,
   },
@@ -175,7 +175,7 @@ window.__phpPlaygroundLevels = [
     instruction:
       'Turn <code>$csv = "apple,banana,mango"</code> into <code>apple | banana | mango</code>.',
     hint: "Split on the comma with <code>explode</code>, rejoin with <code>implode</code> using <code>\" | \"</code>.",
-    starter: '<?php\n$csv = "apple,banana,mango";\n\n// Print "apple | banana | mango"\n',
+    starter: '<?php\n\n// Declare $csv, then print "apple | banana | mango"\n',
     passValue: "apple | banana | mango",
     isFinal: false,
   },
@@ -189,7 +189,7 @@ window.__phpPlaygroundLevels = [
     instruction:
       'Given <code>$config = ["theme" =&gt; "dark"]</code>, print <code>$config["timezone"]</code> using <code>??</code> so it defaults to <code>"default"</code>. The expected output is <code>default</code>.',
     hint: "Write <code>$config[\"timezone\"] ?? \"default\"</code> — the <code>??</code> only kicks in when the key is missing.",
-    starter: '<?php\n$config = ["theme" => "dark"];\n\n// Print $config["timezone"] ?? "default"\n',
+    starter: '<?php\n\n// Declare $config, then print $config["timezone"] ?? "default"\n',
     passValue: "default",
     isFinal: false,
   },
@@ -205,7 +205,7 @@ window.__phpPlaygroundLevels = [
     instruction:
       'Uppercase every fruit in <code>$fruits = ["apple", "banana", "mango"]</code> with <code>array_map()</code>, then join the result with a single space. Expected: <code>APPLE BANANA MANGO</code>.',
     hint: '<code>array_map("strtoupper", $fruits)</code> returns a new array — feed it to <code>implode(" ", ...)</code>.',
-    starter: '<?php\n$fruits = ["apple", "banana", "mango"];\n\n// Uppercase each fruit, join with a space\n',
+    starter: '<?php\n\n// Declare $fruits, then uppercase each fruit and join with a space\n',
     passValue: "APPLE BANANA MANGO",
     isFinal: false,
   },
@@ -233,7 +233,7 @@ window.__phpPlaygroundLevels = [
     instruction:
       'Total <code>$nums = [10, 20, 30, 40]</code> using <code>array_reduce()</code> with an arrow function. Expected output: <code>100</code>.',
     hint: 'The callback adds each value to a running total, starting at <code>0</code>: <code>fn($carry, $n) =&gt; $carry + $n</code>, then pass <code>0</code> as the third argument.',
-    starter: '<?php\n$nums = [10, 20, 30, 40];\n\n// Total them with array_reduce\n',
+    starter: '<?php\n\n// Declare $nums = [10, 20, 30, 40], then total them with array_reduce\n',
     passValue: "100",
     isFinal: true,
   },
