@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
@@ -36,9 +36,9 @@ const games = [
     title: "HTML Hero",
     description:
       "Become an HTML Master! Write real tags for headings, lists, tables, forms and full pages across easy to advanced challenges.",
-    difficulty: "Beginner ? Advanced",
+    difficulty: "Beginner â†’ Advanced",
     topics: ["HTML", "Tags", "Semantics", "Forms"],
-    animal: "??",
+    animal: "ðŸ¦¸",
     color: "from-indigo-500/20 to-violet-500/20",
     borderColor: "border-indigo-500/30",
     accentColor: "text-indigo-500",
@@ -51,7 +51,7 @@ const games = [
       "Help adorable animals find their enclosures by mastering CSS Flexbox properties. Learn justify-content, align-items, flex-direction and more through fun challenges!",
     difficulty: "Beginner",
     topics: ["Flexbox", "CSS Layout", "justify-content", "align-items"],
-    animal: "??",
+    animal: "ðŸ¦",
     color: "from-green-500/20 to-emerald-500/20",
     borderColor: "border-green-500/30",
     accentColor: "text-green-500",
@@ -64,7 +64,7 @@ const games = [
       "Build layouts and master CSS Grid. Learn grid-template-columns, grid-areas, spanning, and more through fun challenges!",
     difficulty: "Intermediate",
     topics: ["CSS Grid", "grid-template", "grid-areas", "spanning"],
-    animal: "??",
+    animal: "ðŸŒ±",
     color: "from-emerald-500/20 to-teal-500/20",
     borderColor: "border-emerald-500/30",
     accentColor: "text-emerald-500",
@@ -75,9 +75,9 @@ const games = [
     title: "JS Detective",
     description:
       "Solve coding mysteries and master core JavaScript! Variables, loops, arrays, functions, .map, .filter and event handlers through fun console challenges.",
-    difficulty: "Beginner ? Advanced",
+    difficulty: "Beginner â†’ Advanced",
     topics: ["JavaScript", "Variables", "Loops", "Functions"],
-    animal: "???",
+    animal: "ðŸ•µï¸",
     color: "from-yellow-500/20 to-amber-500/20",
     borderColor: "border-amber-500/30",
     accentColor: "text-amber-500",
@@ -88,9 +88,9 @@ const games = [
     title: "PHP Playground",
     description:
       "Type real PHP and watch it run live in your browser. Variables, loops, functions, arrays and string functions - all executed by a WebAssembly PHP engine right on the page.",
-    difficulty: "Beginner ? Advanced",
+    difficulty: "Beginner â†’ Advanced",
     topics: ["PHP", "Echo", "Variables", "Loops", "Functions", "Arrays"],
-    animal: "??",
+    animal: "ðŸ˜",
     color: "from-violet-500/20 to-purple-600/20",
     borderColor: "border-violet-500/30",
     accentColor: "text-violet-500",
@@ -101,9 +101,9 @@ const games = [
     title: "Query Quest",
     description:
       "Master SQL by querying a real in-your-browser database. SELECT, WHERE, ORDER BY, JOIN, GROUP BY and more - run against an actual SQLite engine via sql.js.",
-    difficulty: "Beginner ? Advanced",
+    difficulty: "Beginner â†’ Advanced",
     topics: ["SQL", "SELECT", "WHERE", "ORDER BY", "JOIN", "GROUP BY"],
-    animal: "???",
+    animal: "ðŸ—ƒï¸",
     color: "from-sky-500/20 to-cyan-500/20",
     borderColor: "border-sky-500/30",
     accentColor: "text-sky-500",
@@ -116,7 +116,7 @@ const games = [
       "Hunt for elements using CSS selectors. Master class, ID, attribute, and pseudo selectors!",
     difficulty: "Beginner",
     topics: ["Selectors", "Class", "ID", "Pseudo-classes"],
-    animal: "??",
+    animal: "ðŸŽ¯",
     color: "from-blue-500/20 to-cyan-500/20",
     borderColor: "border-blue-500/30",
     accentColor: "text-blue-500",
@@ -129,7 +129,7 @@ const games = [
       "Bring characters to life with CSS animations and transitions. Learn keyframes, timing, and more!",
     difficulty: "Advanced",
     topics: ["Animations", "Transitions", "Keyframes"],
-    animal: "?",
+    animal: "âœ¨",
     color: "from-purple-500/20 to-pink-500/20",
     borderColor: "border-purple-500/30",
     accentColor: "text-purple-500",
@@ -185,13 +185,13 @@ function GamePreview({ game }: { game: (typeof games)[0] }) {
           <div className="flex h-full flex-col">
             <div className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-black/20 p-2">
               <span className="flex h-9 flex-1 items-center justify-center rounded-lg bg-red-400/25 text-2xl">
-                ??
+                ðŸ¦
               </span>
               <span className="flex h-9 flex-1 items-center justify-center rounded-lg bg-sky-400/25 text-2xl">
-                ??
+                ðŸ°
               </span>
               <span className="flex h-9 flex-1 items-center justify-center rounded-lg bg-yellow-400/25 text-2xl">
-                ??
+                ðŸ¦Š
               </span>
             </div>
             <p className="mt-2 font-mono text-[0.6rem] text-emerald-400">
@@ -204,12 +204,12 @@ function GamePreview({ game }: { game: (typeof games)[0] }) {
           <div className="flex h-full flex-col">
             <div className="grid flex-1 grid-cols-3 grid-rows-2 gap-1">
               <div className="flex items-center justify-center rounded-md border border-emerald-400/50 bg-emerald-500/30 text-xl">
-                ??
+                ðŸŒ±
               </div>
               <div className="rounded-md bg-emerald-200/10" />
               <div className="rounded-md bg-emerald-200/10" />
               <div className="flex items-center justify-center rounded-md bg-emerald-500/20 text-sm">
-                ??
+                ðŸ§º
               </div>
               <div className="rounded-md bg-emerald-200/10" />
               <div className="rounded-md bg-emerald-200/10" />
@@ -236,7 +236,7 @@ function GamePreview({ game }: { game: (typeof games)[0] }) {
               {"titleCase"}(
               <span className="text-amber-300">clue</span>)
             </p>
-            <p className="text-emerald-400">? &quot;Mystery solved!&quot;</p>
+            <p className="text-emerald-400">â†’ &quot;Mystery solved!&quot;</p>
             <p className="text-slate-500">
               ▓<span className="animate-pulse">_</span>
             </p>
@@ -354,8 +354,8 @@ function GameCard({
           </h3>
           <span
             title={
-              game.difficulty.includes("?")
-                ? "Multiple difficulty tiers inside one game — easy to advanced challenges"
+              game.difficulty.includes("â†’")
+                ? "Multiple difficulty tiers inside one game â€” easy to advanced challenges"
                 : undefined
             }
             className={cn(
@@ -404,7 +404,7 @@ function GameCard({
                 <CheckCircle2 className={cn("h-3.5 w-3.5", game.accentColor)} />
                 {progress
                   ? `${Object.values(progress.completed).filter(Boolean).length}/${progress.totalLevels}`
-                  : "—"}
+                  : "â€”"}
               </p>
             </div>
           </div>
@@ -425,7 +425,7 @@ function GameCard({
                     {done >= total
                       ? " Completed!"
                       : done > 0
-                        ? ` Playing — ${done}/${total} levels`
+                        ? ` Playing â€” ${done}/${total} levels`
                         : " Not started"}
                   </span>
                   <div className="mt-1 h-1 overflow-hidden rounded-full bg-background-secondary">
@@ -778,7 +778,7 @@ export default function GamesPage() {
                         "flex items-center gap-2 rounded-full border border-border bg-background-secondary px-3 py-1.5 text-xs transition-colors hover:border-primary/40",
                         g.accentColor
                       )}
-                      title={`${g.title} — ${p ? `${p.score} pts, ${done}/${total} levels` : "not started"}`}
+                      title={`${g.title} â€” ${p ? `${p.score} pts, ${done}/${total} levels` : "not started"}`}
                     >
                       {isDone ? (
                         <CheckCircle2 className="h-3.5 w-3.5 text-green-500" />
@@ -823,7 +823,7 @@ export default function GamesPage() {
                           {g.title}
                         </Link>
                         <span className="ml-auto">
-                          {p ? `${done}/${total} levels left` : "not started"} —{" "}
+                          {p ? `${done}/${total} levels left` : "not started"} â€”{" "}
                           {p?.score ?? 0} pts
                         </span>
                       </li>

@@ -230,7 +230,7 @@ export default function QueryQuestPage() {
             </Link>
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-2xl">???</span>
+                <span className="text-2xl">🗃️</span>
                 <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Query Quest</h1>
               </div>
               <p className="text-sm text-slate-400">

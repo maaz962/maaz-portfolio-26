@@ -240,7 +240,7 @@ export default function PhpPlaygroundPage() {
             </Link>
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-2xl">??</span>
+                <span className="text-2xl">🐘</span>
                 <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">PHP Playground</h1>
               </div>
               <p className="text-sm text-slate-400">
@@ -251,7 +251,7 @@ export default function PhpPlaygroundPage() {
           <GameSocial
             slug={GAME_SLUG}
             title="PHP Playground"
-            emoji="??"
+            emoji="🐘"
             accentText="text-amber-400"
             accentBg="bg-amber-500/10"
             currentUser={currentUser}
@@ -426,7 +426,7 @@ export default function PhpPlaygroundPage() {
                     }`}
                   >
                     <div className="mb-1 font-semibold">
-                      {result.ok ? "? Correct!" : "? Not quite:"}
+                      {result.ok ? "✓ Correct!" : "✗ Not quite:"}
                     </div>
                     {result.stdout && <pre className="whitespace-pre-wrap text-xs">{result.stdout}</pre>}
                     {result.error && <pre className="whitespace-pre-wrap text-xs">{result.error}</pre>}
