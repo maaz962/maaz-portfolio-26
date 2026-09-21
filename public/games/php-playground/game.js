@@ -1,101 +1,325 @@
-﻿/* PHP Playground — vanilla IIFE, js-detective contract (exact):
- *   __initPhpPlayground / __resumePhpPlayground / __onPhpPlaygroundProgress /
- *   __getPhpPlaygroundLevels / __goToPhpPlaygroundLevel / __checkPhpPlayground
- * The heavy PHP (php-wasm) engine is booted lazily by the page.tsx bridge —
- * this engine only owns level data, tier unlock, XP, hints and progress, and
- * delegates code execution to window.__phpPlaygroundRun(source). It also emits
- * a "php-booting" phase so the page can show a "Setting up PHP engine…" state.
- */
+﻿/* ==========================================================================
+   PHP PLAYGROUND — Engine (vanilla IIFE, js-detective contract)
+   window API:
+     __initPhpPlayground                init/reset state (called by hook)
+     __resumePhpPlayground(saved)       restore DB progress (hook)
+     __getPhpPlaygroundLevels()         level meta for the sidebar cards
+     __getPhpPlaygroundState()          live snapshot for boot polling
+     __goToPhpPlaygroundLevel(index)    navigate (0-based index)
+     __phpPlaygroundRun(index, code)    run PHP, return stdout/stderr
+     __phpPlaygroundCheck(index, code)  run + judge vs passValue
+     __phpPlaygroundRevealHint(index)   reveal hint (max 3/day, DB-tracked)
+   Events:
+     php-playground-boot   {status: booting|ready|error, message?}
+     php-playground-state  {currentLevel, score, completed, solutions, hints, totalLevels}
+   The heavy php-wasm engine (PHP 8.4 WASM) boots LAZILY on the first Run.
+   Hints: nudge only, hidden behind a reveal button, limited to 3 per day per
+   user; the counter rides the progress payload ({date, used}) so it persists
+   in the DB and resumes across visits.
+   ========================================================================== */
 (function () {
   "use strict";
 
   var LEVELS = [];
-  try { LEVELS = window.__phpPlaygroundLevels || []; } catch (e) { LEVELS = []; }
-
-  var TIER_ORDER = ["easy", "intermediate", "hard", "mostHard"];
-  var LAST_TIER = "mostHard";
+  var TIERS = ["easy", "intermediate", "hard", "mostHard"];
+  var TIER_LABELS = { easy: "Easy", intermediate: "Intermediate", hard: "Hard", mostHard: "Most Hard" };
+  var POINTS = { easy: 5, intermediate: 6, hard: 8, mostHard: 10 };
+  var HINTS_PER_DAY = 3;
 
   var STATE = {
     currentLevel: 0,
-    score: LEVELS.reduce(function (s, l) { return s + l.xp; }, 0),
+    score: 0,
     completed: {},
-    hints: {},
-    totalLevels: LEVELS.length,
+    solutions: {},
+    hintsDate: null,
+    hintsUsed: 0,
   };
-  var emitter = null;
 
-  function tierLevels(tier) { return LEVELS.filter(function (l) { return l.tier === tier; }); }
-  function tierDone(tier) { return tierLevels(tier).filter(function (l) { return STATE.completed[l.id - 1]; }).length; }
-  function tierOpen(tier) {
-    if (tier === "easy") return true;
-    var prev = TIER_ORDER[TIER_ORDER.indexOf(tier) - 1];
-    var prevId = tierLevels(prev).map(function (l) { return l.id; });
-    if (!prevId.length) return true;
-    return tierDone(prev) >= prevId.length;
+  /* ---- level data (poll-safe) -------------------------------------------- */
+
+  function tryLoadLevels() {
+    if (LEVELS.length) return true;
+    try {
+      if (typeof window.__phpPlaygroundLevels !== "undefined") {
+        LEVELS = window.__phpPlaygroundLevels || [];
+        STATE.currentLevel = Math.min(STATE.currentLevel, Math.max(0, LEVELS.length - 1));
+        return LEVELS.length > 0;
+      }
+    } catch (e) { /* levels.js may not be parsed yet */ }
+    return false;
   }
 
-  function emit() {
+  /* ---- tier gate ---------------------------------------------------------- */
+
+  function tierIndex(tier) { return TIERS.indexOf(tier); }
+  function tierLevels(tierKey) { return LEVELS.filter(function (l) { return l.tier === tierKey; }); }
+  function countDoneInTier(tierKey) {
+    return tierLevels(tierKey).filter(function (l) { return STATE.completed[l.id - 1]; }).length;
+  }
+  function pointsForLevel(level) { return POINTS[level.tier] || 5; }
+
+  // Finish all but one case in a tier to unlock the next; all Hard cases
+  // must be solved before Most Hard opens (same rules as js-detective).
+  function isLevelUnlocked(index) {
+    if (!LEVELS[index]) return false;
+    if (STATE.completed[index]) return true;
+    var ti = tierIndex(LEVELS[index].tier);
+    if (ti <= 0) return true;
+    var prevKey = TIERS[ti - 1];
+    var prevLevels = tierLevels(prevKey);
+    var need = prevKey === "hard" ? prevLevels.length : Math.max(1, prevLevels.length - 1);
+    return prevLevels.length === 0 || countDoneInTier(prevKey) >= need;
+  }
+
+  function lockMessageFor(index) {
+    var lvl = LEVELS[index];
+    if (!lvl) return "";
+    var ti = tierIndex(lvl.tier);
+    if (ti <= 0) return "";
+    var prevKey = TIERS[ti - 1];
+    var prevLabel = TIER_LABELS[prevKey] || prevKey;
+    var prevLevels = tierLevels(prevKey);
+    var need = prevKey === "hard" ? prevLevels.length : Math.max(1, prevLevels.length - 1);
+    var left = Math.max(0, need - countDoneInTier(prevKey));
+    return "Solve " + left + " more " + prevLabel + " level" + (left === 1 ? "" : "s") + " to unlock this tier.";
+  }
+
+  /* ---- score / state ---------------------------------------- */
+
+  function recomputeScore() {
+    var s = 0, i;
+    for (i = 0; i < LEVELS.length; i++) {
+      if (STATE.completed[i]) s += pointsForLevel(LEVELS[i]);
+    }
+    STATE.score = s;
+  }
+
+  function publishState() {
+    tryLoadLevels();
+    recomputeScore();
     var payload = {
       currentLevel: STATE.currentLevel,
       score: STATE.score,
       completed: STATE.completed,
-      totalLevels: STATE.totalLevels,
+      solutions: STATE.solutions,
+      hints: { date: STATE.hintsDate, used: STATE.hintsUsed },
+      totalLevels: LEVELS.length,
     };
-    if (emitter) emitter(payload);
-    if (window.__onPhpPlaygroundProgressExternal) window.__onPhpPlaygroundProgressExternal(payload);
-  }
-
-  function markDone(id) {
-    if (STATE.completed[id]) return;
-    STATE.completed[id] = true;
-    emit();
-  }
-
-  function garbageCollect() {}
-
-  function checkLevel(id, source) {
-    var lvl = LEVELS.find(function (l) { return l.id === id; });
-    if (!lvl) return Promise.resolve({ ok: false, error: "Unknown level." });
-    if (typeof window.__phpPlaygroundRun !== "function") {
-      return Promise.resolve({ ok: false, error: "PHP engine is still booting. Please wait a moment, then try again.", booting: true });
+    try {
+      window.dispatchEvent(new CustomEvent("php-playground-state", { detail: payload }));
+    } catch (e) { /* no listeners yet */ }
+    if (typeof window.__onPhpPlaygroundProgress === "function") {
+      try { window.__onPhpPlaygroundProgress(payload); } catch (e) { /* ignore */ }
     }
-    return Promise.resolve(window.__phpPlaygroundRun(source)).then(function (res) {
-      if (!res) return { ok: false, error: "PHP engine returned no result." };
-      if (res.error) return { ok: false, error: res.error, stdout: res.stdout || "" };
-      // The level's PASS value is a plain string compared against stdout.
-      var expected = String(lvl.passValue ?? "");
+  }
+
+  /* ---- php-wasm lazy boot -------------------------------------------------- */
+
+  try {
+    if (typeof navigator !== "undefined" && !navigator.locks) {
+      var __locksChain = Promise.resolve();
+      navigator.locks = {
+        request: function (name, callback) {
+          var next = __locksChain.then(function () { return callback({ name: name, mode: "exclusive" }); });
+          __locksChain = next.then(function () {}, function () {});
+          return next;
+        },
+      };
+    }
+  } catch (e) { /* run() will surface any locks problems */ }
+
+  var BOOT_TIMEOUT_MS = 60000;
+  var engineState = { status: "idle", php: null, bootPromise: null };
+
+  function bootEvent(status, message) {
+    var detail = { status: status };
+    if (message !== undefined) detail.message = message;
+    try {
+      window.dispatchEvent(new CustomEvent("php-playground-boot", { detail: detail }));
+    } catch (e) { /* no listeners yet */ }
+  }
+
+  function ensureBooted() {
+    if (engineState.status === "ready") return Promise.resolve(engineState.php);
+    if (engineState.status === "booting") return engineState.bootPromise;
+    engineState.status = "booting";
+    bootEvent("booting");
+
+    var watchdog = setTimeout(function () {
+      if (engineState.status !== "booting") return;
+      engineState.status = "error";
+      engineState.bootPromise = null;
+      bootEvent("error", "The PHP engine did not start within " + Math.round(BOOT_TIMEOUT_MS / 1000) + "s. Try again, or check that the php-playground WASM assets are deployed.");
+    }, BOOT_TIMEOUT_MS);
+
+    engineState.bootPromise = Promise.resolve()
+      .then(function () {
+        // PhpWeb.mjs dynamically imports ./php8.4-web.mjs, which fetches
+        // e31ec3faf3e2323a2b4a448342b50307765b8217.wasm alongside it.
+        return import("/games/php-playground/PhpWeb.mjs");
+      })
+      .then(function (mod) {
+        var PhpWeb = mod && (mod.PhpWeb || (mod.default && mod.default.PhpWeb));
+        if (typeof PhpWeb !== "function") throw new Error("php-wasm module is malformed");
+        return new PhpWeb({ version: "8.4" });
+      })
+      .then(function (php) {
+        return php.binary.then(function () {
+          engineState.php = php;
+          engineState.status = "ready";
+          return php;
+        });
+      })
+      .then(function (php) { clearTimeout(watchdog); bootEvent("ready"); return php; })
+      .catch(function (err) {
+        engineState.status = "error";
+        engineState.bootPromise = null;
+        clearTimeout(watchdog);
+        bootEvent("error", String((err && err.message) || err));
+        throw err;
+      });
+    return engineState.bootPromise;
+  }
+
+  /* ---- run ---------------------------------------------------------------- */
+
+  function runPHP(source) {
+    return ensureBooted()
+      .then(function (php) {
+        var out = "", err = "";
+        php.addEventListener("output", function (e) { out += (e.detail || []).join(""); });
+        php.addEventListener("error", function (e) { err += (e.detail || []).join(""); });
+        return php.run(String(source || "")).then(function (exit) {
+          return { stdout: out, stderr: err, exit: exit };
+        });
+      })
+      .catch(function (e) {
+        return { stdout: "", stderr: String((e && e.message) || e), exit: -1 };
+      });
+  }
+
+  function checkLevel(index, source) {
+    var lvl = LEVELS[index];
+    return runPHP(source).then(function (res) {
+      if (!lvl) return { ok: false, stdout: res.stdout, error: "Unknown level." };
+      var expected = String(lvl.passValue ?? "").trim();
       var actual = String(res.stdout ?? "").trim();
       if (actual === expected) {
-        markDone(id);
-        return { ok: true, stdout: actual };
+        STATE.completed[index] = true;
+        STATE.solutions[index] = source;
+        publishState();
+        return { ok: true, stdout: res.stdout, score: pointsForLevel(lvl), completed: true };
       }
-      return { ok: false, error: res.stderr || lvl.seedErr || "Output doesn't match.", stdout: actual };
+      if (res.stderr && res.stderr.trim()) {
+        return { ok: false, stdout: res.stdout, error: res.stderr, errorType: "runtime" };
+      }
+      return { ok: false, stdout: res.stdout, error: lvl.seedErr || "Output doesn't match the expected result.", errorType: "wrong" };
     });
   }
 
-  function goLevel(id) {
-    if (id < 0 || id >= STATE.totalLevels) return;
-    STATE.currentLevel = id;
-    emit();
+  /* ---- hints ---------------------------------------------------------------- */
+
+  function todayStr() {
+    var d = new Date();
+    return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
   }
 
-  function init(cb) { if (cb) emitter = cb; emit(); }
-  function resume(cb, prev) {
-    if (cb) emitter = cb;
-    if (prev) {
-      STATE.currentLevel = prev.currentLevel || 0;
-      STATE.score = prev.score || LEVELS.reduce(function (s, l) { return s + l.xp; }, 0);
-      STATE.completed = prev.completed || {};
-      if (prev.totalLevels) STATE.totalLevels = prev.totalLevels;
+  function revealHint(index) {
+    var lvl = LEVELS[index];
+    if (!lvl) return { ok: false, left: 0, used: STATE.hintsUsed };
+    var today = todayStr();
+    if (STATE.hintsDate !== today) {
+      STATE.hintsDate = today;
+      STATE.hintsUsed = 0;
     }
-    emit();
+    if (STATE.hintsUsed >= HINTS_PER_DAY) {
+      return { ok: false, left: 0, used: HINTS_PER_DAY };
+    }
+    STATE.hintsUsed += 1;
+    publishState();
+    return { ok: true, hint: lvl.hint, used: STATE.hintsUsed, left: HINTS_PER_DAY - STATE.hintsUsed };
+  }
+
+  /* ---- navigation ------------------------------------------------------------ */
+
+  function gotoLevel(index) {
+    if (!LEVELS.length) return;
+    index = Number(index);
+    if (index < 0 || index >= LEVELS.length) return;
+    if (!STATE.completed[index] && !isLevelUnlocked(index)) return;
+    STATE.currentLevel = index;
+    publishState();
+  }
+
+  /* ---- public API -------------------------------------------------------------- */
+
+  function init() {
+    STATE.currentLevel = 0;
+    STATE.score = 0;
+    STATE.completed = {};
+    STATE.solutions = {};
+    STATE.hintsDate = null;
+    STATE.hintsUsed = 0;
+    publishState();
+  }
+
+  function resume(saved) {
+    if (!saved) return;
+    tryLoadLevels();
+    if (typeof saved.currentLevel === "number") {
+      var cl = Math.floor(saved.currentLevel);
+      if (cl >= 0 && cl < Math.max(1, LEVELS.length)) STATE.currentLevel = cl;
+    }
+    if (saved.completed && typeof saved.completed === "object") STATE.completed = saved.completed;
+    if (saved.solutions && typeof saved.solutions === "object") STATE.solutions = saved.solutions;
+    if (saved.hints && typeof saved.hints === "object") {
+      var hu = Number(saved.hints.used);
+      if (typeof saved.hints.date === "string" && saved.hints.date.length === 10 && Number.isInteger(hu) && hu >= 0) {
+        STATE.hintsDate = saved.hints.date;
+        STATE.hintsUsed = STATE.hintsDate === todayStr() ? hu : 0;
+      }
+    }
+    publishState();
   }
 
   window.__initPhpPlayground = init;
   window.__resumePhpPlayground = resume;
-  window.__onPhpPlaygroundProgress = function (cb) { emitter = cb; };
-  window.__getPhpPlaygroundLevels = function () { return LEVELS; };
-  window.__goToPhpPlaygroundLevel = function (id) { goLevel(id); };
-  window.__checkPhpPlayground = function (id, source) { return checkLevel(id, source); };
-  window.__getPhpPlaygroundState = function () { return STATE; };
+  window.__getPhpPlaygroundLevels = function () {
+    tryLoadLevels();
+    return LEVELS.map(function (lv) {
+      return {
+        id: lv.id,
+        title: lv.title,
+        tier: lv.tier,
+        concepts: lv.concepts || [],
+        points: pointsForLevel(lv),
+        isFinal: !!lv.isFinal,
+        shortDesc: lv.shortDesc || "",
+        instruction: lv.instruction || "",
+        hint: lv.hint || "",
+        seedCode: lv.starter || "",
+        seedErr: lv.seedErr || "Output doesn't match the expected result.",
+        passValue: lv.passValue ?? "",
+      };
+    });
+  };
+  window.__getPhpPlaygroundState = function () {
+    tryLoadLevels();
+    return {
+      currentLevel: STATE.currentLevel,
+      score: STATE.score,
+      completed: STATE.completed,
+      solutions: STATE.solutions,
+      hints: { date: STATE.hintsDate, used: STATE.hintsUsed },
+      totalLevels: LEVELS.length,
+    };
+  };
+  window.__goToPhpPlaygroundLevel = gotoLevel;
+  window.__phpPlaygroundRun = function (index, code) { return runPHP(code); };
+  window.__phpPlaygroundCheck = function (index, code) { return checkLevel(index, code); };
+  window.__phpPlaygroundRevealHint = revealHint;
+  window.__phpPlaygroundBootState = function () {
+    tryLoadLevels();
+    return { boot: engineState.status };
+  };
 })();

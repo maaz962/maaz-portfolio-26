@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import Script from "next/script";
 import CodeMirror from "@uiw/react-codemirror";
@@ -10,12 +10,13 @@ import {
   ArrowLeft,
   Check,
   ChevronDown,
+  FolderOpen,
   Gamepad2,
+  Lightbulb,
   Lock,
-  Pause,
-  Play,
   Sparkles,
   Terminal,
+  X,
 } from "lucide-react";
 import { GlassNavbar } from "@/components/layout/glass-navbar";
 import { AuthGate } from "@/components/games/auth-gate";
@@ -26,7 +27,7 @@ import { useAuth } from "@/lib/auth-context";
 import "./game.css";
 
 const GAME_SLUG = "php-playground";
-const FALLBACK_TOTAL_LEVELS = 8;
+const FALLBACK_TOTAL_LEVELS = 16;
 
 interface PhpLevelMeta {
   id: number;
@@ -34,38 +35,153 @@ interface PhpLevelMeta {
   tier: "easy" | "intermediate" | "hard" | "mostHard";
   concepts: string[];
   points: number;
-  isFinal?: boolean;
+  isFinal: boolean;
+  shortDesc: string;
+  instruction: string;
+  hint: string;
   seedCode: string;
-  seedHint: string;
 }
 
 interface PhpGameState {
   currentLevel: number;
   score: number;
   completed: Record<number, boolean>;
+  solutions?: Record<number, string>;
+  hints?: { date?: string; used: number };
   totalLevels: number;
+}
+
+interface PhpRunResult {
+  ok?: boolean;
+  stdout?: string;
+  stderr?: string;
+  exit?: number;
+  score?: number;
+  error?: string;
+}
+
+interface ConsoleLine {
+  type: "log" | "error";
+  text: string;
 }
 
 const TIER_ORDER = ["easy", "intermediate", "hard", "mostHard"];
 
-const TIER_META: Record<string, { label: string; blurb: string }> = {
-  easy: { label: "Easy", blurb: "echo, variables, types & control flow" },
-  intermediate: { label: "Intermediate", blurb: "functions, arrays & string helpers" },
-  hard: { label: "Hard", blurb: "superglobals, null-coalescing & array fns" },
-  mostHard: { label: "Most Hard", blurb: "array_map, array_sum & the boss levels" },
+const TIER_META = [
+  { key: "easy", label: "Easy", blurb: "Warm-up — echo, variables, types and control flow." },
+  { key: "intermediate", label: "Intermediate", blurb: "Clues tighten — functions, arrays and string helpers." },
+  { key: "hard", label: "Hard", blurb: "Real casework — superglobals, null-coalescing and array helpers." },
+  { key: "mostHard", label: "Most Hard", blurb: "Final stretch — array_map, array_filter and the boss reduce." },
+];
+
+const CONCEPT_LABELS: Record<string, string> = {
+  variables: "Variables",
+  "data types": "Types",
+  gettype: "gettype",
+  operators: "Operators",
+  "if/else": "if/else",
+  comparison: "Comparison",
+  foreach: "foreach",
+  functions: "Functions",
+  parameters: "Parameters",
+  arrays: "Arrays",
+  count: "count",
+  array_sum: "sum",
+  strtoupper: "strtoupper",
+  trim: "trim",
+  "associative arrays": "Keyed arrays",
+  for: "for",
+  continue: "continue",
+  "$_GET": "GET",
+  superglobals: "Superglobals",
+  explode: "explode",
+  implode: "implode",
+  "??": "??",
+  array_map: "map",
+  array_filter: "filter",
+  "arrow functions": "Arrows",
+  array_reduce: "reduce",
 };
 
-const TIER_STYLE: Record<string, { chip: string }> = {
-  easy: { chip: "bg-emerald-500/15 text-emerald-300 border-emerald-400/30" },
-  intermediate: { chip: "bg-sky-500/15 text-sky-300 border-sky-400/30" },
-  hard: { chip: "bg-amber-500/15 text-amber-300 border-amber-400/30" },
-  mostHard: { chip: "bg-rose-500/15 text-rose-300 border-rose-400/30" },
-};
+/* ---- shared tier helpers (mirror js-detective) ---- */
+
+function tierLevelsFor(levels: PhpLevelMeta[], tierKey: string): PhpLevelMeta[] {
+  return levels.filter((l) => l.tier === tierKey);
+}
+
+function tierDoneFor(
+  levels: PhpLevelMeta[],
+  completed: Record<number, boolean>,
+  tierKey: string
+): number {
+  return tierLevelsFor(levels, tierKey).filter((l) => completed[l.id - 1]).length;
+}
+
+function tierOpenFor(
+  levels: PhpLevelMeta[],
+  completed: Record<number, boolean>,
+  tierKey: string
+): boolean {
+  const ti = TIER_ORDER.indexOf(tierKey);
+  if (ti <= 0) return true;
+  const prev = TIER_ORDER[ti - 1] ?? "";
+  const prevLevels = tierLevelsFor(levels, prev);
+  const need = prev === "hard" ? prevLevels.length : Math.max(1, prevLevels.length - 1);
+  return prevLevels.length === 0 || tierDoneFor(levels, completed, prev) >= need;
+}
+
+function lockNoteFor(
+  levels: PhpLevelMeta[],
+  completed: Record<number, boolean>,
+  tierKey: string
+): string {
+  const ti = TIER_ORDER.indexOf(tierKey);
+  if (ti <= 0) return "";
+  const prev = TIER_ORDER[ti - 1] ?? "";
+  const prevLevels = tierLevelsFor(levels, prev);
+  const need = prev === "hard" ? prevLevels.length : Math.max(1, prevLevels.length - 1);
+  const left = Math.max(0, need - tierDoneFor(levels, completed, prev));
+  const label = TIER_META.find((t) => t.key === prev)?.label || prev;
+  return `Solve ${left} more ${label} level${left === 1 ? "" : "s"} to unlock this tier.`;
+}
+
+function tierLegendFor(levels: PhpLevelMeta[]): string {
+  const parts: string[] = [];
+  for (let ti = 1; ti < TIER_ORDER.length; ti++) {
+    const prev = TIER_ORDER[ti - 1] ?? "";
+    const next = TIER_ORDER[ti] ?? "";
+    const prevLevels = tierLevelsFor(levels, prev);
+    if (!prevLevels.length) continue;
+    const need = prev === "hard" ? prevLevels.length : Math.max(1, prevLevels.length - 1);
+    const prevLabel = TIER_META.find((t) => t.key === prev)?.label || prev;
+    const nextLabel = TIER_META.find((t) => t.key === next)?.label || next;
+    parts.push(`Solve ${need} of ${prevLevels.length} ${prevLabel} levels to unlock ${nextLabel}`);
+  }
+  return parts.join(". ");
+}
+
+function consoleLinesFor(res: PhpRunResult): ConsoleLine[] {
+  const lines: ConsoleLine[] = [];
+  const stdout = res.stdout ?? "";
+  const stderr = res.stderr ?? "";
+  const stdoutTrimmed = stdout.replace(/\n$/, "");
+  stdoutTrimmed.split("\n").forEach((l) => {
+    if (l.length) lines.push({ type: "log", text: l });
+  });
+  stderr
+    .replace(/\n$/, "")
+    .split("\n")
+    .forEach((l) => {
+      if (l.length) lines.push({ type: "error", text: l });
+    });
+  return lines;
+}
 
 export default function PhpPlaygroundPage() {
   const { user: currentUser, loading: authLoading } = useAuth();
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authRequest, setAuthRequest] = useState<"login" | "register">("login");
+  const [showLevelSelect, setShowLevelSelect] = useState(false);
   const [levels, setLevels] = useState<PhpLevelMeta[]>([]);
   const [gameState, setGameState] = useState<PhpGameState>({
     currentLevel: 0,
@@ -75,19 +191,16 @@ export default function PhpPlaygroundPage() {
   });
   const [code, setCode] = useState("");
   const [running, setRunning] = useState(false);
-  const [booting, setBooting] = useState(true);
-  const [bootMsg, setBootMsg] = useState(
-    "Loading the in-browser PHP engine (WebAssembly, ~19 MB on first visit, then cached)…"
-  );
-  const [result, setResult] = useState<{
-    ok: boolean;
-    stdout?: string;
-    error?: string;
-  } | null>(null);
-  const [showHint, setShowHint] = useState(false);
+  const [bootStatus, setBootStatus] = useState<"idle" | "booting" | "ready" | "error">("idle");
+  const [bootMsg, setBootMsg] = useState("");
+  const [consoleLines, setConsoleLines] = useState<ConsoleLine[]>([]);
+  const [result, setResult] = useState<{ ok: boolean; label: string; detail?: string; score?: number } | null>(null);
+  const [solved, setSolved] = useState(false);
+  const [hintRevealed, setHintRevealed] = useState(false);
+  const [hintText, setHintText] = useState("");
+  const [hintMsg, setHintMsg] = useState("");
 
-  const loggedIn = Boolean(currentUser) && !authLoading;
-  const gamesAuthed = loggedIn;
+  const gamesAuthed = Boolean(currentUser) && !authLoading;
 
   useGameProgress({
     slug: GAME_SLUG,
@@ -123,8 +236,15 @@ export default function PhpPlaygroundPage() {
       if (typeof w.__getPhpPlaygroundState === "function") {
         const s = w.__getPhpPlaygroundState();
         if (s && s.totalLevels > 0) {
-          setBooting(false);
           setGameState((g) => ({ ...g, ...s }));
+          try {
+            if (typeof w.__phpPlaygroundBootState === "function") {
+              const b = w.__phpPlaygroundBootState();
+              if (b && b.boot) setBootStatus(b.boot);
+            }
+          } catch (e) {
+            /* ignore */
+          }
         } else {
           stateTimer = setTimeout(pullState, 150);
         }
@@ -137,14 +257,14 @@ export default function PhpPlaygroundPage() {
       const detail = (e as CustomEvent)?.detail;
       if (!detail) return;
       if (detail.status === "booting") {
-        setBooting(true);
+        setBootStatus("booting");
+        setBootMsg("Booting PHP 8.4 in your browser (WebAssembly)…");
       } else if (detail.status === "ready") {
-        setBooting(false);
-        setBootMsg("PHP ready — running live in your browser.");
+        setBootStatus("ready");
+        setBootMsg("");
       } else if (detail.status === "error") {
-        setBooting(false);
-        setBootMsg("PHP engine failed to start — see deployment notes for the php-wasm assets.");
-        setResult({ ok: false, error: detail.message || "PHP engine failed to boot." });
+        setBootStatus("error");
+        setBootMsg(detail.message || "PHP engine failed to boot.");
       }
     };
     const onState = (e: Event) => {
@@ -166,280 +286,531 @@ export default function PhpPlaygroundPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [gamesAuthed]);
 
-  const current = useMemo(
-    () => levels.find((l) => l.id === gameState.currentLevel),
-    [levels, gameState.currentLevel]
-  );
+  const currentIdx = gameState.currentLevel;
+  const current = levels.length ? levels[currentIdx] : undefined;
+  const isLastLevel = Boolean(current?.isFinal);
 
+  const hintsUsed = gameState.hints?.used ?? 0;
+  const hintsLeft = Math.max(0, 3 - hintsUsed);
+
+  /* Reset the workspace only when the level actually changes; completion data
+     for the current level may arrive later (resume/DB poll) and must not reset
+     the editor or the just-shown solved overlay. */
+  const loadedForId = useRef<number | null>(null);
   useEffect(() => {
-    if (current) {
-      setCode(current.seedCode);
-      setResult(null);
-      setShowHint(false);
-    }
-  }, [current]);
+    if (!current) return;
+    if (loadedForId.current === current.id) return;
+    loadedForId.current = current.id;
+    const idx = current.id - 1;
+    const saved = gameState.completed[idx] ? gameState.solutions?.[idx] : undefined;
+    setCode(saved ?? current.seedCode);
+    setResult(null);
+    setConsoleLines([]);
+    setSolved(false);
+    setHintRevealed(false);
+    setHintText("");
+    setHintMsg("");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [current?.id, gameState.completed?.[currentIdx], gameState.solutions?.[currentIdx]]);
+
+  const goLevel = (idx: number) => {
+    const w = window as any;
+    if (typeof w.__goToPhpPlaygroundLevel === "function") w.__goToPhpPlaygroundLevel(idx);
+    setShowLevelSelect(false);
+  };
+
+  const appendConsole = (res: PhpRunResult) => {
+    const lines = consoleLinesFor(res);
+    if (lines.length) setConsoleLines((prev) => [...prev, ...lines]);
+  };
 
   const run = async () => {
     const w = window as any;
-    if (typeof w.__runPhpPlayground === "function") {
-      setRunning(true);
-      setResult(null);
-      try {
-        const r = await w.__runPhpPlayground(code, gameState.currentLevel);
-        setResult(typeof r === "object" ? r : { ok: !!r, stdout: String(r) });
-      } catch (e) {
-        setResult({ ok: false, error: String(e) });
-      } finally {
-        setRunning(false);
+    if (typeof w.__phpPlaygroundRun !== "function") return;
+    setRunning(true);
+    setResult(null);
+    setSolved(false);
+    try {
+      const r: PhpRunResult = await w.__phpPlaygroundRun(currentIdx, code);
+      appendConsole(r);
+      if ((r.stderr ?? "").trim()) {
+        setResult({ ok: false, label: "PHP reported an error", detail: (r.stderr ?? "").trim() });
       }
-    } else {
-      setResult({
-        ok: false,
-        error: "The PHP engine is still starting up — give it a few seconds, then try again.",
-      });
+    } catch (e) {
+      setResult({ ok: false, label: "Something went wrong", detail: String(e) });
+    } finally {
+      setRunning(false);
     }
   };
 
-  const goLevel = (id: number) => {
+  const check = async () => {
     const w = window as any;
-    if (typeof w.__goToPhpPlaygroundLevel === "function") w.__goToPhpPlaygroundLevel(id);
+    if (typeof w.__phpPlaygroundCheck !== "function") return;
+    setRunning(true);
+    setResult(null);
+    setSolved(false);
+    try {
+      const r: PhpRunResult = await w.__phpPlaygroundCheck(currentIdx, code);
+      appendConsole(r);
+      if (r.ok) {
+        setSolved(true);
+        setResult({ ok: true, label: "Correct!", detail: "Output matches exactly.", score: r.score });
+      } else if (r.error) {
+        setResult({ ok: false, label: "Not quite", detail: r.error });
+      } else {
+        setResult({
+          ok: false,
+          label: "Not quite",
+          detail: `Expected your output to match the target. Your output was:\n${(r.stdout ?? "").trim() || "(empty)"}`,
+        });
+      }
+    } catch (e) {
+      setResult({ ok: false, label: "Something went wrong", detail: String(e) });
+    } finally {
+      setRunning(false);
+    }
   };
 
-  const tierFor = (l: PhpLevelMeta) => l.tier || "easy";
-  const tierLevels = (tier: string) => levels.filter((l) => tierFor(l) === tier);
-  const tierDone = (tier: string) => tierLevels(tier).filter((l) => gameState.completed[l.id]).length;
-  const openTiers = (tier: string) => {
-    const i = TIER_ORDER.indexOf(tier);
-    if (i <= 0) return true;
-    const prev = TIER_ORDER[i - 1] ?? "";
-    const prevList = tierLevels(prev);
-    if (!prevList.length) return true;
-    return tierDone(prev) === prevList.length;
+  const revealHint = async () => {
+    const w = window as any;
+    if (typeof w.__phpPlaygroundRevealHint !== "function") return;
+    if (!current) return;
+    setHintMsg("");
+    try {
+      const r = await w.__phpPlaygroundRevealHint(currentIdx);
+      if (r && r.ok) {
+        setHintText(r.hint ?? current.hint);
+        setHintRevealed(true);
+      } else if (r && r.left === 0) {
+        setHintMsg("You've used all 3 hints today. Come back tomorrow for more.");
+      }
+    } catch (e) {
+      setHintMsg(String(e));
+    }
   };
+
+  const replay = () => {
+    const w = window as any;
+    if (typeof w.__initPhpPlayground === "function") w.__initPhpPlayground();
+    setSolved(false);
+    setResult(null);
+    setConsoleLines([]);
+  };
+
+  const openAuthModal = () => {
+    setAuthRequest("login");
+    setShowAuthModal(true);
+  };
+
+  const hintRevealDisabled = Boolean(current && gameState.completed[currentIdx]) || hintsLeft === 0;
+  const showSolvedNote = Boolean(current && gameState.completed[currentIdx]);
 
   return (
-    <div className="relative min-h-screen bg-[#04060c] text-slate-100">
+    <div className="relative min-h-screen bg-background">
       <GlassNavbar activeSection="games" />
-      {showAuthModal && (
-        <AuthModal
-          open={showAuthModal}
-          onClose={() => setShowAuthModal(false)}
-          initialMode={authRequest}
-        />
-      )}
 
       <main className="mx-auto max-w-6xl px-4 pb-24 pt-28">
-        <div className="mb-8 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <Link
-              href="/games"
-              className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-700/60 bg-slate-900/60 text-slate-400 transition hover:border-slate-500 hover:text-foreground"
-              aria-label="Back to all games"
-            >
-              <ArrowLeft className="h-5 w-5" />
-            </Link>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="text-2xl">🐘</span>
-                <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">PHP Playground</h1>
-              </div>
-              <p className="text-sm text-slate-400">
-                Type real PHP and watch it run live in your browser — a sandboxed PHP 8.4 compiled to WebAssembly.
-              </p>
-            </div>
+        <Link
+          href="/games"
+          className="mb-6 inline-flex items-center gap-1.5 text-xs text-muted transition-colors hover:text-foreground"
+        >
+          <ArrowLeft className="h-3 w-3" />
+          All Games
+        </Link>
+
+        <div className="mb-6 flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/10 text-amber-500">
+            <span className="text-xl">🐘</span>
           </div>
-          <GameSocial
-            slug={GAME_SLUG}
-            title="PHP Playground"
-            emoji="🐘"
-            accentText="text-amber-400"
-            accentBg="bg-amber-500/10"
-            currentUser={currentUser}
-            canInteract={gamesAuthed}
-            onAuthRequired={() => {
+          <div>
+            <h1 className="font-display text-xl font-bold text-foreground">PHP Playground</h1>
+            <p className="text-xs text-muted">
+              Solve PHP challenges — variables, functions, arrays &amp; the higher-order bosses
+            </p>
+          </div>
+        </div>
+
+        {/* GAME SECTION */}
+        {!authLoading && !gamesAuthed ? (
+          <AuthGate
+            loading={authLoading}
+            onSignIn={() => {
               setAuthRequest("login");
               setShowAuthModal(true);
             }}
+            onRegister={() => {
+              setAuthRequest("register");
+              setShowAuthModal(true);
+            }}
           />
-        </div>
+        ) : (
+          <div className="php-game-wrapper">
+            {/* LEFT SIDEBAR */}
+            <div className="php-sidebar">
+              {/* Level Select Drawer */}
+              <div className="php-level-select">
+                <button
+                  type="button"
+                  className={"php-level-select-toggle" + (showLevelSelect ? " open" : "")}
+                  aria-expanded={showLevelSelect}
+                  onClick={() => setShowLevelSelect((v) => !v)}
+                >
+                  <span className="php-ls-label">
+                    <FolderOpen className="h-3 w-3" />
+                    All Cases
+                  </span>
+                  <span className="php-ls-count">
+                    {levels.filter((l) => gameState.completed[l.id - 1]).length}/{gameState.totalLevels}
+                  </span>
+                  <ChevronDown className={"php-ls-chevron" + (showLevelSelect ? " open" : "")} />
+                </button>
 
-        <div className="grid gap-6 lg:grid-cols-[240px_1fr]">
-          <aside className="space-y-5">
-            {TIER_ORDER.map((tier) => {
-              const list = tierLevels(tier);
-              if (!list.length) return null;
-              const open = openTiers(tier);
-              const done = tierDone(tier);
-              const meta = TIER_META[tier];
-              const style = TIER_STYLE[tier];
-              return (
-                <div key={tier} className="rounded-2xl border border-slate-800/70 bg-slate-900/40 p-4">
-                  <div className="mb-1 flex items-center justify-between">
-                    <h2 className="text-sm font-semibold text-slate-200">{meta?.label}</h2>
-                    <span
-                      className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-medium ${style?.chip}`}
-                    >
-                      <Check className="h-3 w-3" />
-                      {done}/{list.length}
-                    </span>
-                  </div>
-                  <p className="mb-3 text-xs text-slate-500">{meta?.blurb}</p>
-                  <div className="space-y-1.5">
-                    {list.map((l) => {
-                      const isCurrent = l.id === gameState.currentLevel;
-                      const isDone = !!gameState.completed[l.id];
+                {showLevelSelect && (
+                  <div className="php-level-select-body">
+                    {TIER_META.map((tier) => {
+                      const ls = tierLevelsFor(levels, tier.key);
+                      const done = tierDoneFor(levels, gameState.completed, tier.key);
+                      const open = tierOpenFor(levels, gameState.completed, tier.key);
                       return (
-                        <button
-                          key={l.id}
-                          type="button"
-                          onClick={() => goLevel(l.id)}
-                          disabled={!open && !isCurrent}
-                          className={`flex w-full items-center gap-2 rounded-lg border px-3 py-2 text-left text-sm transition ${
-                            isCurrent
-                              ? "border-amber-400/50 bg-amber-500/10 text-white"
-                              : open
-                                ? "border-slate-800 bg-slate-900/60 text-slate-300 hover:border-slate-600 hover:text-white"
-                                : "cursor-not-allowed border-slate-800/50 text-slate-600"
-                          }`}
+                        <div
+                          key={tier.key}
+                          className={"php-tier-group " + tier.key + (open ? "" : " closed")}
                         >
-                          <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-slate-800 text-[11px] text-slate-400">
-                            {isDone ? <Check className="h-3.5 w-3.5 text-emerald-400" /> : l.id}
-                          </span>
-                          <span className="min-w-0 flex-1 truncate">{l.title}</span>
-                          {!open && !isCurrent && <Lock className="h-3.5 w-3.5 shrink-0" />}
-                        </button>
+                          <div className="php-tier-head">
+                            <span className="php-tier-name">{tier.label}</span>
+                            <span className="php-tier-count">
+                              {done}/{ls.length}
+                            </span>
+                          </div>
+                          <div className="php-tier-blurb">
+                            {open ? tier.blurb : lockNoteFor(levels, gameState.completed, tier.key)}
+                          </div>
+                          <div className="php-level-grid">
+                            {ls.map((level) => {
+                              const doneLevel = !!gameState.completed[level.id - 1];
+                              const isCurrent = gameState.currentLevel === level.id - 1;
+                              const locked =
+                                !doneLevel && !tierOpenFor(levels, gameState.completed, level.tier);
+                              return (
+                                <button
+                                  key={level.id}
+                                  type="button"
+                                  disabled={locked}
+                                  className={
+                                    "php-level-card " +
+                                    level.tier +
+                                    (doneLevel ? " done" : "") +
+                                    (isCurrent ? " current" : "")
+                                  }
+                                  title={level.shortDesc || level.title}
+                                  onClick={() => goLevel(level.id - 1)}
+                                >
+                                  <span className="php-lk-num">
+                                    {doneLevel ? (
+                                      <Check className="php-lk-check" />
+                                    ) : locked ? (
+                                      <Lock className="php-lk-lock" />
+                                    ) : (
+                                      level.id
+                                    )}
+                                  </span>
+                                  <span className="php-lk-title">{level.title}</span>
+                                  <span className="php-lk-meta">
+                                    {level.concepts.slice(0, 3).map((c) => (
+                                      <span key={c} className="php-concept-chip">
+                                        {CONCEPT_LABELS[c] || c}
+                                      </span>
+                                    ))}
+                                    <span className="php-lk-points">+{level.points} XP</span>
+                                  </span>
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
                       );
                     })}
+                    <div className="php-ls-legend">{tierLegendFor(levels)}</div>
                   </div>
-                </div>
-              );
-            })}
-
-            <div className="rounded-2xl border border-slate-800/70 bg-slate-900/40 p-4">
-              <div className="flex items-center justify-between text-sm">
-                <span className="flex items-center gap-1.5 text-slate-300">
-                  <Gamepad2 className="h-4 w-4" />
-                  Score
-                </span>
-                <span className="font-bold text-amber-300">{gameState.score} XP</span>
+                )}
               </div>
-              <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-slate-800">
-                <div
-                  className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-amber-400 transition-all"
-                  style={{ width: `${(gameState.score / Math.max(gameState.totalLevels * 75, 1)) * 100}%` }}
-                />
-              </div>
-            </div>
 
-            {booting && (
-              <div className="flex items-center gap-3 rounded-2xl border border-amber-500/30 bg-amber-500/5 px-4 py-3 text-sm text-amber-300">
-                <Play className="h-4 w-4 animate-pulse" />
-                <span>{bootMsg}</span>
-              </div>
-            )}
-          </aside>
-
-          <section className="space-y-4">
-            {!loggedIn && (
-              <AuthGate
-                loading={authLoading}
-                onSignIn={() => {
-                  setAuthRequest("login");
-                  setShowAuthModal(true);
-                }}
-                onRegister={() => {
-                  setAuthRequest("register");
-                  setShowAuthModal(true);
-                }}
-              />
-            )}
-
-            {loggedIn && current && (
-              <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-4">
-                <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-                  <div className="flex items-center gap-2">
-                    <Pause className="h-4 w-4 text-amber-400" />
-                    <h3 className="font-semibold text-foreground">
-                      Level {current.id} · {current.title}
-                    </h3>
-                  </div>
-                  {current.points > 0 && (
-                    <span className="rounded-full border border-amber-400/30 bg-amber-500/10 px-2 py-0.5 text-xs text-amber-300">
-                      +{current.points} XP
+              {/* Level Info */}
+              {current && (
+                <div className="php-level-info">
+                  <div className="php-level-header">
+                    <span className="php-level-badge">
+                      <Gamepad2 className="h-3 w-3" />
+                      Level <span>{current.id}</span>
+                      <span className="text-muted">/</span>
+                      <span>{gameState.totalLevels}</span>
                     </span>
+                    <span className={"php-level-difficulty " + current.tier}>
+                      {TIER_META.find((t) => t.key === current.tier)?.label ?? current.tier}
+                    </span>
+                  </div>
+                  <h2 className="font-display text-sm font-bold text-foreground">{current.title}</h2>
+                  <p className="php-instruction mt-1" dangerouslySetInnerHTML={{ __html: current.instruction }} />
+
+                  {hintRevealed && hintText && (
+                    <div className="php-hint">
+                      <Sparkles className="mt-0.5 h-3 w-3 shrink-0 text-primary" />
+                      <span dangerouslySetInnerHTML={{ __html: hintText }} />
+                    </div>
+                  )}
+                  {!hintRevealed && (
+                    <div className="mt-2">
+                      <button
+                        type="button"
+                        className="php-hint-reveal"
+                        onClick={revealHint}
+                        disabled={hintRevealDisabled}
+                      >
+                        <Lightbulb className="h-3 w-3" />
+                        Show Hint
+                      </button>
+                      <div className="php-hint-usage">
+                        {hintMsg || `${hintsUsed}/3 hints used today`}
+                      </div>
+                    </div>
+                  )}
+                  {showSolvedNote && (
+                    <div className="php-solved-note">Solved! Answers are saved — you can return to this level anytime.</div>
                   )}
                 </div>
-                <p className="mb-3 text-sm text-slate-400">{current.seedHint}</p>
+              )}
 
-                <div className="overflow-hidden rounded-xl border border-slate-800">
-                  <CodeMirror
-                    value={code}
-                    height="260px"
-                    theme={oneDark}
-                    extensions={[php()]}
-                    onChange={(v) => setCode(v)}
-                    editable={gamesAuthed}
-                    basicSetup={{ lineNumbers: true, foldGutter: false }}
-                  />
-                </div>
-
-                <div className="mt-3 flex flex-wrap items-center gap-2">
-                  <button
-                    onClick={run}
-                    disabled={!gamesAuthed || running}
-                    className="inline-flex items-center gap-2 rounded-xl bg-amber-500 px-4 py-2 text-sm font-semibold text-amber-950 transition hover:bg-amber-400 disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    {running ? <Terminal className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
-                    {running ? "Running…" : "Run PHP"}
-                  </button>
-                  <button
-                    onClick={() => setShowHint((s) => !s)}
-                    disabled={!gamesAuthed}
-                    className="inline-flex items-center gap-1.5 rounded-xl border border-slate-700 px-3 py-2 text-sm text-slate-300 transition hover:border-slate-500 disabled:opacity-50"
-                  >
-                    <ChevronDown
-                      className={`h-4 w-4 transition-transform ${showHint ? "rotate-180" : ""}`}
-                    />
-                    Hint
-                  </button>
-                  <span className="ml-auto flex items-center gap-1.5 text-sm text-slate-500">
-                    <Sparkles className="h-4 w-4" />
-                    PHP 8.4 · in-browser
-                  </span>
-                </div>
-
-                {showHint && current.seedCode && (
-                  <div className="mt-3 rounded-xl border border-amber-500/30 bg-amber-500/5 p-4 text-sm text-amber-200">
-                    <p className="mb-1 font-semibold text-amber-300">Starter code</p>
-                    <pre className="overflow-x-auto whitespace-pre-wrap text-xs text-amber-100/90">
-                      {current.seedCode}
-                    </pre>
-                  </div>
-                )}
-
-                {result && (
-                  <div
-                    className={`mt-3 rounded-xl border p-4 text-sm ${
-                      result.ok
-                        ? "border-emerald-500/30 bg-emerald-500/5 text-emerald-200"
-                        : "border-rose-500/30 bg-rose-500/5 text-rose-200"
-                    }`}
-                  >
-                    <div className="mb-1 font-semibold">
-                      {result.ok ? "✓ Correct!" : "✗ Not quite:"}
+              {/* Code Editor */}
+              {current && (
+                <div className="php-editor">
+                  <div className="php-editor-header">
+                    <div className="php-editor-dots">
+                      <span className="php-editor-dot red" />
+                      <span className="php-editor-dot yellow" />
+                      <span className="php-editor-dot green" />
                     </div>
-                    {result.stdout && <pre className="whitespace-pre-wrap text-xs">{result.stdout}</pre>}
-                    {result.error && <pre className="whitespace-pre-wrap text-xs">{result.error}</pre>}
+                    <span className="php-editor-title">solution.php</span>
                   </div>
-                )}
+                  <div className="php-editor-body">
+                    <div className="php-editor-wrap">
+                      <CodeMirror
+                        value={code}
+                        height="320px"
+                        theme={oneDark}
+                        extensions={[php()]}
+                        onChange={(v) => setCode(v)}
+                        editable={gamesAuthed}
+                        basicSetup={{ lineNumbers: true, foldGutter: false }}
+                        placeholder="Write your PHP solution here…"
+                      />
+                    </div>
+                  </div>
+
+                  {result && (
+                    <div className={"php-result " + (result.ok ? "pass" : "fail")}>
+                      <span className="php-result-icon">
+                        {result.ok ? <Check className="h-4 w-4" /> : <X className="h-4 w-4" />}
+                      </span>
+                      <span className="php-result-body">
+                        <strong>{result.label}</strong>
+                        {result.score ? `+${result.score} XP` : null}
+                        {result.detail && <pre>{result.detail}</pre>}
+                      </span>
+                    </div>
+                  )}
+
+                  <div className="php-editor-actions">
+                    <button
+                      type="button"
+                      className="php-run-btn"
+                      onClick={run}
+                      disabled={running}
+                    >
+                      <Terminal className="h-3 w-3" />
+                      {running ? "Running…" : "Run PHP"}
+                    </button>
+                    <div className="php-nav-buttons">
+                      <button
+                        type="button"
+                        className="php-nav-btn prev"
+                        disabled={currentIdx === 0}
+                        onClick={() => goLevel(currentIdx - 1)}
+                      >
+                        ← Prev
+                      </button>
+                      <button
+                        type="button"
+                        className="php-check-btn"
+                        onClick={check}
+                        disabled={running}
+                      >
+                        Check
+                      </button>
+                      <button
+                        type="button"
+                        className="php-nav-btn next"
+                        disabled={!gameState.completed[currentIdx] || isLastLevel}
+                        onClick={() => goLevel(currentIdx + 1)}
+                      >
+                        Next →
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* RIGHT GAME AREA */}
+            <div className="php-game-area">
+              {bootStatus === "booting" && (
+                <div className="php-boot-strip">
+                  <Terminal className="h-3 w-3 shrink-0 animate-spin" />
+                  <span>{bootMsg}</span>
+                </div>
+              )}
+              {bootStatus === "error" && (
+                <div className="php-boot-strip error">
+                  <X className="h-3 w-3 shrink-0" />
+                  <span>{bootMsg}</span>
+                </div>
+              )}
+
+              <div className="php-console-container">
+                <div className="php-console-header">
+                  <div className="php-console-tabs">
+                    <button className="php-console-tab active">Output</button>
+                  </div>
+                  <div className="php-score">
+                    <span className="php-score-value">Score: {gameState.score}</span>
+                    <span>XP</span>
+                  </div>
+                </div>
+                <div className="php-console">
+                  {consoleLines.length === 0 ? (
+                    <div className="php-console-empty">
+                      Output appears here — hit Run PHP to execute your script, or Check to test your answer.
+                    </div>
+                  ) : (
+                    consoleLines.map((line, i) => (
+                      <div key={`${i}-${line.type}`} className={"php-console-line " + line.type}>
+                        <span className="path">php://</span>
+                        {line.type === "log" ? <span className="prompt">&gt;</span> : <span className="prompt">!</span>}
+                        {line.text}
+                      </div>
+                    ))
+                  )}
+                </div>
+
+                {solved && (
+                  <div className="php-complete-overlay">
+                      {isLastLevel ? (
+                        <>
+                          <div className="php-stars">
+                            <span className="php-star earned">🏆</span>
+                          </div>
+                          <div className="php-complete-text">PHP Master!</div>
+                          <div className="php-complete-sub">All 16 levels conquered.</div>
+                          <div className="php-victory-stats">
+                            <div className="php-victory-stat">
+                              <div className="php-victory-stat-value">{gameState.score}</div>
+                              <div className="php-victory-stat-label">Score</div>
+                            </div>
+                            <div className="php-victory-stat">
+                              <div className="php-victory-stat-value">16/16</div>
+                              <div className="php-victory-stat-label">Levels</div>
+                            </div>
+                            <div className="php-victory-stat">
+                              <div className="php-victory-stat-value">{hintsUsed}</div>
+                              <div className="php-victory-stat-label">Hints</div>
+                            </div>
+                          </div>
+                          <button type="button" className="php-complete-btn" onClick={replay}>
+                            Play Again
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          <div className="php-stars">
+                            <span className="php-star earned">⭐</span>
+                            <span className="php-star earned">⭐</span>
+                            <span className="php-star earned">⭐</span>
+                          </div>
+                          <div className="php-complete-text">Case Solved!</div>
+                          <div className="php-complete-sub">Output matches exactly. Nice work.</div>
+                          <div className="php-complete-msg">
+                            +{current?.points ?? 0} XP · Saved to your profile
+                          </div>
+                          <button
+                            type="button"
+                            className="php-complete-btn"
+                            onClick={() => goLevel(currentIdx + 1)}
+                          >
+                            Next Case →
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  )}
               </div>
-            )}
-          </section>
-        </div>
+
+              <div className="php-progress">
+                {levels.map((l, i) => {
+                  const doneLevel = !!gameState.completed[l.id - 1];
+                  const isCurrent = currentIdx === i;
+                  const locked = !doneLevel && !tierOpenFor(levels, gameState.completed, l.tier);
+                  return (
+                    <button
+                      key={l.id}
+                      type="button"
+                      disabled={locked}
+                      title={`${l.id}. ${l.title}`}
+                      className={
+                        "php-progress-dot " +
+                        (isCurrent ? "current" : "") +
+                        (doneLevel ? " done" : "") +
+                        (locked ? " locked" : "")
+                      }
+                      onClick={() => goLevel(i)}
+                    >
+                      {doneLevel ? <Check className="h-3 w-3" /> : locked ? <Lock className="h-3 w-3" /> : l.id}
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div className="php-hint-bar">
+                <Sparkles className="h-3 w-3 shrink-0 text-primary" />
+                <span>
+                  Use <strong>Run PHP</strong> to try your script live and{" "}
+                  <strong>Check</strong> when you think the output matches.{" "}
+                  <strong>Show Hint</strong> reveals a nudge — you get 3 hints per day.
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* LIKE + COMMENTS */}
+        <GameSocial
+          slug={GAME_SLUG}
+          title="PHP Playground"
+          emoji="🐘"
+          accentText="text-amber-500"
+          accentBg="bg-amber-500/10"
+          currentUser={currentUser}
+          canInteract={gamesAuthed}
+          onAuthRequired={openAuthModal}
+        />
       </main>
 
       <Script src="/games/php-playground/levels.js" strategy="afterInteractive" />
       <Script src="/games/php-playground/game.js" strategy="afterInteractive" />
+
+      <AuthModal
+        open={showAuthModal}
+        initialMode={authRequest}
+        onClose={() => setShowAuthModal(false)}
+      />
     </div>
   );
 }

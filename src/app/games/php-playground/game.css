@@ -1,83 +1,1005 @@
-/* PHP Playground — game shell styles */
+/* ==========================================================================
+   PHP PLAYGROUND — Game Styles
+   Visual twin of the JS Detective shell, tuned for the CodeMirror PHP editor
+   and the in-browser php-wasm engine.
+   ========================================================================== */
 
-.php-shell {
-  min-height: 100vh;
-  background:
-    radial-gradient(1200px 500px at 80% -10%, rgba(245, 158, 11, 0.08), transparent 60%),
-    #04060c;
+/* ---------- Layout ---------- */
+
+.php-game-wrapper {
+  display: flex;
+  flex-direction: row;
+  gap: 1.25rem;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 1rem;
+  align-items: flex-start;
 }
 
-.php-boot-card {
+.php-sidebar {
+  width: 380px;
+  flex-shrink: 0;
   display: flex;
-  align-items: center;
-  gap: 0.6rem;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.php-game-area {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+/* ---------- Level Info ---------- */
+
+.php-level-info {
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
   border-radius: 1rem;
-  border: 1px solid rgba(245, 158, 11, 0.25);
-  background: rgba(245, 158, 11, 0.06);
-  padding: 0.7rem 0.9rem;
-  font-size: 0.75rem;
-  color: #fcd34d;
+  padding: 1rem 1.25rem;
 }
 
-.php-boot-card .animate-spin {
-  animation: php-spin 1.2s linear infinite;
-}
-
-@keyframes php-spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-.php-result-ok {
-  border-color: rgba(16, 185, 129, 0.35);
-  background: rgba(16, 185, 129, 0.07);
-  color: #a7f3d0;
-}
-
-.php-result-err {
-  border-color: rgba(244, 63, 94, 0.35);
-  background: rgba(244, 63, 94, 0.07);
-  color: #fecdd3;
-}
-
-.php-toolbar {
+.php-level-header {
   display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
   align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.php-level-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  background: hsl(var(--primary) / 0.12);
+  color: hsl(var(--primary));
+  padding: 0.25rem 0.625rem;
+  border-radius: 9999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  font-family: var(--font-mono);
+}
+
+.php-level-difficulty {
+  font-size: 0.625rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.2rem 0.5rem;
+  border-radius: 9999px;
+}
+
+.php-level-difficulty.easy {
+  background: hsl(142 70% 45% / 0.12);
+  color: hsl(142 70% 45%);
+}
+
+.php-level-difficulty.intermediate {
+  background: hsl(38 92% 50% / 0.12);
+  color: hsl(38 92% 50%);
+}
+
+.php-level-difficulty.hard {
+  background: hsl(0 84% 60% / 0.12);
+  color: hsl(0 84% 60%);
+}
+
+.php-level-difficulty.mostHard {
+  background: hsl(262 83% 68% / 0.14);
+  color: hsl(262 83% 72%);
+}
+
+.php-instruction {
+  color: hsl(var(--foreground));
+  font-size: 0.8rem;
+  line-height: 1.5;
+}
+
+.php-instruction code,
+.php-hint code,
+.php-hint-reveal code {
+  background: hsl(var(--primary) / 0.1);
+  color: hsl(var(--primary));
+  padding: 0.1rem 0.3rem;
+  border-radius: 0.25rem;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+}
+
+.php-hint {
+  margin-top: 0.5rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.375rem;
+  background: hsl(var(--primary) / 0.06);
+  border: 1px solid hsl(var(--primary) / 0.12);
+  border-radius: 0.5rem;
+  padding: 0.5rem 0.625rem;
+  font-size: 0.7rem;
+  color: hsl(var(--muted));
+  line-height: 1.4;
+}
+
+.php-solved-note {
+  margin-top: 0.625rem;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.68rem;
+  line-height: 1.4;
+  border-radius: 0.75rem;
+  background: hsl(142 70% 40% / 0.12);
+  border: 1px solid hsl(142 70% 40% / 0.4);
+  color: hsl(142 70% 45%);
+}
+
+/* ---------- Code Editor ---------- */
+
+.php-editor {
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
+  border-radius: 1rem;
+  overflow: hidden;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+.php-editor-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.625rem 1rem;
+  border-bottom: 1px solid hsl(var(--border));
+  background: hsl(var(--background-secondary));
+}
+
+.php-editor-dots {
+  display: flex;
+  gap: 0.375rem;
+}
+
+.php-editor-dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+}
+
+.php-editor-dot.red { background: #ff5f57; }
+.php-editor-dot.yellow { background: #febc2e; }
+.php-editor-dot.green { background: #28c840; }
+
+.php-editor-title {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  color: hsl(var(--muted));
+}
+
+.php-editor-body {
+  background: #282c34;
 }
 
 .php-editor-wrap {
   overflow: hidden;
-  border-radius: 1rem;
-  border: 1px solid rgba(148, 163, 184, 0.16);
-  background: #0b0e17;
 }
 
 .php-editor-wrap .cm-editor {
   font-size: 0.78rem;
-  line-height: 1.55;
+  line-height: 1.6;
 }
 
 .php-editor-wrap .cm-scroller {
-  font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
-  padding: 0.4rem 0;
+  font-family: var(--font-mono);
+  padding: 0.5rem 0;
 }
 
-.php-hint {
-  border-color: rgba(245, 158, 11, 0.3);
-  background: rgba(245, 158, 11, 0.05);
-  color: #fde68a;
+.php-editor-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.625rem 1rem;
+  border-top: 1px solid hsl(var(--border));
+  background: hsl(var(--background-secondary));
+  flex-wrap: wrap;
 }
 
-.php-tier-chip {
+.php-run-btn {
   display: inline-flex;
   align-items: center;
-  gap: 0.35rem;
-  border-radius: 999px;
-  border: 1px solid;
-  padding: 0.15rem 0.6rem;
+  gap: 0.375rem;
+  padding: 0.4rem 0.875rem;
+  border-radius: 9999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  background: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+  transition: filter 0.2s ease;
+}
+
+.php-run-btn:hover {
+  filter: brightness(1.1);
+}
+
+.php-run-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  filter: none;
+}
+
+.php-nav-buttons {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.php-nav-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.4rem 0.75rem;
+  border-radius: 9999px;
   font-size: 0.7rem;
-  font-weight: 500;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.php-nav-btn.prev {
+  background: hsl(var(--border));
+  color: hsl(var(--muted));
+}
+
+.php-nav-btn.prev:hover:not(:disabled) {
+  color: hsl(var(--foreground));
+}
+
+.php-nav-btn.prev:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.php-check-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.4rem 0.875rem;
+  border-radius: 9999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  background: hsl(var(--foreground) / 0.1);
+  color: hsl(var(--foreground));
+  transition: all 0.2s ease;
+}
+
+.php-check-btn:hover {
+  filter: brightness(1.1);
+}
+
+.php-check-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  filter: none;
+}
+
+.php-nav-btn.next {
+  background: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+}
+
+.php-nav-btn.next:hover:not(:disabled) {
+  filter: brightness(1.1);
+}
+
+.php-nav-btn.next:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  filter: none;
+}
+
+/* ---------- Result Panel ---------- */
+
+.php-result {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  padding: 0.6rem 0.875rem;
+  font-size: 0.78rem;
+  line-height: 1.45;
+  border-radius: 0.75rem;
+  margin: 0.625rem;
+  background: hsl(var(--background-secondary));
+  border: 1px solid hsl(var(--border));
+  word-break: break-word;
+}
+
+.php-result-icon {
+  flex-shrink: 0;
+  line-height: 1.45;
+}
+
+.php-result-body strong {
+  margin-right: 0.25rem;
+}
+
+.php-result-body pre {
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  margin-top: 0.25rem;
+}
+
+.php-result.error {
+  background: hsl(0 84% 55% / 0.12);
+  border-color: hsl(0 84% 55% / 0.5);
+  color: hsl(0 84% 66%);
+}
+
+.php-result.error strong {
+  color: hsl(0 84% 72%);
+}
+
+.php-result.fail {
+  background: hsl(38 92% 50% / 0.1);
+  border-color: hsl(38 92% 50% / 0.45);
+  color: hsl(38 92% 55%);
+}
+
+.php-result.fail strong {
+  color: hsl(38 92% 60%);
+}
+
+.php-result.pass {
+  background: hsl(142 70% 40% / 0.12);
+  border-color: hsl(142 70% 40% / 0.5);
+  color: hsl(142 70% 50%);
+}
+
+.php-result.pass strong {
+  color: hsl(142 70% 55%);
+}
+
+/* ---------- Boot strip ---------- */
+
+.php-boot-strip {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.875rem;
+  font-size: 0.68rem;
+  color: #fcd34d;
+  background: hsl(38 92% 50% / 0.08);
+  border: 1px solid hsl(38 92% 50% / 0.25);
+  border-radius: 0.75rem;
+  line-height: 1.4;
+  animation: php-pulse 1.6s ease-in-out infinite;
+}
+
+.php-boot-strip.error {
+  color: hsl(0 84% 66%);
+  background: hsl(0 84% 55% / 0.1);
+  border-color: hsl(0 84% 55% / 0.4);
+  animation: none;
+}
+
+@keyframes php-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.65; }
+}
+
+/* ---------- Console Panel ---------- */
+
+.php-console-container {
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
+  border-radius: 1rem;
+  overflow: hidden;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.php-console-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 1rem;
+  border-bottom: 1px solid hsl(var(--border));
+  background: hsl(var(--background-secondary));
+}
+
+.php-console-tabs {
+  display: flex;
+  gap: 0;
+}
+
+.php-console-tab {
+  padding: 0.3rem 0.75rem;
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: hsl(var(--muted));
+  background: none;
+  border: none;
+  border-radius: 0.375rem;
+  cursor: default;
+  transition: all 0.15s ease;
+}
+
+.php-console-tab.active {
+  background: hsl(var(--primary) / 0.12);
+  color: hsl(var(--primary));
+}
+
+.php-score {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  color: hsl(var(--muted));
+}
+
+.php-score-value {
+  color: hsl(var(--primary));
+  font-weight: 700;
+}
+
+.php-console {
+  position: relative;
+  min-height: 300px;
+  height: 360px;
+  max-height: 420px;
+  overflow-y: auto;
+  padding: 0.875rem 1rem;
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  line-height: 1.6;
+  background: hsl(225 20% 3%);
+  color: hsl(var(--foreground) / 0.85);
+}
+
+.php-console-line {
+  white-space: pre-wrap;
+  word-break: break-word;
+  padding: 1px 0;
+}
+
+.php-console-line.log {
+  color: hsl(var(--foreground) / 0.85);
+}
+
+.php-console-line.error {
+  color: hsl(0 84% 60%);
+}
+
+.php-console-line .prompt {
+  color: hsl(var(--muted) / 0.5);
+  margin-right: 0.5rem;
+}
+
+.php-console-line .path {
+  color: hsl(38 92% 55%);
+  margin-right: 0.375rem;
+}
+
+.php-console-empty {
+  color: hsl(var(--muted) / 0.5);
+  font-style: italic;
+}
+
+/* ---------- Hint bar ---------- */
+
+.php-hint-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 0.875rem;
+  font-size: 0.68rem;
+  color: hsl(var(--muted));
+  background: hsl(var(--primary) / 0.06);
+  border: 1px solid hsl(var(--primary) / 0.12);
+  border-radius: 0.75rem;
+  line-height: 1.4;
+}
+
+.php-hint-bar strong {
+  color: hsl(var(--foreground));
+}
+
+/* ---------- Hint reveal button ---------- */
+
+.php-hint-reveal {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.3rem 0.7rem;
+  border-radius: 9999px;
+  border: 1px dashed hsl(var(--primary) / 0.45);
+  background: hsl(var(--primary) / 0.08);
+  color: hsl(var(--primary));
+  font-size: 0.68rem;
+  font-weight: 700;
+  font-family: var(--font-mono);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.php-hint-reveal:hover:not(:disabled) {
+  background: hsl(var(--primary) / 0.16);
+  border-style: solid;
+}
+
+.php-hint-reveal:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.php-hint-usage {
+  margin-top: 0.5rem;
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  color: hsl(var(--muted) / 0.7);
+}
+
+/* ---------- Progress dots ---------- */
+
+.php-progress {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  padding: 0.15rem 0.25rem;
+}
+
+.php-progress-dot {
+  width: 24px;
+  height: 24px;
+  border-radius: 9999px;
+  border: 1px solid hsl(var(--border));
+  background: hsl(var(--background-secondary));
+  color: hsl(var(--muted));
+  font-size: 0.6rem;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.php-progress-dot.current {
+  border-color: hsl(var(--primary));
+  color: hsl(var(--primary));
+  box-shadow: 0 0 0 3px hsl(var(--primary) / 0.15);
+}
+
+.php-progress-dot.done {
+  background: hsl(142 70% 40%);
+  border-color: hsl(142 70% 40% / 0.6);
+  color: #fff;
+}
+
+.php-progress-dot:hover:not(:disabled) {
+  border-color: hsl(var(--primary) / 0.6);
+}
+
+.php-progress-dot.locked {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.php-progress-dot.locked:hover {
+  border-color: hsl(var(--border));
+}
+
+/* ---------- Level Complete Overlay ---------- */
+
+.php-complete-overlay {
+  position: absolute;
+  inset: 0;
+  background: hsl(240 20% 5% / 0.88);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 20;
+  border-radius: 0 0 1rem 1rem;
+}
+
+.php-stars {
+  display: flex;
+  gap: 0.25rem;
+  margin-bottom: 0.75rem;
+  justify-content: center;
+}
+
+.php-star {
+  font-size: 1.5rem;
+  opacity: 0.2;
+  transition: opacity 0.3s ease;
+}
+
+.php-star.earned {
+  opacity: 1;
+  animation: php-star-pop 0.4s ease;
+}
+
+.php-complete-text {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: hsl(var(--primary));
+  margin-bottom: 0.25rem;
+}
+
+.php-complete-sub {
+  font-size: 0.8rem;
+  color: hsl(var(--muted));
+  margin-bottom: 0.5rem;
+}
+
+.php-complete-msg {
+  font-size: 0.7rem;
+  color: hsl(var(--muted) / 0.7);
+  font-style: italic;
+  margin-bottom: 1rem;
+  max-width: 280px;
+  text-align: center;
+  line-height: 1.5;
+}
+
+.php-complete-btn {
+  padding: 0.5rem 1.25rem;
+  border-radius: 9999px;
+  background: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+  font-size: 0.8rem;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  transition: filter 0.15s ease, transform 0.15s ease;
+}
+
+.php-complete-btn:hover {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+}
+
+.php-complete-btn:active {
+  transform: translateY(0);
+}
+
+/* ---------- Victory ---------- */
+
+.php-victory-stats {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.php-victory-stat {
+  text-align: center;
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
+  border-radius: 0.75rem;
+  padding: 0.875rem 1rem;
+}
+
+.php-victory-stat-value {
+  font-family: var(--font-mono);
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: hsl(var(--primary));
+  line-height: 1;
+  margin-bottom: 0.375rem;
+}
+
+.php-victory-stat-label {
+  font-size: 0.55rem;
+  color: hsl(var(--muted));
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+}
+
+/* ---------- Level Select Drawer ---------- */
+
+.php-level-select {
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
+  border-radius: 1rem;
+  overflow: hidden;
+}
+
+.php-level-select-toggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.625rem 0.875rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: hsl(var(--foreground));
+  font-size: 0.72rem;
+  font-weight: 700;
+  font-family: var(--font-display);
+  transition: background 0.15s ease;
+}
+
+.php-level-select-toggle:hover {
+  background: hsl(var(--primary) / 0.06);
+}
+
+.php-ls-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.php-ls-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2.25rem;
+  padding: 0.125rem 0.5rem;
+  border-radius: 9999px;
+  background: hsl(var(--primary) / 0.12);
+  color: hsl(var(--primary));
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  font-weight: 700;
+}
+
+.php-ls-chevron {
+  width: 0.875rem;
+  height: 0.875rem;
+  color: hsl(var(--muted));
+  transition: transform 0.2s ease;
+}
+
+.php-ls-chevron.open {
+  transform: rotate(180deg);
+}
+
+.php-level-select-body {
+  border-top: 1px solid hsl(var(--border));
+  padding: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+  max-height: 62vh;
+  overflow-y: auto;
+}
+
+.php-tier-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  padding-left: 0.625rem;
+  border-left: 3px solid hsl(var(--border));
+}
+
+.php-tier-group.easy { border-left-color: hsl(142 70% 45%); }
+.php-tier-group.intermediate { border-left-color: hsl(38 92% 50%); }
+.php-tier-group.hard { border-left-color: hsl(0 84% 60%); }
+.php-tier-group.mostHard { border-left-color: hsl(262 83% 68%); }
+
+.php-tier-group.closed { opacity: 0.72; }
+
+.php-tier-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.php-tier-name {
+  font-family: var(--font-display);
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.php-tier-group.easy .php-tier-name { color: hsl(142 70% 45%); }
+.php-tier-group.intermediate .php-tier-name { color: hsl(38 92% 50%); }
+.php-tier-group.hard .php-tier-name { color: hsl(0 84% 60%); }
+.php-tier-group.mostHard .php-tier-name { color: hsl(262 83% 72%); }
+
+.php-tier-count {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: hsl(var(--muted));
+  background: hsl(var(--background-secondary));
+  padding: 0.125rem 0.4375rem;
+  border-radius: 9999px;
+}
+
+.php-tier-blurb {
+  font-size: 0.62rem;
+  line-height: 1.4;
+  color: hsl(var(--muted));
+}
+
+.php-level-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.4rem;
+}
+
+.php-level-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  align-items: flex-start;
+  padding: 0.5rem 0.55rem;
+  border-radius: 0.65rem;
+  border: 1px solid hsl(var(--border));
+  background: hsl(var(--background-secondary));
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.15s ease;
+}
+
+.php-level-card:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.php-level-card:hover:not(:disabled) {
+  border-color: hsl(var(--primary) / 0.55);
+  transform: translateY(-1px);
+}
+
+.php-level-card.current {
+  border-color: hsl(var(--primary));
+  box-shadow: 0 0 0 3px hsl(var(--primary) / 0.15);
+}
+
+.php-level-card.done {
+  border-color: hsl(142 70% 40% / 0.55);
+}
+
+.php-level-card.easy .php-lk-num { background: hsl(142 70% 45% / 0.14); color: hsl(142 70% 45%); }
+.php-level-card.intermediate .php-lk-num { background: hsl(38 92% 50% / 0.14); color: hsl(38 92% 50%); }
+.php-level-card.hard .php-lk-num { background: hsl(0 84% 60% / 0.14); color: hsl(0 84% 60%); }
+.php-level-card.mostHard .php-lk-num { background: hsl(262 83% 68% / 0.16); color: hsl(262 83% 72%); }
+
+.php-lk-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.35rem;
+  height: 1.35rem;
+  border-radius: 9999px;
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  font-weight: 800;
+}
+
+.php-lk-check {
+  width: 0.72rem;
+  height: 0.72rem;
+  color: hsl(142 70% 40%);
+}
+
+.php-lk-lock {
+  width: 0.72rem;
+  height: 0.72rem;
+  color: hsl(var(--muted));
+}
+
+.php-lk-title {
+  font-size: 0.66rem;
+  font-weight: 700;
+  color: hsl(var(--foreground));
+  line-height: 1.25;
+}
+
+.php-lk-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+
+.php-concept-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.1rem 0.375rem;
+  border-radius: 9999px;
+  background: hsl(var(--primary) / 0.1);
+  color: hsl(var(--primary));
+  font-family: var(--font-mono);
+  font-size: 0.52rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.php-lk-points {
+  font-family: var(--font-mono);
+  font-size: 0.55rem;
+  font-weight: 800;
+  color: hsl(38 92% 55%);
+}
+
+.php-ls-legend {
+  font-size: 0.6rem;
+  line-height: 1.45;
+  color: hsl(var(--muted));
+  background: hsl(var(--primary) / 0.06);
+  border: 1px solid hsl(var(--primary) / 0.12);
+  border-radius: 0.5rem;
+  padding: 0.4375rem 0.625rem;
+}
+
+.php-ls-legend strong {
+  color: hsl(var(--foreground));
+}
+
+/* ---------- Keyframes ---------- */
+
+@keyframes php-star-pop {
+  0% {
+    transform: scale(0);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.3);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* ---------- Responsive ---------- */
+
+@media (max-width: 768px) {
+  .php-game-wrapper {
+    flex-direction: column;
+  }
+
+  .php-sidebar {
+    width: 100%;
+  }
+
+  .php-console {
+    height: 280px;
+    min-height: 200px;
+  }
+}
+
+@media (max-width: 480px) {
+  .php-game-wrapper {
+    padding: 0 0.5rem;
+    gap: 0.75rem;
+  }
+
+  .php-level-info {
+    padding: 0.75rem 1rem;
+  }
+
+  .php-console {
+    height: 240px;
+    min-height: 180px;
+  }
+
+  .php-complete-text {
+    font-size: 1.25rem;
+  }
 }
