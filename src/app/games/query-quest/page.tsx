@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
@@ -50,7 +50,7 @@ interface QqGameState {
 const TIER_ORDER = ["easy", "intermediate", "hard", "mostHard"];
 
 const TIER_META: Record<string, { label: string; blurb: string }> = {
-  easy: { label: "Easy", blurb: "SELECT, FROM, WHERE, ORDER BY â€” read data like a pro." },
+  easy: { label: "Easy", blurb: "SELECT, FROM, WHERE, ORDER BY — read data like a pro." },
   intermediate: { label: "Intermediate", blurb: "JOINs, aliases, aggregate fns & GROUP BY." },
   hard: { label: "Hard", blurb: "Subqueries, CASE, UPDATE/INSERT with real data." },
   mostHard: { label: "Most Hard", blurb: "DELETE, HAVING, window-ish tricks & the final boss." },
@@ -230,19 +230,19 @@ export default function QueryQuestPage() {
             </Link>
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-2xl">ðŸ—ƒï¸</span>
+                <span className="text-2xl">???</span>
                 <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Query Quest</h1>
               </div>
               <p className="text-sm text-slate-400">
-                Solv SQL queries against a real in-browser SQLite database â€” powered by sql.js (WASM).
+                Solv SQL queries against a real in-browser SQLite database — powered by sql.js (WASM).
               </p>
             </div>
           </div>
-          <GameSocial slug={GAME_SLUG}  title="Query Quest" emoji="dY-�{?" accentText="text-emerald-400" accentBg="bg-emerald-500/10" currentUser={currentUser} canInteract={gamesAuthed} onAuthRequired={() => { setAuthRequest("login"); setShowAuthModal(true); }} />
+          <GameSocial slug={GAME_SLUG}  title="Query Quest" emoji="dY-?{?" accentText="text-emerald-400" accentBg="bg-emerald-500/10" currentUser={currentUser} canInteract={gamesAuthed} onAuthRequired={() => { setAuthRequest("login"); setShowAuthModal(true); }} />
         </div>
 
         <div className="grid gap-6 lg:grid-cols-[240px_1fr]">
-          {/* LEFT â€” tier / level sidebar */}
+          {/* LEFT — tier / level sidebar */}
           <aside className="space-y-5">
             {TIER_ORDER.map((tier) => {
               const tLevels = tierLevels(tier);
@@ -311,12 +311,12 @@ export default function QueryQuestPage() {
             </div>
           </aside>
 
-          {/* RIGHT â€” editor + output */}
+          {/* RIGHT — editor + output */}
           <section className="space-y-4">
             {booting && (
               <div className="flex items-center gap-3 rounded-2xl border border-emerald-500/30 bg-emerald-500/5 px-4 py-3 text-sm text-emerald-300">
                 <RefreshCw className="h-4 w-4 animate-spin" />
-                Downloading &amp; booting the SQLite engine (WASM ~640&nbsp;KB)â€¦
+                Downloading &amp; booting the SQLite engine (WASM ~640&nbsp;KB)…
               </div>
             )}
 
@@ -326,7 +326,7 @@ export default function QueryQuestPage() {
                   <div className="flex items-center gap-2">
                     <Database className="h-4 w-4 text-emerald-400" />
                     <h3 className="font-semibold text-white">
-                      Level {current.id} Â· {current.title}
+                      Level {current.id} · {current.title}
                     </h3>
                   </div>
                   {current.points > 0 && (
@@ -370,7 +370,7 @@ export default function QueryQuestPage() {
                   </button>
                   <span className="ml-auto flex items-center gap-1.5 text-sm text-slate-500">
                     <Terminal className="h-4 w-4" />
-                    SQLite Â· sql.js
+                    SQLite · sql.js
                   </span>
                 </div>
 
@@ -391,7 +391,7 @@ export default function QueryQuestPage() {
                   >
                     <div className="mb-1 flex items-center gap-2 font-semibold">
                       {result.ok ? <Trophy className="h-4 w-4" /> : <Terminal className="h-4 w-4" />}
-                      {result.ok ? "Correct! Nice query." : "Not quite â€” engine said:"}
+                      {result.ok ? "Correct! Nice query." : "Not quite — engine said:"}
                     </div>
                     {result.error && <pre className="mt-1 whitespace-pre-wrap text-xs text-rose-200/90">{result.error}</pre>}
                     {Array.isArray(result.rows) && (

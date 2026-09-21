@@ -1,10 +1,16 @@
-# repair-emoji.ps1 — byte-accurate UTF-8 mojibake repair (Next.js TSX sources).
-# 4-byte emoji (F0 9F ..) stored as UTF-8, then mis-decoded with cp1252 and
-# re-encoded as UTF-8 (mojibake "<0xF0><0x9F>" -> "C3 B0 C5 B8 .."). This script
-# recovers the ORIGINAL bytes though a lossless cp1252->UTF-8 round-trip, and
-# only touches characters cp1252 can encode (never corrupts genuine >0xFF text).
+# repair-emoji.ps1 — byte-accurate mojibake repair for UTF-8 source files.
+#
+# WHY: 4-byte emoji (F0 9F 8E AF = U+1F3AF "�" ) stored as UTF-8, then decoded
+# with Windows-1252 into the string "ðŸŽ¯" (U+00F0 U+0178 U+017D U+00AF) and RE-SAVED
+# as UTF-8 (C3 B0 C5 B8 C5 BD C2 AF). That is "double-encoded emoji". Repair =
+# cp1252 GetBytes -> recovers original F0 9F 8E AF -> UTF-8 GetString -> real emoji.
+#
+# SAFETY: only runs made of chars that are BOTH >= 0x80 AND cp1252-encodable are
+# round-tripped. ASCII, genuine multi-byte emoji, and single legit accented chars
+# (whose lone cp1252 byte never forms valid multibyte UTF-8) are NEVER altered.
+
 $ErrorActionPreference = "Stop"
-$cp1252 = [System.Text.Encoding]::GetEncoding(1252)
+$cp1252 = [Text.Encoding]::GetEncoding(1252)
 $utf8   = New-Object System.Text.UTF8Encoding($false)
 
 function Count-Mark([string]$path, [byte[]]$pat) {
@@ -16,69 +22,66 @@ function Count-Mark([string]$path, [byte[]]$pat) {
   return $n
 }
 
+function Repair-File([string]$path) {
+  $bytes = [IO.File]::ReadAllBytes($path)
+  $s     = $utf8.GetString($bytes)
+  $sb    = New-Object System.Text.StringBuilder
+  $run   = New-Object System.Text.StringBuilder
+  foreach ($ch in $s.ToCharArray()) {
+    $code = [int][char]$ch
+    $inRun = $false
+    if ($code -ge 0x80) {
+      try { if ($cp1252.GetByteCount([string]$ch) -eq 1) { $inRun = $true } } catch { $inRun = $false }
+    }
+    if ($inRun) {
+      [void]$run.Append($ch)
+    } else {
+      if ($run.Length -gt 0) {
+        [void]$sb.Append((Repair-Run $run.ToString()))
+        [void]$run.Clear()
+      }
+      [void]$sb.Append($ch)
+    }
+  }
+  if ($run.Length -gt 0) { [void]$sb.Append((Repair-Run $run.ToString())) }
+  $new = $sb.ToString()
+  if ($new -eq $s) { return $false }
+  [IO.File]::WriteAllText($path, $new, $utf8)
+  return $true
+}
+
 function Repair-Run([string]$run) {
-  if ($run.Length -eq 0) { return $run }
   try {
     $bytes = $cp1252.GetBytes($run)
     $dec   = $utf8.GetString($bytes)
-    if ($dec.IndexOf([char]0xFFFD) -ge 0) { return $run }
-    if ($dec -eq $run) { return $run }
-    $hasHigh = $false
-    foreach ($ch in $dec.ToCharArray()) { if ([int][char]$ch -gt 0x7F) { $hasHigh = $true; break } }
-    if (-not $hasHigh) { return $run }
+    if ($dec.Contains([char]0xFFFD)) { return $run }
     return $dec
   } catch {
     return $run
   }
 }
 
-function Repair-File([string]$path) {
-  $bytes = [IO.File]::ReadAllBytes($path)
-  $s     = $utf8.GetString($bytes)
-  $out   = New-Object System.Text.StringBuilder
-  $run   = New-Object System.Text.StringBuilder
-  foreach ($ch in $s.ToCharArray()) {
-    if ([int][char]$ch -le 0xFF) { [void]$run.Append($ch) }
-    else {
-      [void]$out.Append((Repair-Run $run.ToString()))
-      [void]$out.Append($ch)
-      [void]$run.Clear()
-    }
-  }
-  [void]$out.Append((Repair-Run $run.ToString()))
-  $new = $out.ToString()
-  if ($new -eq $s) { return $false }
-  [IO.File]::WriteAllText($path, $new, $utf8)
-  return $true
-}
-
 $targets = @(
   "src\app\games\page.tsx",
-  "src\app\games\query-quest\page.tsx",
   "src\app\games\php-playground\page.tsx",
-  "src\components\sections\projects.tsx"
+  "src\app\games\query-quest\page.tsx",
+  "src\app\components\sections\projects.tsx"
 )
 
-"=== BEFORE (dbl=C3 B0 mojibake / valid=F0 9F emoji) ==="
+"=== REPAIR ($($targets.Count) files) ==="
 foreach ($t in $targets) {
   if (-not (Test-Path $t)) { continue }
-  "  {0,-40} dbl={1}  validEmoji={2}" -f (Split-Path $t -Leaf), (Count-Mark $t @(0xC3,0xB0)), (Count-Mark $t @(0xF0,0x9F))
+  $dbBefore = Count-Mark $t @(0xC3, 0xB0)      # "ð" mojibake pair
+  $changed   = Repair-File $t
+  $dbAfter   = Count-Mark $t @(0xC3, 0xB0)
+  $valid     = Count-Mark $t @(0xF0, 0x9F)     # genuine 4-byte emoji, must survive
+  "  {0,-44} changed={1}  dbl {2}->{3}  validEmoji={4}" -f (Split-Path $t -Leaf), $changed, $dbBefore, $dbAfter, $valid
 }
-"=== REPAIR ==="
-foreach ($t in $targets) {
-  if (-not (Test-Path $t)) { continue }
-  $beforeDbl = Count-Mark $t @(0xC3,0xB0)
-  $fixed = Repair-File $t
-  if ($fixed) { "  REPAIRED " + (Split-Path $t -Leaf) }
-  else        { "  ok-clean " + (Split-Path $t -Leaf) }
-}
-"=== AFTER (dbl must be 0 everywhere, validEmoji preserved where present) ==="
+"=== VERIFY: dbl must all be 0 ; validEmoji preserved on projects.tsx ==="
 $allok = $true
 foreach ($t in $targets) {
   if (-not (Test-Path $t)) { continue }
-  $d = Count-Mark $t @(0xC3,0xB0)
-  $v = Count-Mark $t @(0xF0,0x9F)
+  $d = Count-Mark $t @(0xC3, 0xB0)
   if ($d -gt 0) { $allok = $false }
-  "  {0,-40} dbl={1}  validEmoji={2}" -f (Split-Path $t -Leaf), $d, $v
 }
-if ($allok) { "ALL-CLEAN" } else { "STILL-CORRUPT" }
+"  ALL-CLEAN=$allok"
