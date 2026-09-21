@@ -62,7 +62,10 @@ CONTACT INFORMATION:
 - LinkedIn: https://www.linkedin.com/in/maaz-arif-webdev/
 
 GAMES (Maaz's "Learn Games" hub at /games is the main focus of his portfolio):
-Maaz built 4 playable coding games. Players must sign in (register/login) to save progress; progress and XP only count while signed in. Each game has likes and a discussion/comments section below it.
+Maaz built 6 playable coding games. Players must sign in (register/login) to save progress; progress and XP only count while signed in. Each game has likes and a discussion/comments section below it.
+
+Recommended order for brand-new beginners: start with HTML Hero (simplest visual), then Grid Garden, Flexbox Zoo, JS Detective, then PHP Playground, then Query Quest last (it needs the most reading). This is only a suggestion; nothing is locked and any game can be played first.
+
 
 1) HTML Hero (/games/html-hero) - 🦸 "Write real HTML tags, level by level" -
 16 levels: easy L1-L5 (3 XP), intermediate L6-L12 (7 XP), advanced L13-L16 (9 XP). Max score 100 XP.
@@ -85,8 +88,18 @@ Level list: 1 First Prints (variables + console output - must log "Ada is 36"); 
 Tier unlock conditions: intermediate unlocks after 3 of 4 easy solved; hard unlocks after 6 of 7 intermediate; mostHard unlocks after the 1 hard level (L12) is solved.
 Pass conditions: each level has a hidden check that runs your code against a stubbed console/document/window; output or resulting state must match exactly and multi-log levels require the exact order. A failed run reports the error with its line number. Hints are unlimited (a hint button reveals the level's tip). In L12 the stub keeps element.className and element.classList in sync, so you can set a class via className = "solved" or classList.add("solved").
 
+5) PHP Playground (/games/php-playground) - 🐘 "Type real PHP and watch it run live in your browser" -
+8 levels: easy L1-L4 (9 XP), intermediate L5-L6 (11 XP), hard L7 (13 XP), mostHard L8 (15 XP). Max score 100 XP.
+Level list: 1 My First Echo (echo a string; "PHP Coding Playground" must be printed); 2 Variable Ventures (declare a variable and interpolate/echo it); 3 Conditional Crossroads (if/else that prints the correct branch: "Even" for a nullish, "Odd" otherwise); 4 Loop Land (for + foreach loops printing each filtered item); 5 Function Junction (write a named function with a default parameter and call it); 6 String Symphony (concatenation, string interpolation and strtolower()); 7 Array Assault (associative array keyed access + count()); 8 Array Avenue (array functions: array_map/filter on a numbers list, then implode() the result).
+Pass conditions: the game runs your PHP in a WASM PHP engine right in the browser (no server round-trip) and checks the exact printed output; it must match the expected output exactly (extra stray output fails). PHP warnings/notices printed to output count as failures. Hints are unlimited.
+
+6) Query Quest (/games/query-quest) - 🗃️ "Master SQL by querying a real in-your-browser database" -
+8 levels: easy L1-L4 (9 XP), intermediate L5-L6 (11 XP), hard L7 (13 XP), mostHard L8 (15 XP). Max score 100 XP.
+Level list: 1 See Everything (SELECT * FROM students); 2 Use Your Eyes (SELECT specific columns name, city FROM students and return them in that order); 3 Filter the Class (SELECT ... WHERE city = 'Lahore'); 4 Sort It Out (SELECT specific columns ORDER BY name ASC); 5 Find That Row (SELECT with a WHERE on the id); 6 Through the Looking Table (a JOIN of students and courses fetching student name + course title for a specific course category); 7 Change the Story (an INSERT adding a new student row); 8 The Big Count (SELECT city, COUNT(*) GROUP BY city ordered by count DESC).
+Pass conditions: your SQL runs against the game's in-browser sql.js/WebSQL database (a real SQL engine, loaded lazily) and the returned result table must match the expected result rows exactly - the same columns and rows in the same order.
+
 GAMIFICATION (shared across all games):
-- XP is the score saved per game when you beat levels (XP per level differs per game as listed above). Total possible XP across all 4 games = 400 (100 + 100 + 100 + 100).
+- XP is the score saved per game when you beat levels (XP per level differs per game as listed above). Total possible XP across all 6 games = 600 (100 HTM-100 GFP-100 FZX-100 JSD-100 PPP-100 QQ).
 - Player levels use a triangular scale: level n starts at 100*n*(n-1)/2 XP, so L1=0, L2=100, L3=300, L4=600, L5=1000, L6=1500, L7=2100 XP...
 - Daily streak = consecutive UTC days on which the player beats at least one level; missing a day restarts the current streak while the longest streak is remembered.
 - Leaderboard shows the top 10 players by total XP (site admins are excluded from it).

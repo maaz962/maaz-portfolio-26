@@ -160,6 +160,8 @@ const gamesTeaserTiles = [
   { emoji: "🕵️", color: "from-yellow-500/20 to-amber-500/20" },
   { emoji: "🎯", color: "from-blue-500/20 to-cyan-500/20" },
   { emoji: "✨", color: "from-purple-500/20 to-pink-500/20" },
+  { emoji: "🐘", color: "from-violet-500/20 to-purple-600/20" },
+  { emoji: "🗃️", color: "from-sky-500/20 to-cyan-600/20" },
 ];
 
 function GamesTeaserCard() {

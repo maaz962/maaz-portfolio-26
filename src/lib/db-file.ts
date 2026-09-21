@@ -284,7 +284,14 @@ export async function validateCredentials(
 
 // --- GAME PROGRESS ---
 
-const GAME_SLUGS = ["html-hero", "grid-garden", "flexbox-zoo", "js-detective"] as const;
+const GAME_SLUGS = [
+  "html-hero",
+  "grid-garden",
+  "flexbox-zoo",
+  "js-detective",
+  "php-playground",
+  "query-quest",
+] as const;
 
 /** All game progress rows for one user, keyed by game slug. */
 export async function getGameProgressForUser(userId: string): Promise<Record<string, GameProgress>> {

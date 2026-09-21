@@ -1,0 +1,79 @@
+/* Query Quest — game shell styles (CodeMirror SQL sandbox) */
+
+.qqc-shell {
+  min-height: 100vh;
+  background:
+    radial-gradient(1200px 500px at 85% -10%, rgba(16, 185, 129, 0.09), transparent 60%),
+    #04060c;
+}
+
+.qqc-boot-card {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  border-radius: 1rem;
+  border: 1px solid rgba(16, 185, 129, 0.28);
+  background: rgba(16, 185, 129, 0.06);
+  padding: 0.7rem 0.9rem;
+  font-size: 0.75rem;
+  color: #a7f3d0;
+}
+
+.qqc-boot-card .animate-spin {
+  animation: qqc-spin 0.9s linear infinite;
+}
+
+@keyframes qqc-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.qqc-result-ok {
+  border-color: rgba(16, 185, 129, 0.35);
+  background: rgba(16, 185, 129, 0.07);
+  color: #a7f3d0;
+}
+
+.qqc-result-err {
+  border-color: rgba(244, 63, 94, 0.35);
+  background: rgba(244, 63, 94, 0.07);
+  color: #fecdd3;
+}
+
+.qqc-editor-wrap {
+  overflow: hidden;
+  border-radius: 1rem;
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  background: #0b0e17;
+}
+
+.qqc-editor-wrap .cm-editor {
+  font-size: 0.78rem;
+  line-height: 1.55;
+}
+
+.qqc-editor-wrap .cm-scroller {
+  font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  padding: 0.4rem 0;
+}
+
+.qqc-table th,
+.qqc-table td {
+  padding: 0.3rem 0.65rem;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.15);
+  text-align: left;
+  font-size: 0.72rem;
+}
+
+.qqc-table th {
+  color: #6ee7b7;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.qqc-hint {
+  border-color: rgba(245, 158, 11, 0.3);
+  background: rgba(245, 158, 11, 0.05);
+  color: #fde68a;
+}

@@ -10,7 +10,14 @@ import { getSessionUser } from "@/lib/auth";
 import { levelStatsForXp, dateKey } from "@/lib/gamification";
 import type { Gamification, GamificationSummary } from "@/types";
 
-const GAME_SLUGS = ["html-hero", "grid-garden", "flexbox-zoo", "js-detective"];
+const GAME_SLUGS = [
+  "html-hero",
+  "grid-garden",
+  "flexbox-zoo",
+  "js-detective",
+  "php-playground",
+  "query-quest",
+];
 
 function buildGamificationSummary(
   gam: Gamification,
