@@ -22,7 +22,7 @@ import { useAuth } from "@/lib/auth-context";
 import "./game.css";
 
 const GAME_SLUG = "js-detective";
-const FALLBACK_TOTAL_LEVELS = 16;
+const FALLBACK_TOTAL_LEVELS = 18;
 
 interface JsLevelMeta {
   id: number;
@@ -41,16 +41,19 @@ interface JsGameState {
   totalLevels: number;
 }
 
-const TIER_ORDER = ["easy", "intermediate", "hard", "mostHard"];
+const TIER_ORDER = ["beginner", "easy", "intermediate", "mostHard"];
 
 const TIER_META = [
+  { key: "beginner", label: "Beginner", blurb: "First steps — console.log, strings, numbers and variables." },
   { key: "easy", label: "Easy", blurb: "Warm-up — variables, types, operators and control flow." },
   { key: "intermediate", label: "Intermediate", blurb: "Clues tighten — loops, arrays, functions and objects." },
-  { key: "hard", label: "Hard", blurb: "Real casework — modern syntax, higher-order arrays and the DOM." },
   { key: "mostHard", label: "Most Hard", blurb: "Final stretch — events, BOM and async bring the boss fight." },
 ];
 
 const CONCEPT_LABELS: Record<string, string> = {
+  console: "console.log",
+  strings: "Strings",
+  numbers: "Numbers",
   variables: "Variables",
   "data-types": "Data types",
   operators: "Operators",
@@ -87,7 +90,7 @@ function tierOpenFor(
   if (ti <= 0) return true;
   const prev = TIER_ORDER[ti - 1] ?? "";
   const prevLevels = tierLevelsFor(levels, prev);
-  const need = prev === "hard" ? prevLevels.length : Math.max(1, prevLevels.length - 1);
+  const need = Math.max(1, prevLevels.length - 1);
   return prevLevels.length === 0 || tierDoneFor(levels, completed, prev) >= need;
 }
 
@@ -100,7 +103,7 @@ function lockNoteFor(
   if (ti <= 0) return "";
   const prev = TIER_ORDER[ti - 1] ?? "";
   const prevLevels = tierLevelsFor(levels, prev);
-  const need = prev === "hard" ? prevLevels.length : Math.max(1, prevLevels.length - 1);
+  const need = Math.max(1, prevLevels.length - 1);
   const left = Math.max(0, need - tierDoneFor(levels, completed, prev));
   const label = TIER_META.find((t) => t.key === prev)?.label || prev;
   return `Solve ${left} more ${label} case${left === 1 ? "" : "s"} to unlock this tier.`;
@@ -113,7 +116,7 @@ function tierLegendFor(levels: JsLevelMeta[]): string {
     const next = TIER_ORDER[ti] ?? "";
     const prevLevels = tierLevelsFor(levels, prev);
     if (!prevLevels.length) continue;
-    const need = prev === "hard" ? prevLevels.length : Math.max(1, prevLevels.length - 1);
+    const need = Math.max(1, prevLevels.length - 1);
     const prevLabel = TIER_META.find((t) => t.key === prev)?.label || prev;
     const nextLabel = TIER_META.find((t) => t.key === next)?.label || next;
     parts.push(`Solve ${need} of ${prevLevels.length} ${prevLabel} cases to unlock ${nextLabel}`);
@@ -357,9 +360,9 @@ export default function JsDetectivePage() {
                   </span>
                   <span
                     id="level-difficulty"
-                    className="jsd-level-difficulty easy"
+                    className="jsd-level-difficulty beginner"
                   >
-                    Easy
+                    Beginner
                   </span>
                 </div>
                 <h2

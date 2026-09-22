@@ -9,7 +9,7 @@ import type {
 } from "@/types";
 import { hashPassword, verifyPassword } from "./password";
 import { getPgConnectionString, usePostgres } from "./pg-connection";
-import { dateKeyFromDaysAgo, levelForXp } from "./gamification";
+import { dateKeyFromDaysAgo, levelForXp, scoreForCompleted } from "./gamification";
 
 /**
  * Postgres-backed persistent data layer. Used when process.env.DATABASE_URL is
@@ -301,10 +301,15 @@ export async function saveGameProgress(
     0,
     Number.isInteger(data.currentLevel) && data.currentLevel >= 0 ? data.currentLevel : 0
   );
-  const score = Math.max(
-    0,
-    typeof data.score === "number" && Number.isFinite(data.score) ? data.score : 0
-  );
+  // The server is the source of truth for scoring: recompute the total
+  // from the completed map for games with a points table, so scores can
+  // never diverge from the shipped XP values.
+  const score =
+    scoreForCompleted(gameSlug, cleanCompleted) ??
+    Math.max(
+      0,
+      typeof data.score === "number" && Number.isFinite(data.score) ? data.score : 0
+    );
   const totalLevels = Math.max(
     1,
     Number.isInteger(data.totalLevels) && data.totalLevels > 0 ? data.totalLevels : 1

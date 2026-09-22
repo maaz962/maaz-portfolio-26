@@ -494,6 +494,57 @@
   font-style: italic;
 }
 
+.qq-console-error {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  color: hsl(0 84% 66%);
+  background: hsl(0 84% 55% / 0.1);
+  border: 1px solid hsl(0 84% 55% / 0.4);
+  border-radius: 0.5rem;
+  padding: 0.625rem 0.75rem;
+  white-space: pre-wrap;
+  word-break: break-word;
+  line-height: 1.5;
+}
+
+.qq-console-table-wrap {
+  overflow-x: auto;
+}
+
+.qq-console-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  line-height: 1.5;
+}
+
+.qq-console-table th {
+  text-align: left;
+  font-weight: 700;
+  color: hsl(var(--primary));
+  padding: 0.375rem 0.625rem;
+  border-bottom: 1px solid hsl(var(--primary) / 0.35);
+  background: hsl(var(--primary) / 0.08);
+  white-space: nowrap;
+}
+
+.qq-console-table td {
+  padding: 0.3rem 0.625rem;
+  border-bottom: 1px solid hsl(var(--border) / 0.35);
+  color: hsl(var(--foreground) / 0.85);
+  vertical-align: top;
+}
+
+.qq-console-table tbody tr:nth-child(even) td {
+  background: hsl(var(--foreground) / 0.03);
+}
+
+.qq-console-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
 /* ---------- Hint bar ---------- */
 
 .qq-hint-bar {

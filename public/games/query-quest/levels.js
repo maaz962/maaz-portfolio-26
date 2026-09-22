@@ -5,8 +5,9 @@
  * order-fixed (natural scan order when no ORDER BY is stated, and a declared
  * ORDER BY where multicple row orders are possible).
  *
- * Anti-answer-leak rule (house lesson): `starter` contains ONLY a comment that
- * restates the task — never any part of the solution query.
+ * Anti-answer-leak rule (house lesson): every `starter` is left blank ("").
+ * The task is stated in `instruction`/`hint` above the editor — never repeated
+ * as a code comment inside the starter template.
  */
 window.__queryQuestLevels = [
   /* ---------------- EASY (1-5) ---------------- */
@@ -19,7 +20,7 @@ window.__queryQuestLevels = [
     instruction:
       "Your first mission: return <em>every column and every row</em> from the <code>users</code> table. Yes, that includes the id, the email and the age.",
     hint: "SELECT needs two parts: the columns you want (a one-character wildcard means 'all columns') and the table you're reading from.",
-    starter: "-- Return every column and every row from the users table.\n",
+    starter: "",
     seedErr: "You should be selecting from users, returning all four of its columns and every row.",
     expectedColumns: ["id", "name", "email", "city", "age"],
     expectedRows: [
@@ -41,7 +42,7 @@ window.__queryQuestLevels = [
     instruction:
       "Only the Londoners, please. Return <em>every column</em> of every user who lives in <code>London</code>.",
     hint: "A WHERE clause narrows rows by a condition. Compare the city column to the text 'London'.",
-    starter: "-- London only: every column, rows filtered by city.\n",
+    starter: "",
     seedErr: "Add a WHERE clause that keeps rows where the city column equals 'London'.",
     expectedColumns: ["id", "name", "email", "city", "age"],
     expectedRows: [
@@ -59,7 +60,7 @@ window.__queryQuestLevels = [
     instruction:
       "Return only the <code>name</code> and <code>age</code> of every user, sorted <em>youngest first</em> (age ascending).",
     hint: "An ORDER BY clause sorts the output. 'Youngest first' means ascending on the age column.",
-    starter: "-- Name and age of every user, youngest first.\n",
+    starter: "",
     seedErr: "You need ORDER BY age (ascending is the default direction). Only name and age columns.",
     expectedColumns: ["name", "age"],
     expectedRows: [
@@ -81,7 +82,7 @@ window.__queryQuestLevels = [
     instruction:
       "Show the <em>3 oldest</em> users, by <code>name</code> only, oldest first.",
     hint: "Order by age the other way around, then a LIMIT stops the query after 3 rows.",
-    starter: "-- The three oldest users, by name.\n",
+    starter: "",
     seedErr: "Sort by age descending, then limit the output to exactly three rows and keep only the name column.",
     expectedColumns: ["name"],
     expectedRows: [["Margaret Hamilton"], ["Grace Hopper"], ["Barbara Liskov"]],
@@ -96,7 +97,7 @@ window.__queryQuestLevels = [
     instruction:
       "Show the <code>name</code> and <code>city</code> of every user who is <em>under 40</em> OR lives in <code>Boston</code>.",
     hint: "Two conditions joined by OR — one matches on age, the other on city. A row matches if either is true.",
-    starter: "-- Name and city of users under 40 OR living in Boston.\n",
+    starter: "",
     seedErr: "WHERE needs both conditions — age less than 40, or city equal to 'Boston' — joined with OR.",
     expectedColumns: ["name", "city"],
     expectedRows: [
@@ -117,7 +118,7 @@ window.__queryQuestLevels = [
     instruction:
       "Match every order to the product it bought. Return the <code>order id</code> and the <code>product name</code>, one row per order.",
     hint: "orders and products share a column — product_id. Join on it so each order picks up its product's name.",
-    starter: "-- Each order id paired with the product name it ordered.\n",
+    starter: "",
     seedErr: "Join orders to products on product_id. Select the order's id and the product's name.",
     expectedColumns: ["id", "name"],
     expectedRows: [
@@ -141,7 +142,7 @@ window.__queryQuestLevels = [
     instruction:
       "Show <em>every</em> user with the ids of their orders — users who have never ordered must still appear, once, with an empty order id.",
     hint: "An inner join silently drops someone with no orders. A different join kind keeps every left-hand row.",
-    starter: "-- Every user with the ids of orders they placed (no orders is fine too).\n",
+    starter: "",
     seedErr: "Use a LEFT JOIN (users on the left, orders on the right) so Barbara, who has no orders, still shows up as a NULL id.",
     expectedColumns: ["name", "id"],
     expectedRows: [
@@ -166,7 +167,7 @@ window.__queryQuestLevels = [
     instruction:
       "How many products are in the catalog? Return a single count — nothing else.",
     hint: "COUNT is an aggregate function that counts rows. COUNT(*) counts every row in the table.",
-    starter: "-- How many products are in the catalog?\n",
+    starter: "",
     seedErr: "Use COUNT(*) to count all rows in the products table. No other columns.",
     expectedColumns: ["COUNT(*)"],
     expectedRows: [[6]],
@@ -181,7 +182,7 @@ window.__queryQuestLevels = [
     instruction:
       "Every order has a <code>quantity</code>. Return the <em>total number of items</em> ordered across all orders.",
     hint: "SUM adds up a numeric column. Sum the quantity column across all rows of orders.",
-    starter: "-- The total number of items across all orders.\n",
+    starter: "",
     seedErr: "Use SUM(quantity) over the orders table. Your answer should be a single row.",
     expectedColumns: ["SUM(quantity)"],
     expectedRows: [[17]],
@@ -196,7 +197,7 @@ window.__queryQuestLevels = [
     instruction:
       "For each city, return the city name and <em>how many users live there</em>. One row per city.",
     hint: "GROUP BY collects rows that share a value into one group. Count within each group.",
-    starter: "-- How many users live in each city.\n",
+    starter: "",
     seedErr: "Group by the city column, then COUNT(*) per group. Every city appears exactly once.",
     expectedColumns: ["city", "COUNT(*)"],
     expectedRows: [
@@ -218,7 +219,7 @@ window.__queryQuestLevels = [
     instruction:
       "List the <code>name</code> of every product that has been ordered <em>at least once</em>. One product is never ordered — it must NOT appear.",
     hint: "A subquery inside WHERE can answer 'which product ids appear in orders?', then compare each product id against it.",
-    starter: "-- Products that have been ordered at least once.\n",
+    starter: "",
     seedErr: "Use WHERE id IN (SELECT ...). The inner query should return every product_id from orders.",
     expectedColumns: ["name"],
     expectedRows: [["Laptop"], ["Mouse"], ["Keyboard"], ["Desk Lamp"], ["Notebook"]],
@@ -233,7 +234,7 @@ window.__queryQuestLevels = [
     instruction:
       "Add a product named <code>Smart Watch</code> in category <code>electronics</code> priced <code>250</code>. The id is automatic — don't supply it. Then return its <code>name</code>, <code>category</code> and <code>price</code>.",
     hint: "INSERT INTO names the target columns and VALUES lists the new data. Finish with a SELECT that shows the row you just added.",
-    starter: "-- Add a product called 'Smart Watch' (electronics, 250), then show its row back.\n",
+    starter: "",
     seedErr: "INSERT INTO products (name, category, price) with the three values, then SELECT name, category, price for the new product.",
     expectedColumns: ["name", "category", "price"],
     expectedRows: [["Smart Watch", "electronics", 250]],
@@ -248,7 +249,7 @@ window.__queryQuestLevels = [
     instruction:
       "Raise every <code>electronics</code> price by <em>10%</em>, then return the <code>name</code> and new <code>price</code> of the <code>Mouse</code>.",
     hint: "UPDATE sets a column everywhere a WHERE matches. price = price * 1.1 grows a value by ten percent.",
-    starter: "-- Raise every electronics price by 10%, then show the Mouse's new price.\n",
+    starter: "",
     seedErr: "UPDATE products SET price = price * 1.1 WHERE category = 'electronics', then SELECT name, price WHERE name = 'Mouse'.",
     expectedColumns: ["name", "price"],
     expectedRows: [["Mouse", 22]],
@@ -265,7 +266,7 @@ window.__queryQuestLevels = [
     instruction:
       "Remove every order with <code>status = 'cancelled'</code>, then return the remaining <code>order ids</code> in order.",
     hint: "DELETE removes rows that match a WHERE statement. Re-check with a SELECT so you can see what survived.",
-    starter: "-- Remove all cancelled orders, then list the remaining order ids.\n",
+    starter: "",
     seedErr: "DELETE FROM orders WHERE status = 'cancelled', then SELECT id FROM orders. One of the eight orders should be gone.",
     expectedColumns: ["id"],
     expectedRows: [[1], [2], [3], [4], [6], [7], [8]],
@@ -280,7 +281,7 @@ window.__queryQuestLevels = [
     instruction:
       "Total revenue per user from <em>paid</em> orders only (<code>quantity &times; price</code>). Users with no paid orders show NULL — but still appear. Name the total column <code>total</code>.",
     hint: "Cross order and product for prices, but filter the paid status inside the join so non-paid users aren't dropped. Group by user so SUM works per person.",
-    starter: "-- Total paid revenue per user (users with no paid orders show NULL).\n",
+    starter: "",
     seedErr: "LEFT JOIN orders with status filter in the ON, LEFT JOIN products for prices, GROUP BY the user's id, ORDER BY that id. SUM(quantity * price) AS total.",
     expectedColumns: ["name", "total"],
     expectedRows: [
@@ -302,7 +303,7 @@ window.__queryQuestLevels = [
     instruction:
       "For cities with <em>more than one</em> user: return the <code>city</code> and its <code>average age</code>, oldest average first, top 2.",
     hint: "HAVING filters whole groups (not rows). Average ages with AVG, order descending, then LIMIT the report to two cities.",
-    starter: "-- Cities with more than one user: city + average age, oldest average first, top 2.\n",
+    starter: "",
     seedErr: "GROUP BY city, HAVING COUNT(*) > 1, SELECT city and AVG(age) AS avg_age, ORDER BY avg_age DESC, LIMIT 2.",
     expectedColumns: ["city", "avg_age"],
     expectedRows: [

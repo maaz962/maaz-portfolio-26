@@ -71,6 +71,11 @@
   border-radius: 9999px;
 }
 
+.jsd-level-difficulty.beginner {
+  background: hsl(189 94% 43% / 0.12);
+  color: hsl(189 94% 43%);
+}
+
 .jsd-level-difficulty.easy {
   background: hsl(142 70% 45% / 0.12);
   color: hsl(142 70% 45%);
@@ -79,11 +84,6 @@
 .jsd-level-difficulty.intermediate {
   background: hsl(38 92% 50% / 0.12);
   color: hsl(38 92% 50%);
-}
-
-.jsd-level-difficulty.hard {
-  background: hsl(0 84% 60% / 0.12);
-  color: hsl(0 84% 60%);
 }
 
 .jsd-level-difficulty.mostHard {
@@ -968,9 +968,9 @@
   border-left: 3px solid hsl(var(--border));
 }
 
+.jsd-tier-group.beginner { border-left-color: hsl(189 94% 43%); }
 .jsd-tier-group.easy { border-left-color: hsl(142 70% 45%); }
 .jsd-tier-group.intermediate { border-left-color: hsl(38 92% 50%); }
-.jsd-tier-group.hard { border-left-color: hsl(0 84% 60%); }
 .jsd-tier-group.mostHard { border-left-color: hsl(262 83% 68%); }
 
 .jsd-tier-group.closed { opacity: 0.72; }
@@ -990,9 +990,9 @@
   letter-spacing: 0.05em;
 }
 
+.jsd-tier-group.beginner .jsd-tier-name { color: hsl(189 94% 43%); }
 .jsd-tier-group.easy .jsd-tier-name { color: hsl(142 70% 45%); }
 .jsd-tier-group.intermediate .jsd-tier-name { color: hsl(38 92% 50%); }
-.jsd-tier-group.hard .jsd-tier-name { color: hsl(0 84% 60%); }
 .jsd-tier-group.mostHard .jsd-tier-name { color: hsl(262 83% 72%); }
 
 .jsd-tier-count {

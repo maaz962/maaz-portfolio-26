@@ -23,7 +23,7 @@
   var LEVELS = [];
   var TIERS = ["easy", "intermediate", "hard", "mostHard"];
   var TIER_LABELS = { easy: "Easy", intermediate: "Intermediate", hard: "Hard", mostHard: "Most Hard" };
-  var POINTS = { easy: 5, intermediate: 6, hard: 8, mostHard: 10 };
+  var POINTS = { easy: 5, intermediate: 6, hard: 7, mostHard: 8 };
   var HINTS_PER_DAY = 3;
 
   var STATE = {
@@ -198,6 +198,17 @@
       });
   }
 
+  function firstPhpError(output) {
+    var text = String(output || "");
+    if (!text.trim()) return "";
+    var lines = text.split("\n");
+    for (var i = 0; i < lines.length; i++) {
+      var line = lines[i];
+      if (/(?:^|\s)(?:Parse |Fatal )?error:|Warning:|Notice:|Deprecated:/i.test(line)) return line.trim();
+    }
+    return "";
+  }
+
   function checkLevel(index, source) {
     var lvl = LEVELS[index];
     return runPHP(source).then(function (res) {
@@ -212,6 +223,10 @@
       }
       if (res.stderr && res.stderr.trim()) {
         return { ok: false, stdout: res.stdout, error: res.stderr, errorType: "runtime" };
+      }
+      var phpErr = firstPhpError(res.stdout);
+      if (phpErr) {
+        return { ok: false, stdout: res.stdout, error: phpErr, errorType: "runtime" };
       }
       return { ok: false, stdout: res.stdout, error: lvl.seedErr || "Output doesn't match the expected result.", errorType: "wrong" };
     });

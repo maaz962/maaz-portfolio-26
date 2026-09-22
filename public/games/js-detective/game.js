@@ -36,12 +36,12 @@
     }, LEVEL_LOAD_TRY_MS);
   }
 
-  var TIERS = ["easy", "intermediate", "hard", "mostHard"];
+  var TIERS = ["beginner", "easy", "intermediate", "mostHard"];
 
   var TIER_LABELS = {
+    beginner: "Beginner",
     easy: "Easy",
     intermediate: "Intermediate",
-    hard: "Hard",
     mostHard: "Most Hard",
   };
 
@@ -73,9 +73,9 @@
     hintsUsed: 0,
   };
 
-  // Per-tier points. With 15 levels (4 easy + 7 intermediate + 1 hard +
-  // 3 mostHard) the full run scores exactly 4*5 + 7*6 + 8 + 3*10 = 100.
-  var POINTS = { easy: 5, intermediate: 6, hard: 8, mostHard: 10 };
+  // Per-tier points. With 18 levels (4 beginner + 4 easy + 7 intermediate +
+  // 3 mostHard) a full run scores exactly 4*2 + 4*5 + 7*6 + 3*10 = 100.
+  var POINTS = { beginner: 2, easy: 5, intermediate: 6, mostHard: 10 };
 
   function tierLabel(tier) {
     return TIER_LABELS[tier] || tier || "Easy";
@@ -105,8 +105,8 @@
     return out;
   }
 
-  // Progressive gating: finish most cases in a tier to unlock the next;
-  // all Hard cases must be solved before Most Hard opens.
+  // Progressive gating: finish all but one case in a tier to unlock the next
+  // (Beginner -> Easy -> Intermediate -> Most Hard).
   function isLevelUnlocked(index) {
     if (!LEVELS[index]) return false;
     if (STATE.completed[index]) return true;
@@ -114,7 +114,7 @@
     if (ti <= 0) return true;
     var prevKey = TIERS[ti - 1];
     var prevLevels = tierLevels(prevKey);
-    var need = prevKey === "hard" ? prevLevels.length : Math.max(1, prevLevels.length - 1);
+    var need = Math.max(1, prevLevels.length - 1);
     return prevLevels.length === 0 || countDoneInTier(prevKey) >= need;
   }
 
@@ -126,12 +126,30 @@
     var prevKey = TIERS[ti - 1];
     var prevLabel = tierLabel(prevKey);
     var prevLevels = tierLevels(prevKey);
-    var need = prevKey === "hard" ? prevLevels.length : Math.max(1, prevLevels.length - 1);
+    var need = Math.max(1, prevLevels.length - 1);
     var left = Math.max(0, need - countDoneInTier(prevKey));
     return (
       "Solve " + left + " more " + prevLabel + " case" + (left === 1 ? "" : "es") +
       " to unlock this tier."
     );
+  }
+
+  // Progress data version. v2 restructured the level set: four Beginner cases
+  // were inserted at the front and the sole "Hard" case was removed, so every
+  // 0-based level index below is only meaningful for saves of the same version.
+  var DATA_VERSION = 2;
+
+  // v1 layout was [easy x4, intermediate x7, hard x1, mostHard x3] (15 levels,
+  // indices 0..14). v2 maps an old index to the equivalent one in the new
+  // 18-level layout; the removed Hard case (old index 11) returns -1 so it is
+  // archived (dropped) rather than mapped onto another level. Indices before
+  // the removed Hard shift by +4; the three Most Hard cases after it shift by
+  // +3 (old 12-14 -> new 15-17).
+  function migrateLegacyIndex(oldIndex) {
+    if (oldIndex === 11) return -1;
+    if (oldIndex >= 0 && oldIndex <= 10) return oldIndex + 4;
+    if (oldIndex >= 12 && oldIndex <= 14) return oldIndex + 3;
+    return oldIndex;
   }
 
   function emitProgress() {
@@ -143,6 +161,7 @@
         solutions: STATE.solutions,
         hints: { date: STATE.hintsDate, used: STATE.hintsUsed },
         totalLevels: LEVELS.length,
+        version: DATA_VERSION,
       });
     }
   }
@@ -159,6 +178,7 @@
             solutions: STATE.solutions,
             hints: { date: STATE.hintsDate, used: STATE.hintsUsed },
             totalLevels: LEVELS.length,
+            version: DATA_VERSION,
           },
         })
       );
@@ -169,6 +189,41 @@
     if (!saved) return;
     ensureLevels(function () {
       if (LEVELS.length === 0) return;
+      // Migrate a pre-v2 save: re-map completed/solutions/currentLevel from the
+      // old 15-level indices to the new 18-level ones, archiving (dropping) the
+      // removed Hard case. No orphaned references, nothing crashes, and the
+      // score is rebuilt from the re-mapped set below using current points.
+      if (Number(saved.version) !== DATA_VERSION && saved.completed && typeof saved.completed === "object") {
+        var legacy = {
+          currentLevel: saved.currentLevel,
+          completed: {},
+          solutions: {},
+          hints: saved.hints,
+        };
+        var hasCompletions = false;
+        for (var lk in saved.completed) {
+          if (!saved.completed[lk]) continue;
+          var mi = migrateLegacyIndex(Number(lk));
+          if (mi >= 0 && mi < LEVELS.length) {
+            legacy.completed[mi] = true;
+            if (saved.solutions && typeof saved.solutions === "object") {
+              legacy.solutions[mi] = saved.solutions[lk];
+            }
+            hasCompletions = true;
+          }
+        }
+        var clOld = Math.floor(Number(saved.currentLevel));
+        var clNew = Number.isInteger(clOld) ? migrateLegacyIndex(clOld) : -1;
+        if (!hasCompletions) {
+          legacy.currentLevel = 0; // old fresh save -> new Beginner tier
+        } else if (clNew < 0 || clNew >= LEVELS.length || !legacy.completed[clNew]) {
+          var keys = Object.keys(legacy.completed).map(Number).sort(function (a, b) { return b - a; });
+          legacy.currentLevel = keys[0] || 0;
+        } else {
+          legacy.currentLevel = clNew;
+        }
+        saved = legacy;
+      }
       if (typeof saved.currentLevel === "number") {
         var cl = Math.floor(saved.currentLevel);
         if (cl >= 0 && cl < LEVELS.length) STATE.currentLevel = cl;
@@ -1044,7 +1099,7 @@
 
     if (t) t.textContent = "You Did It!";
     if (n) n.textContent = "\uD83C\uDF1F";
-    if (i) i.textContent = "All " + LEVELS.length + " cases closed — Easy, Intermediate, Hard and Most Hard. You mastered the core of JavaScript.";
+    if (i) i.textContent = "All " + LEVELS.length + " cases closed — Beginner, Easy, Intermediate and Most Hard. You mastered the core of JavaScript.";
     if (h) h.innerHTML = "Hint: You can now write variables, loops, functions, objects, DOM handlers, storage and async code. Share your score!";
     if (d) { d.textContent = "Detective Master"; d.className = "jsd-level-difficulty mostHard"; }
 
@@ -1189,6 +1244,7 @@
         score: STATE.score,
         completed: STATE.completed,
         totalLevels: LEVELS.length,
+        version: DATA_VERSION,
       };
     };
     window.__runJsDetective = function () { runCode(); };

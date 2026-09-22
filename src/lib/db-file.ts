@@ -13,7 +13,7 @@ import type {
   LeaderboardEntry,
 } from "@/types";
 import { hashPassword, verifyPassword } from "./password";
-import { dateKeyFromDaysAgo, levelForXp } from "./gamification";
+import { dateKeyFromDaysAgo, levelForXp, scoreForCompleted } from "./gamification";
 
 // DB Types
 interface DatabaseSchema {
@@ -370,10 +370,15 @@ export async function saveGameProgress(
           ? data.currentLevel
           : 0
       ),
-      score: Math.max(
-        0,
-        typeof data.score === "number" && Number.isFinite(data.score) ? data.score : 0
-      ),
+      // The server is the source of truth for scoring: recompute the total
+      // from the completed map for games with a points table, so scores can
+      // never diverge from the shipped XP values.
+      score:
+        scoreForCompleted(gameSlug, cleanCompleted) ??
+        Math.max(
+          0,
+          typeof data.score === "number" && Number.isFinite(data.score) ? data.score : 0
+        ),
       completed: cleanCompleted,
       solutions: cleanSolutions,
       hints: cleanHints,

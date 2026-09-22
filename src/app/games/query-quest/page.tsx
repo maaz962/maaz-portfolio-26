@@ -270,24 +270,36 @@ export default function QueryQuestPage() {
      for the current level may arrive later (resume/DB poll) and must not reset
      the editor or the just-shown solved overlay. */
   const loadedForId = useRef<number | null>(null);
+  const hydratedForId = useRef<number | null>(null);
   const autoRunToken = useRef<number | null>(null);
   useEffect(() => {
     if (!current) return;
-    if (loadedForId.current === current.id) return;
-    loadedForId.current = current.id;
     const idx = current.id - 1;
+    const levelChanged = loadedForId.current !== current.id;
+    if (levelChanged) {
+      // True level change: reset the workspace; the stored solution is applied
+      // right below if the level is already completed.
+      loadedForId.current = current.id;
+      hydratedForId.current = null;
+      setCode(current.seedCode);
+      setQueryOut(null);
+      setResult(null);
+      setSolved(false);
+      setHintRevealed(false);
+      setHintText("");
+      setHintMsg("");
+    }
     const saved = gameState.completed[idx] ? gameState.solutions?.[idx] : undefined;
-    setCode(saved ?? current.seedCode);
-    setQueryOut(null);
-    setResult(null);
-    setSolved(false);
-    setHintRevealed(false);
-    setHintText("");
-    setHintMsg("");
-    // Revisiting an already-solved level re-runs their stored solution so the
-    // result table they achieved is displayed again (the old equally-solved bug
-    // from another game is not repeated here).
-    if (saved !== undefined) {
+    const shouldHydrate =
+      saved !== undefined &&
+      hydratedForId.current !== current.id &&
+      (levelChanged || code === current.seedCode);
+    if (shouldHydrate) {
+      // Revisiting an already-solved level re-runs their stored solution so the
+      // result table they achieved is displayed again (the old equally-solved bug
+      // from another game is not repeated here).
+      hydratedForId.current = current.id;
+      setCode(saved);
       autoRunToken.current = (autoRunToken.current ?? 0) + 1;
       const token = autoRunToken.current;
       const w = window as any;

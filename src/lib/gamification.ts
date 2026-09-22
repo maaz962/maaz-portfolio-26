@@ -51,3 +51,45 @@ export function dateKey(d: Date): string {
 export function dateKeyFromDaysAgo(days: number): string {
   return dateKey(new Date(Date.now() - days * 24 * 60 * 60 * 1000));
 }
+
+/**
+ * Per-level XP values for the full 16- and 18-level games, indexed by 0-based
+ * level. Source of truth shared by every backend so the server recomputes
+ * scores instead of trusting a client-sent number.
+ *
+ * PHP Playground and Query Quest share one layout:
+ *   easy L1-L5 = 5 XP, intermediate L6-L10 = 6 XP,
+ *   hard L11-L13 = 7 XP, mostHard L14-L16 = 8 XP  ->  100 XP overall.
+ *
+ * JS Detective was restructured to drop its Hard tier and gain Beginner:
+ *   beginner L1-L4 = 2 XP, easy L5-L8 = 5 XP, intermediate L9-L15 = 6 XP,
+ *   mostHard L16-L18 = 10 XP  ->  100 XP overall.
+ */
+export const GAME_LEVEL_POINTS: Record<string, number[]> = {
+  "php-playground": [5, 5, 5, 5, 5, 6, 6, 6, 6, 6, 7, 7, 7, 8, 8, 8],
+  "query-quest": [5, 5, 5, 5, 5, 6, 6, 6, 6, 6, 7, 7, 7, 8, 8, 8],
+  "js-detective": [2, 2, 2, 2, 5, 5, 5, 5, 6, 6, 6, 6, 6, 6, 6, 10, 10, 10],
+};
+
+/** Total XP a game is worth when every level is beaten (100 for all six games). */
+export function maxScoreForGame(gameSlug: string): number | null {
+  const points = GAME_LEVEL_POINTS[gameSlug];
+  return points ? points.reduce((sum, p) => sum + p, 0) : null;
+}
+
+/**
+ * Authoritative score (sum of XP for every completed level) for a tracked
+ * game. Returns null when the game has no points table, so callers can fall
+ * back to the client-provided score for untracked games.
+ */
+export function scoreForCompleted(
+  gameSlug: string,
+  completed: Record<string, boolean>
+): number | null {
+  const points = GAME_LEVEL_POINTS[gameSlug];
+  if (!points) return null;
+  return points.reduce(
+    (sum, pts, idx) => sum + (completed[String(idx)] === true ? pts : 0),
+    0
+  );
+}

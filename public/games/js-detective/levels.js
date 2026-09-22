@@ -1,5 +1,6 @@
 /* ==========================================================================
-   JS DETECTIVE — Level Data (16 cases across 4 difficulty tiers)
+   JS DETECTIVE — Level Data (18 cases across 4 difficulty tiers:
+   Beginner, Easy, Intermediate, Most Hard — no Hard tier)
    Sets window.LJS_LEVELS for the browser. game.js no longer depends on this
    executing first — it re-reads window.LJS_LEVELS lazily and polls until the
    data arrives, so script execution order between the two files is safe.
@@ -175,6 +176,75 @@ function mkFetch(data) {
 var LJS_LEVELS = [
   {
     id: 1,
+    title: "Your First Clue",
+    tier: "beginner",
+    concepts: ["console", "strings"],
+    shortDesc: "first console.log",
+    instruction:
+      'Your first day on the force. The department just wants proof the console can speak. Log the exact message <code>Hello, Detective!</code> on its own line.',
+    hint:
+      'Use <code>console.log(...)</code> and put the exact text <code>Hello, Detective!</code> between quotes. The console prints whatever string you hand it, cleanly, on one line.',
+    starter: '// log "Hello, Detective!"\n',
+    check: function (ctx, logs) {
+      return logs.some(function (l) { return String(l.value) === "Hello, Detective!"; });
+    },
+    successNote: "console.log is how a detective announces clues — one line, exactly the message asked for.",
+  },
+  {
+    id: 2,
+    title: "The Missing Word",
+    tier: "beginner",
+    concepts: ["strings", "operators"],
+    shortDesc: "joining strings with +",
+    instruction:
+      'Two fragments of a clue have been recovered: <code>"The suspect is "</code> and <code>"Ada"</code>. Join them into one string with the <code>+</code> operator and log the full sentence — it must print <code>The suspect is Ada</code>.',
+    hint:
+      'A <code>+</code> between two strings stitches them into one. Log the joined result on a single line — the trailing space inside the first fragment keeps the words apart.',
+    starter: '// join the two fragments with + and log them\n',
+    check: function (ctx, logs) {
+      return logs.some(function (l) { return String(l.value) === "The suspect is Ada"; });
+    },
+    successNote: "The + operator glues strings together — order and spacing decide the sentence.",
+  },
+  {
+    id: 3,
+    title: "The Safe Combination",
+    tier: "beginner",
+    concepts: ["numbers", "operators"],
+    shortDesc: "arithmetic with numbers",
+    instruction:
+      'The safe opens at a three-number combination. Log the result of <code>6 * 7</code>, then the result of <code>10 - 3</code>, then the result of <code>20 / 4</code> — three lines, in that order.',
+    hint:
+      'One <code>console.log</code> per expression. JavaScript does the arithmetic for you — hand each whole expression to the log and read the computed result.',
+    starter: '// log 6*7, then 10-3, then 20/4\n',
+    check: function (ctx, logs) {
+      return !!logs && logs.length >= 3 &&
+        logs[0].value === 42 &&
+        logs[1].value === 7 &&
+        logs[2].value === 5;
+    },
+    successNote: "*, - and / do the math; each console.log prints the calculated result, not the equation.",
+  },
+  {
+    id: 4,
+    title: "The Suspect File",
+    tier: "beginner",
+    concepts: ["variables"],
+    shortDesc: "declare + log variables",
+    instruction:
+      'Create a new suspect file. Declare a variable <code>suspect</code> holding the string <code>"Riley"</code>, then declare <code>evidence</code> holding the number <code>12</code>. Log <code>suspect</code> first, then <code>evidence</code> — two lines.',
+    hint:
+      'Use <code>let</code> or <code>const</code> to store a value under a name, then put that name inside <code>console.log(...)</code>. Two declarations, two logs, in order.',
+    starter: '// declare suspect = "Riley" and evidence = 12\n// then log both\n',
+    check: function (ctx, logs) {
+      return !!logs && logs.length >= 2 &&
+        String(logs[0].value) === "Riley" &&
+        logs[1].value === 12;
+    },
+    successNote: "Variables give values reusable names — the next tier puts them to work.",
+  },
+  {
+    id: 5,
     title: "First Prints",
     tier: "easy",
     concepts: ["variables", "data-types"],
@@ -190,7 +260,7 @@ var LJS_LEVELS = [
     successNote: "Variables store data you can reuse — everything else builds on this.",
   },
   {
-    id: 2,
+    id: 6,
     title: "The Type Trap",
     tier: "easy",
     concepts: ["data-types", "operators"],
@@ -211,7 +281,7 @@ var LJS_LEVELS = [
     successNote: "typeof tells you a value's type — but [] and null are famous traps.",
   },
   {
-    id: 3,
+    id: 7,
     title: "Strict or Loose",
     tier: "easy",
     concepts: ["operators", "data-types"],
@@ -228,7 +298,7 @@ var LJS_LEVELS = [
     successNote: "=== never coerces. When in doubt, prefer the strict triple-equals.",
   },
   {
-    id: 4,
+    id: 8,
     title: "The Grade Defector",
     tier: "easy",
     concepts: ["control-flow"],
@@ -249,7 +319,7 @@ var LJS_LEVELS = [
     successNote: "if/else chains steer your code; switch handles many fixed cases cleanly.",
   },
   {
-    id: 5,
+    id: 9,
     title: "Count Every Step",
     tier: "intermediate",
     concepts: ["loops"],
@@ -269,7 +339,7 @@ var LJS_LEVELS = [
     successNote: "for repeats a known count; while repeats while a condition holds.",
   },
   {
-    id: 6,
+    id: 10,
     title: "Clue Upgrade",
     tier: "intermediate",
     concepts: ["arrays", "arrow-functions"],
@@ -292,7 +362,7 @@ var LJS_LEVELS = [
     successNote: "push grows an array; map transforms it; filter keeps only what passes a test.",
   },
   {
-    id: 7,
+    id: 11,
     title: "Words & Defaults",
     tier: "intermediate",
     concepts: ["functions", "arrow-functions", "operators"],
@@ -312,7 +382,7 @@ var LJS_LEVELS = [
     successNote: "Arrow functions are concise; default params and ternaries shrink boilerplate.",
   },
   {
-    id: 8,
+    id: 12,
     title: "Suspect Object",
     tier: "intermediate",
     concepts: ["objects", "arrow-functions"],
@@ -334,7 +404,7 @@ var LJS_LEVELS = [
     successNote: "this in a regular method points to the object; arrows inherit the surrounding this.",
   },
   {
-    id: 9,
+    id: 13,
     title: "Copy, Swap, Rest",
     tier: "intermediate",
     concepts: ["objects", "operators", "data-types"],
@@ -356,7 +426,7 @@ var LJS_LEVELS = [
     successNote: "Shorthand, spread, rest, destructuring and ?? are everyday modern JS.",
   },
   {
-    id: 10,
+    id: 14,
     title: "The Records Room",
     tier: "intermediate",
     concepts: ["arrays", "functions"],
@@ -383,7 +453,7 @@ var LJS_LEVELS = [
     successNote: "filter, find, sort and reduce cover 90% of real data work.",
   },
   {
-    id: 11,
+    id: 15,
     title: "The Hoisted Alibi",
     tier: "intermediate",
     concepts: ["variables", "functions", "loops"],
@@ -413,37 +483,7 @@ var LJS_LEVELS = [
     successNote: "var hoists declarations; closures keep private state alive between calls.",
   },
   {
-    id: 12,
-    title: "Board the Evidence",
-    tier: "hard",
-    concepts: ["dom"],
-    shortDesc: "DOM manipulation",
-    instruction:
-      "This case runs against a stubbed <code>document</code> — no real browser needed. Grab <code>#case-list</code> with getElementById, create an <code>&lt;li&gt;</code> via createElement, set its <code>textContent</code> to \"The Stolen Key\", add the class <code>solved</code>, set <code>data-id</code> to \"s1\", and append it to the list. Then set the <code>#status</code> element's <code>textContent</code> to \"online\".",
-    hint:
-      'You get a stubbed <code>document</code>. Grab the list, create an <code>&lt;li&gt;</code>, fill its <code>textContent</code>, add the class, set the <code>data-id</code> attribute, and append it — then flip the <code>#status</code> text to <code>&quot;online&quot;</code>.',
-    starter: "// use the stubbed document to build the board\n",
-    setUp: function (ctx) {
-      ctx.document = mkDocument(["case-list", "status"]);
-    },
-    check: function (ctx, logs) {
-      var doc = ctx.document;
-      var list = doc.getElementById("case-list");
-      var status = doc.getElementById("status");
-      if (!list || !status) return false;
-      if (status.textContent !== "online") return false;
-      if (!list.children || !list.children.length) return false;
-      var li = list.children[0];
-      return li.tagName === "LI" &&
-        li.textContent === "The Stolen Key" &&
-        li.getAttribute("data-id") === "s1" &&
-        li.classList.contains("solved") &&
-        li.parent === list;
-    },
-    successNote: "Creating nodes, wiring classes/attributes and inserting them is the core of dynamic pages.",
-  },
-  {
-    id: 13,
+    id: 16,
     title: "The Delegation Gambit",
     tier: "mostHard",
     concepts: ["dom", "events"],
@@ -482,7 +522,7 @@ var LJS_LEVELS = [
     successNote: "Delegation listens once on a parent; preventDefault stops a form's default submit.",
   },
   {
-    id: 14,
+    id: 17,
     title: "Window to the Case",
     tier: "mostHard",
     concepts: ["bom", "operators"],
@@ -516,7 +556,7 @@ var LJS_LEVELS = [
     successNote: "navigator, location, storage and history are the browser window's gadgets.",
   },
   {
-    id: 15,
+    id: 18,
     title: "The Async Heist",
     tier: "mostHard",
     concepts: ["async", "functions", "objects"],

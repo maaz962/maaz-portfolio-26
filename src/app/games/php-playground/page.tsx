@@ -58,11 +58,21 @@ interface PhpRunResult {
   exit?: number;
   score?: number;
   error?: string;
+  errorType?: string;
 }
 
 interface ConsoleLine {
   type: "log" | "error";
   text: string;
+}
+
+const PHP_ERROR_RE = /(?:^|\s)(?:Parse |Fatal )?error:|Warning:|Notice:|Deprecated:/i;
+
+function phpErrorFrom(output?: string): string {
+  const text = (output ?? "").trim();
+  if (!text) return "";
+  const line = text.split("\n").find((l) => PHP_ERROR_RE.test(l));
+  return (line ?? "").trim();
 }
 
 const TIER_ORDER = ["easy", "intermediate", "hard", "mostHard"];
@@ -297,19 +307,33 @@ export default function PhpPlaygroundPage() {
      for the current level may arrive later (resume/DB poll) and must not reset
      the editor or the just-shown solved overlay. */
   const loadedForId = useRef<number | null>(null);
+  const hydratedForId = useRef<number | null>(null);
   useEffect(() => {
     if (!current) return;
-    if (loadedForId.current === current.id) return;
-    loadedForId.current = current.id;
     const idx = current.id - 1;
+    const levelChanged = loadedForId.current !== current.id;
+    if (levelChanged) {
+      // True level change: reset the workspace; the stored solution is applied
+      // right below if the level is already completed.
+      loadedForId.current = current.id;
+      hydratedForId.current = null;
+      setCode(current.seedCode);
+      setResult(null);
+      setConsoleLines([]);
+      setSolved(false);
+      setHintRevealed(false);
+      setHintText("");
+      setHintMsg("");
+    }
     const saved = gameState.completed[idx] ? gameState.solutions?.[idx] : undefined;
-    setCode(saved ?? current.seedCode);
-    setResult(null);
-    setConsoleLines([]);
-    setSolved(false);
-    setHintRevealed(false);
-    setHintText("");
-    setHintMsg("");
+    if (saved !== undefined && hydratedForId.current !== current.id) {
+      // On a genuine level change, or on a late arrival of completion data for
+      // the current level whose editor still holds untouched starter code.
+      if (levelChanged || code === current.seedCode) {
+        hydratedForId.current = current.id;
+        setCode(saved);
+      }
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [current?.id, gameState.completed?.[currentIdx], gameState.solutions?.[currentIdx]]);
 
@@ -333,8 +357,9 @@ export default function PhpPlaygroundPage() {
     try {
       const r: PhpRunResult = await w.__phpPlaygroundRun(currentIdx, code);
       appendConsole(r);
-      if ((r.stderr ?? "").trim()) {
-        setResult({ ok: false, label: "PHP reported an error", detail: (r.stderr ?? "").trim() });
+      const phpErr = phpErrorFrom(r.stdout) || (r.stderr ?? "").trim();
+      if (phpErr) {
+        setResult({ ok: false, label: "PHP reported an error", detail: phpErr });
       }
     } catch (e) {
       setResult({ ok: false, label: "Something went wrong", detail: String(e) });
@@ -356,7 +381,11 @@ export default function PhpPlaygroundPage() {
         setSolved(true);
         setResult({ ok: true, label: "Correct!", detail: "Output matches exactly.", score: r.score });
       } else if (r.error) {
-        setResult({ ok: false, label: "Not quite", detail: r.error });
+        setResult({
+          ok: false,
+          label: r.errorType === "runtime" ? "PHP reported an error" : "Not quite",
+          detail: r.error,
+        });
       } else {
         setResult({
           ok: false,

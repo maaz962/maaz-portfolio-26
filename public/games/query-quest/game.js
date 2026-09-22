@@ -37,7 +37,7 @@
     hard: "amber",
     mostHard: "rose",
   };
-  var POINTS = { easy: 5, intermediate: 6, hard: 8, mostHard: 10 };
+  var POINTS = { easy: 5, intermediate: 6, hard: 7, mostHard: 8 };
   var HINTS_PER_DAY = 3;
 
   var LEVELS = [];
