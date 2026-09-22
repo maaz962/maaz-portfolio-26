@@ -15,6 +15,7 @@ const GAME_SLUGS = [
   "grid-garden",
   "flexbox-zoo",
   "js-detective",
+  "animation-arena",
   "php-playground",
   "query-quest",
 ];

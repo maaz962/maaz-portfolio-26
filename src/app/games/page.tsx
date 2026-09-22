@@ -84,6 +84,19 @@ const games = [
     comingSoon: false,
   },
   {
+    slug: "animation-arena",
+    title: "Animation Arena",
+    description:
+      "Bring robots to life with CSS transitions, transforms and keyframes. Fade, spin, float and dance your way from first steps to hover tricks!",
+    difficulty: "Beginner \u2192 Intermediate",
+    topics: ["Animations", "Transitions", "Transforms", "Keyframes"],
+    animal: "\uD83E\uDD16",
+    color: "from-purple-500/20 to-pink-500/20",
+    borderColor: "border-purple-500/30",
+    accentColor: "text-purple-500",
+    comingSoon: false,
+  },
+  {
     slug: "php-playground",
     title: "PHP Playground",
     description:
@@ -108,32 +121,6 @@ const games = [
     borderColor: "border-sky-500/30",
     accentColor: "text-sky-500",
     comingSoon: false,
-  },
-  {
-    slug: "css selectors",
-    title: "Selector Safari",
-    description:
-      "Hunt for elements using CSS selectors. Master class, ID, attribute, and pseudo selectors!",
-    difficulty: "Beginner",
-    topics: ["Selectors", "Class", "ID", "Pseudo-classes"],
-    animal: "🎯",
-    color: "from-blue-500/20 to-cyan-500/20",
-    borderColor: "border-blue-500/30",
-    accentColor: "text-blue-500",
-    comingSoon: true,
-  },
-  {
-    slug: "animation-arena",
-    title: "Animation Arena",
-    description:
-      "Bring characters to life with CSS animations and transitions. Learn keyframes, timing, and more!",
-    difficulty: "Advanced",
-    topics: ["Animations", "Transitions", "Keyframes"],
-    animal: "\u2728",
-    color: "from-purple-500/20 to-pink-500/20",
-    borderColor: "border-purple-500/30",
-    accentColor: "text-purple-500",
-    comingSoon: true,
   },
 ];
 
@@ -290,6 +277,28 @@ function GamePreview({ game }: { game: (typeof games)[0] }) {
             </div>
             <p className="text-slate-500">
               <span className="animate-pulse">_</span>
+            </p>
+          </div>
+        )}
+
+        {game.slug === "animation-arena" && (
+          <div className="relative flex h-full flex-col overflow-hidden rounded-lg bg-gradient-to-b from-purple-900/40 to-black/40">
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-x-0 -top-6 h-1/3 bg-purple-500/20 blur-xl"
+            />
+            <div className="flex flex-1 items-center justify-center pb-1">
+              <span className="rob-preview-still text-5xl drop-shadow-[0_6px_10px_rgba(167,139,250,0.35)]">
+                🤖
+              </span>
+            </div>
+            <p className="pb-2 text-center font-mono text-[0.6rem] text-purple-300">
+              <span className="text-slate-400">@keyframes</span>{" "}
+              <span className="text-purple-400">spin</span>{" "}
+              <span className="text-slate-400">{"{"}</span>{" "}
+              <span className="text-slate-500">transform:</span>{" "}
+              <span className="text-amber-300">rotate(360deg)</span>{" "}
+              <span className="text-slate-400">{"}"}</span>
             </p>
           </div>
         )}
@@ -863,11 +872,11 @@ export default function GamesPage() {
         <div className="mt-12 rounded-2xl border border-border bg-card p-6 text-center">
           <Sparkles className="mx-auto mb-2 h-5 w-5 text-primary" />
           <p className="text-sm font-semibold text-foreground">
-            More games coming soon!
+            All seven games are ready to play!
           </p>
           <p className="mt-1 text-xs text-muted">
             HTML, CSS, and JavaScript games to help you learn web development
-            step by step.
+            step by step — start at HTML Hero and climb to Query Quest.
           </p>
         </div>
       </main>

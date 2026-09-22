@@ -64,14 +64,21 @@ export function dateKeyFromDaysAgo(days: number): string {
  * JS Detective was restructured to drop its Hard tier and gain Beginner:
  *   beginner L1-L4 = 2 XP, easy L5-L8 = 5 XP, intermediate L9-L15 = 6 XP,
  *   mostHard L16-L18 = 10 XP  ->  100 XP overall.
+ *
+ * Animation Arena ships two tiers (no advanced/Most Hard):
+ *   beginner L1-L8 = 8 XP, intermediate L9-L12 = 9 XP  ->  100 XP overall.
  */
 export const GAME_LEVEL_POINTS: Record<string, number[]> = {
   "php-playground": [5, 5, 5, 5, 5, 6, 6, 6, 6, 6, 7, 7, 7, 8, 8, 8],
   "query-quest": [5, 5, 5, 5, 5, 6, 6, 6, 6, 6, 7, 7, 7, 8, 8, 8],
   "js-detective": [2, 2, 2, 2, 5, 5, 5, 5, 6, 6, 6, 6, 6, 6, 6, 10, 10, 10],
+  "animation-arena": [8, 8, 8, 8, 8, 8, 8, 8, 9, 9, 9, 9],
 };
 
-/** Total XP a game is worth when every level is beaten (100 for all six games). */
+/** Shared daily hint budget: every game draws from one pool of 3 hints per user per day. */
+export const DAILY_HINT_LIMIT = 3;
+
+/** Total XP a game is worth when every level is beaten (100 for all seven games). */
 export function maxScoreForGame(gameSlug: string): number | null {
   const points = GAME_LEVEL_POINTS[gameSlug];
   return points ? points.reduce((sum, p) => sum + p, 0) : null;

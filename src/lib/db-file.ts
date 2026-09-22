@@ -13,7 +13,12 @@ import type {
   LeaderboardEntry,
 } from "@/types";
 import { hashPassword, verifyPassword } from "./password";
-import { dateKeyFromDaysAgo, levelForXp, scoreForCompleted } from "./gamification";
+import {
+  dateKeyFromDaysAgo,
+  levelForXp,
+  scoreForCompleted,
+  DAILY_HINT_LIMIT,
+} from "./gamification";
 
 // DB Types
 interface DatabaseSchema {
@@ -289,6 +294,7 @@ const GAME_SLUGS = [
   "grid-garden",
   "flexbox-zoo",
   "js-detective",
+  "animation-arena",
   "php-playground",
   "query-quest",
 ] as const;
@@ -450,6 +456,9 @@ function recomputeGamificationLocked(
     currentStreak,
     longestStreak,
     lastPlayedAt: today,
+    // The shared daily hint budget lives on the gamification row (one pool
+    // across all games) — preserve whatever was already spent today.
+    hints: existing?.hints,
     updatedAt: new Date().toISOString(),
   };
 
@@ -475,8 +484,75 @@ export async function getGamification(userId: string): Promise<Gamification> {
     currentStreak: stored?.currentStreak ?? 0,
     longestStreak: stored?.longestStreak ?? 0,
     lastPlayedAt: stored?.lastPlayedAt ?? null,
+    hints: stored?.hints,
     updatedAt: stored?.updatedAt ?? new Date().toISOString(),
   };
+}
+
+// --- SHARED DAILY HINT BUDGET ---
+
+/**
+ * How many of today's shared 3 hints the user has left across all games
+ * (the pool is per user, not per game).
+ */
+export async function getDailyHintUsage(
+  userId: string
+): Promise<{ used: number; left: number }> {
+  const db = await readDbFile();
+  const stored = (db.gamification ?? []).find((g) => g.userId === userId);
+  const today = dateKeyFromDaysAgo(0);
+  const used =
+    stored?.hints && stored.hints.date === today
+      ? Math.max(0, Number(stored.hints.used) || 0)
+      : 0;
+  return { used, left: Math.max(0, DAILY_HINT_LIMIT - used) };
+}
+
+/**
+ * Consumes one hint from the user's shared daily budget. Server-authoritative:
+ * the count rolls over at midnight UTC and can never climb above the daily cap,
+ * regardless of which game the reveal happens in.
+ */
+export async function consumeDailyHint(
+  userId: string
+): Promise<{ ok: boolean; used: number; left: number }> {
+  return withDbLock(async () => {
+    const db = await readDbFile();
+    const today = dateKeyFromDaysAgo(0);
+    const idx = (db.gamification ?? []).findIndex((g) => g.userId === userId);
+    const existing = idx > -1 ? db.gamification[idx] : null;
+
+    const used =
+      existing?.hints && existing.hints.date === today
+        ? Math.max(0, Number(existing.hints.used) || 0)
+        : 0;
+
+    if (used >= DAILY_HINT_LIMIT) {
+      return { ok: false, used, left: 0 };
+    }
+
+    const nextUsed = used + 1;
+    const gamification: Gamification = {
+      userId,
+      totalXp: existing?.totalXp ?? 0,
+      gamesPlayed: existing?.gamesPlayed ?? 0,
+      currentStreak: existing?.currentStreak ?? 0,
+      longestStreak: existing?.longestStreak ?? 0,
+      lastPlayedAt: existing?.lastPlayedAt ?? null,
+      hints: { date: today, used: nextUsed },
+      updatedAt: new Date().toISOString(),
+    };
+
+    if (idx > -1) {
+      db.gamification[idx] = gamification;
+    } else {
+      if (!db.gamification) db.gamification = [];
+      db.gamification.push(gamification);
+    }
+
+    await saveDbFile(db);
+    return { ok: true, used: nextUsed, left: DAILY_HINT_LIMIT - nextUsed };
+  });
 }
 
 /** Top players by total XP (admins excluded — they're the site owners). */

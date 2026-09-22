@@ -9,7 +9,7 @@ import type {
 } from "@/types";
 import { hashPassword, verifyPassword } from "./password";
 import { getPgConnectionString, usePostgres } from "./pg-connection";
-import { dateKeyFromDaysAgo, levelForXp, scoreForCompleted } from "./gamification";
+import { dateKeyFromDaysAgo, levelForXp, scoreForCompleted, DAILY_HINT_LIMIT } from "./gamification";
 
 /**
  * Postgres-backed persistent data layer. Used when process.env.DATABASE_URL is
@@ -97,6 +97,7 @@ async function initDb(): Promise<void> {
     // Migration for older rows created before the solutions/hints columns existed.
     await sql`ALTER TABLE game_progress ADD COLUMN IF NOT EXISTS solutions JSONB NOT NULL DEFAULT '{}'`;
     await sql`ALTER TABLE game_progress ADD COLUMN IF NOT EXISTS hints JSONB NOT NULL DEFAULT '{}'`;
+    await sql`ALTER TABLE gamification ADD COLUMN IF NOT EXISTS hints JSONB NOT NULL DEFAULT '{}'`;
     // Idempotent seed of the site owner's admin account — mirrors the file-store
     // seed so /admin is reachable on first production deploy too. ON CONFLICT
     // makes it safe on every cold start / redeploy.
@@ -331,7 +332,9 @@ export async function saveGameProgress(
     RETURNING *
   `;
 
-  // Keep gamification (XP / streak) in sync with the fresh progress write.
+  // Keep gamification (XP / streak / shared hint budget) in sync with the
+  // fresh progress write — carry the user's spent hints through untouched so a
+  // save never resets the shared daily hint pool.
   const [sumRow] = await sql`
     SELECT COALESCE(SUM(score), 0)::int AS total_xp,
            COUNT(DISTINCT game_slug)::int AS games_played
@@ -343,6 +346,11 @@ export async function saveGameProgress(
     SELECT * FROM gamification WHERE user_id = ${userId} LIMIT 1
   `;
 
+  const hintsJson =
+    streakRow?.hints && typeof streakRow.hints === "object"
+      ? JSON.stringify(streakRow.hints)
+      : JSON.stringify({ date: "", used: 0 });
+
   let currentStreak = streakRow?.current_streak ?? 0;
   if (streakRow?.last_played_at !== today) {
     currentStreak = streakRow?.last_played_at === yesterday ? currentStreak + 1 : 1;
@@ -350,8 +358,8 @@ export async function saveGameProgress(
   const longestStreak = Math.max(streakRow?.longest_streak ?? 0, currentStreak);
 
   await sql`
-    INSERT INTO gamification (user_id, total_xp, games_played, current_streak, longest_streak, last_played_at, updated_at)
-    VALUES (${userId}, ${sumRow?.total_xp ?? 0}, ${sumRow?.games_played ?? 0}, ${currentStreak}, ${longestStreak}, ${today}, ${nowISO()})
+    INSERT INTO gamification (user_id, total_xp, games_played, current_streak, longest_streak, last_played_at, hints, updated_at)
+    VALUES (${userId}, ${sumRow?.total_xp ?? 0}, ${sumRow?.games_played ?? 0}, ${currentStreak}, ${longestStreak}, ${today}, ${hintsJson}, ${nowISO()})
     ON CONFLICT (user_id)
     DO UPDATE SET
       total_xp = EXCLUDED.total_xp,
@@ -359,6 +367,7 @@ export async function saveGameProgress(
       current_streak = EXCLUDED.current_streak,
       longest_streak = EXCLUDED.longest_streak,
       last_played_at = EXCLUDED.last_played_at,
+      hints = EXCLUDED.hints,
       updated_at = EXCLUDED.updated_at
   `;
 
@@ -385,8 +394,71 @@ export async function getGamification(userId: string): Promise<Gamification> {
     currentStreak: stored?.current_streak ?? 0,
     longestStreak: stored?.longest_streak ?? 0,
     lastPlayedAt: stored?.last_played_at ?? null,
+    hints:
+      stored?.hints && typeof stored.hints === "object"
+        ? {
+            date: typeof stored.hints.date === "string" ? stored.hints.date : "",
+            used: Number.isInteger(stored.hints.used) ? stored.hints.used : 0,
+          }
+        : undefined,
     updatedAt: stored?.updated_at ?? nowISO(),
   };
+}
+
+// --- SHARED DAILY HINT BUDGET ---
+
+/**
+ * How many of today's shared 3 hints the user has left across all games
+ * (the pool is per user, not per game).
+ */
+export async function getDailyHintUsage(
+  userId: string
+): Promise<{ used: number; left: number }> {
+  await initDb();
+  const [stored] = await sql`
+    SELECT hints FROM gamification WHERE user_id = ${userId} LIMIT 1
+  `;
+  const today = dateKeyFromDaysAgo(0);
+  const used =
+    stored?.hints && stored.hints.date === today
+      ? Math.max(0, Number(stored.hints.used) || 0)
+      : 0;
+  return { used, left: Math.max(0, DAILY_HINT_LIMIT - used) };
+}
+
+/**
+ * Consumes one hint from the user's shared daily budget. Server-authoritative:
+ * the count rolls over at midnight UTC and can never climb above the daily cap,
+ * regardless of which game the reveal happens in.
+ */
+export async function consumeDailyHint(
+  userId: string
+): Promise<{ ok: boolean; used: number; left: number }> {
+  await initDb();
+  const [stored] = await sql`
+    SELECT * FROM gamification WHERE user_id = ${userId} LIMIT 1
+  `;
+  const today = dateKeyFromDaysAgo(0);
+  const used =
+    stored?.hints && stored.hints.date === today
+      ? Math.max(0, Number(stored.hints.used) || 0)
+      : 0;
+
+  if (used >= DAILY_HINT_LIMIT) {
+    return { ok: false, used, left: 0 };
+  }
+
+  const nextUsed = used + 1;
+  const hintsJson = JSON.stringify({ date: today, used: nextUsed });
+  await sql`
+    INSERT INTO gamification (user_id, total_xp, games_played, current_streak, longest_streak, last_played_at, hints, updated_at)
+    VALUES (${userId}, ${stored?.total_xp ?? 0}, ${stored?.games_played ?? 0}, ${stored?.current_streak ?? 0}, ${stored?.longest_streak ?? 0}, ${stored?.last_played_at ?? null}, ${hintsJson}, ${nowISO()})
+    ON CONFLICT (user_id)
+    DO UPDATE SET
+      hints = EXCLUDED.hints,
+      updated_at = EXCLUDED.updated_at
+  `;
+  return { ok: true, used: nextUsed, left: DAILY_HINT_LIMIT - nextUsed };
 }
 
 /** Top players by total XP (admins excluded — they're the site owners). */

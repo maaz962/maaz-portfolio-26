@@ -1,0 +1,1034 @@
+(function () {
+  "use strict";
+
+  // ANIMATION ARENA — CSS transitions + keyframe animations, taught through
+  // 12 levels across two tiers (8 Beginner, 4 Intermediate). Players compose
+  // CSS property: value pairs in the editor and hit Check; a live preview
+  // applies valid pairs to the #arena-stage element on the board.
+
+  // A fixed <style> block defines the keyframes players refer to by name
+  // (pulse, spin, float, pop, wiggle), so the answer is always just composing
+  // the `animation` shorthand from the editor — no keyframes authoring needed.
+  var KEYFRAMES_CSS = [
+    "@keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.15); } }",
+    "@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }",
+    "@keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-14px); } }",
+    "@keyframes pop { 0% { transform: scale(0); opacity: 0.3; } 60% { transform: scale(1.08); opacity: 1; } 100% { transform: scale(1); opacity: 1; } }",
+    "@keyframes wiggle { 0%, 100% { transform: rotate(-6deg); } 50% { transform: rotate(6deg); } }"
+  ].join("\n");
+
+  // Per-tier XP. 8 beginner (8 XP) + 4 intermediate (9 XP) = 100 exactly,
+  // matching the 100-point ceiling of every other game on the site.
+  var POINTS = { beginner: 8, intermediate: 9 };
+
+  var TIER_LABELS = { beginner: "Beginner", intermediate: "Intermediate" };
+
+  var SUCCESS_MSGS = [
+    "Nailed it! The crowd goes wild!",
+    "Perfect form! You're a natural!",
+    "That's the move! Ten out of ten!",
+    "Flawless execution! Encore!",
+    "Beautifully timed! On to the next!",
+  ];
+
+  var WRONG_MSGS = [
+    "Not quite. Compare your property and value with the task.",
+    "Almost! Re-read the instruction and double-check the value.",
+    "Hmm, that doesn't animate the way the task asks. Check the hint!",
+    "Keep at it — the property is right but the value needs work.",
+  ];
+
+  var VALID_PROPS = [
+    "transition",
+    "transform",
+    "animation",
+    "animation-delay",
+    "animation-direction",
+    "animation-duration",
+    "animation-fill-mode",
+    "animation-iteration-count",
+    "animation-name",
+    "animation-timing-function",
+  ];
+
+  // Note: parseCSS lowercases both the property and the value, so accepted
+  // values here are lowercase (e.g. "translatex(80px)").
+  var LEVELS = [
+    {
+      id: 1,
+      tier: "beginner",
+      title: "First Fade",
+      instruction:
+        "The star flashes in with zero smoothness. Give it a transition so its background color changes gradually — property background-color, duration 0.4s.",
+      hint: "A transition needs the property name and how long it lasts — write <code>transition: background-color 0.4s</code>.",
+      accept: [
+        { "transition": "background-color 0.4s" },
+      ],
+      placeholder: "transition: background-color 0.4s",
+      multiLine: false,
+      hover: false,
+      concepts: ["transition", "duration"],
+      fx: "bgfade",
+    },
+    {
+      id: 2,
+      tier: "beginner",
+      title: "Easy Does It",
+      instruction:
+        "The star dims abruptly. Smooth it out with the transition shorthand — fade opacity over 0.6s using the ease-in-out timing function.",
+      hint: "Use the shortcut — <code>transition: opacity 0.6s ease-in-out</code>.",
+      accept: [
+        { "transition": "opacity 0.6s ease-in-out" },
+      ],
+      placeholder: "transition: opacity 0.6s ease-in-out",
+      multiLine: false,
+      hover: false,
+      concepts: ["transition", "timing"],
+      fx: "opacitypulse",
+    },
+    {
+      id: 3,
+      tier: "beginner",
+      title: "Slide Over",
+      instruction:
+        "Slide the star over to the dashed goal ring by transforming it — translate it 80px along the X axis.",
+      hint: "Transform moves the star. Try <code>transform: translateX(80px)</code>.",
+      accept: [
+        { "transform": "translatex(80px)" },
+      ],
+      placeholder: "transform: translateX(80px)",
+      multiLine: false,
+      hover: false,
+      concepts: ["transform", "translate"],
+      fx: null,
+      goalX: 80,
+    },
+    {
+      id: 4,
+      tier: "beginner",
+      title: "Turn the Dial",
+      instruction:
+        "Spin the star a quarter turn — rotate it 45deg.",
+      hint: "Rotations happen with <code>transform: rotate(45deg)</code>.",
+      accept: [
+        { "transform": "rotate(45deg)" },
+      ],
+      placeholder: "transform: rotate(45deg)",
+      multiLine: false,
+      hover: false,
+      concepts: ["transform", "rotate"],
+      fx: null,
+    },
+    {
+      id: 5,
+      tier: "beginner",
+      title: "Super Size",
+      instruction:
+        "Blow the star up — scale it to 1.5 times its size.",
+      hint: "<code>transform: scale(1.5)</code> will grow it for you.",
+      accept: [
+        { "transform": "scale(1.5)" },
+      ],
+      placeholder: "transform: scale(1.5)",
+      multiLine: false,
+      hover: false,
+      concepts: ["transform", "scale"],
+      fx: null,
+    },
+    {
+      id: 6,
+      tier: "beginner",
+      title: "First Loop",
+      instruction:
+        "Make the star pulse on a loop using the built-in pulse keyframes — the animation property with a 1.5s duration.",
+      hint: "Keyframes run through the animation property, like <code>animation: pulse 1.5s</code>.",
+      accept: [
+        { "animation": "pulse 1.5s" },
+      ],
+      placeholder: "animation: pulse 1.5s",
+      multiLine: false,
+      hover: false,
+      concepts: ["animation", "keyframes"],
+      fx: null,
+    },
+    {
+      id: 7,
+      tier: "beginner",
+      title: "Endless Motion",
+      instruction:
+        "Set the star spinning non-stop — animation spin 1s, and make it iterate infinitely.",
+      hint: "Keep it moving with <code>animation: spin 1s infinite</code> — the iteration count lives in the shorthand.",
+      accept: [
+        { "animation": "spin 1s infinite" },
+        {
+          "animation-name": "spin",
+          "animation-duration": "1s",
+          "animation-iteration-count": "infinite",
+        },
+      ],
+      placeholder: "animation: spin 1s infinite",
+      multiLine: true,
+      hover: false,
+      concepts: ["animation", "iteration", "shorthand"],
+      fx: null,
+    },
+    {
+      id: 8,
+      tier: "beginner",
+      title: "On Repeat",
+      instruction:
+        "Send the star gently bobbing — a float animation over 3s with ease-in-out timing and infinite repeats, all in one shorthand.",
+      hint: "Compose it all at once: <code>animation: float 3s ease-in-out infinite</code>.",
+      accept: [
+        { "animation": "float 3s ease-in-out infinite" },
+        {
+          "animation-name": "float",
+          "animation-duration": "3s",
+          "animation-timing-function": "ease-in-out",
+          "animation-iteration-count": "infinite",
+        },
+      ],
+      placeholder: "animation: float 3s ease-in-out infinite",
+      multiLine: true,
+      hover: false,
+      concepts: ["animation", "shorthand"],
+      fx: null,
+    },
+    {
+      id: 9,
+      tier: "intermediate",
+      title: "Late Arrival",
+      instruction:
+        "This one pops in late. Give the star a pop animation over 2s with ease-in-out timing, and make it wait 1s before starting using the animation-delay property.",
+      hint: "Add the delay as its own line too: <code>animation: pop 2s ease-in-out</code> on one line and <code>animation-delay: 1s</code> on the next.",
+      accept: [
+        {
+          "animation": "pop 2s ease-in-out",
+          "animation-delay": "1s",
+        },
+      ],
+      placeholder: "animation: pop 2s ease-in-out\nanimation-delay: 1s",
+      multiLine: true,
+      hover: false,
+      concepts: ["animation-delay", "delay"],
+      fx: null,
+    },
+    {
+      id: 10,
+      tier: "intermediate",
+      title: "Zoom In, Zoom Out",
+      instruction:
+        "Make the star zoom back and forth — a pulse animation over 2s with ease-in-out timing, repeated infinitely, and the direction reversed on every other cycle with alternate.",
+      hint: "Turning around each cycle is the <code>animation-direction</code> value <code>alternate</code>, inside the shorthand: <code>animation: pulse 2s ease-in-out infinite alternate</code>.",
+      accept: [
+        { "animation": "pulse 2s ease-in-out infinite alternate" },
+        {
+          "animation-name": "pulse",
+          "animation-duration": "2s",
+          "animation-timing-function": "ease-in-out",
+          "animation-iteration-count": "infinite",
+          "animation-direction": "alternate",
+        },
+      ],
+      placeholder: "animation: pulse 2s ease-in-out infinite alternate",
+      multiLine: true,
+      hover: false,
+      concepts: ["animation-direction"],
+      fx: null,
+    },
+    {
+      id: 11,
+      tier: "intermediate",
+      title: "Hover Lift",
+      instruction:
+        "Lift the star when you hover it! Add a transition for transform (0.3s, ease), then a transform that raises it 8px — then hover the star.",
+      hint: "Two lines: <code>transition: transform 0.3s ease</code> and <code>transform: translateY(-8px)</code>. Hover the star to see it rise.",
+      accept: [
+        { "transition": "transform 0.3s ease", "transform": "translatey(-8px)" },
+      ],
+      placeholder: "transition: transform 0.3s ease\ntransform: translateY(-8px)",
+      multiLine: true,
+      hover: true,
+      concepts: ["transition", "transform", "hover"],
+      fx: null,
+    },
+    {
+      id: 12,
+      tier: "intermediate",
+      title: "Grand Finale",
+      instruction:
+        "The grand finale! Hover the star — it should rise 8px and grow to 1.1x at once, with a 0.3s ease transition on transform.",
+      hint: "Chain the transforms together: <code>transition: transform 0.3s ease</code> and <code>transform: translateY(-8px) scale(1.1)</code>. Then hover the star.",
+      accept: [
+        { "transition": "transform 0.3s ease", "transform": "translatey(-8px) scale(1.1)" },
+      ],
+      placeholder: "transition: transform 0.3s ease\ntransform: translateY(-8px) scale(1.1)",
+      multiLine: true,
+      hover: true,
+      concepts: ["transition", "transform", "hover"],
+      fx: null,
+      isFinal: true,
+    },
+  ];
+
+  var STATE = {
+    currentLevel: 0,
+    score: 0,
+    completed: {},
+    solutions: {},
+  };
+
+  var DATA_VERSION = 1;
+
+  function tierLabel(tier) {
+    return TIER_LABELS[tier] || tier || "Beginner";
+  }
+
+  function pointsForLevel(level) {
+    return POINTS[level.tier] || 8;
+  }
+
+  function isLevelUnlocked(index) {
+    if (!LEVELS[index]) return false;
+    if (STATE.completed[index]) return true;
+    // Linear gating: level N opens once N-1 is solved (level 0 always open).
+    if (index === 0) return true;
+    return !!STATE.completed[index - 1];
+  }
+
+  function lockMessageFor(index) {
+    if (!isLevelUnlocked(index)) {
+      return "Solve Level " + index + " first to unlock Level " + (index + 1) + ".";
+    }
+    return "";
+  }
+
+  // Inject the fixed keyframe stylesheet once.
+  function ensureKeyframes() {
+    if (!$("arena-keyframes")) {
+      var style = document.createElement("style");
+      style.id = "arena-keyframes";
+      style.textContent = KEYFRAMES_CSS;
+      (document.head || document.documentElement).appendChild(style);
+    }
+  }
+
+  function emitProgress() {
+    if (typeof window !== "undefined" && typeof window.__onAnimationArenaProgress === "function") {
+      window.__onAnimationArenaProgress({
+        currentLevel: STATE.currentLevel,
+        score: STATE.score,
+        completed: STATE.completed,
+        solutions: STATE.solutions,
+        totalLevels: LEVELS.length,
+        version: DATA_VERSION,
+      });
+    }
+  }
+
+  function publishState() {
+    if (typeof window === "undefined") return;
+    try {
+      window.dispatchEvent(
+        new CustomEvent("aaa-state", {
+          detail: {
+            currentLevel: STATE.currentLevel,
+            score: STATE.score,
+            completed: STATE.completed,
+            totalLevels: LEVELS.length,
+            version: DATA_VERSION,
+          },
+        })
+      );
+    } catch (e) { /* no-op */ }
+  }
+
+  function resumeGame(saved) {
+    if (!saved) return;
+    if (typeof saved.currentLevel === "number") {
+      var cl = Math.floor(saved.currentLevel);
+      if (cl >= 0 && cl < LEVELS.length) STATE.currentLevel = cl;
+    }
+    if (saved.completed && typeof saved.completed === "object") {
+      var clean = {};
+      for (var k in saved.completed) {
+        if (saved.completed[k] && k >= 0 && k < LEVELS.length) clean[k] = true;
+      }
+      STATE.completed = clean;
+      // Rebuild the score from the completed set (never trust a stored total),
+      // so revisits and version changes always converge on the current points.
+      STATE.score = 0;
+      for (var sk in clean) STATE.score += pointsForLevel(LEVELS[sk]);
+    }
+    if (saved.solutions && typeof saved.solutions === "object") {
+      var sols = {};
+      for (var ik in saved.solutions) {
+        var si = Number(ik);
+        if (
+          Number.isInteger(si) &&
+          si >= 0 &&
+          si < LEVELS.length &&
+          typeof saved.solutions[ik] === "string"
+        ) {
+          sols[si] = saved.solutions[ik];
+        }
+      }
+      STATE.solutions = sols;
+    }
+    while (STATE.currentLevel > 0 && !isLevelUnlocked(STATE.currentLevel)) {
+      STATE.currentLevel--;
+    }
+    var s = $("score-display");
+    if (s) s.textContent = "Score: " + STATE.score;
+    renderLevel();
+    publishState();
+  }
+
+  function $(id) { return document.getElementById(id); }
+  function qs(sel, ctx) { return (ctx || document).querySelector(sel); }
+  function randomItem(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+
+  function parseCSS(text) {
+    if (!text || !text.trim()) return [];
+    var lines = text.split("\n");
+    var pairs = [];
+    for (var i = 0; i < lines.length; i++) {
+      var line = lines[i].trim().replace(/;+$/, "").trim();
+      if (!line) continue;
+      var colonIdx = line.indexOf(":");
+      if (colonIdx === -1) continue;
+      var prop = line.substring(0, colonIdx).trim().toLowerCase();
+      var val = line.substring(colonIdx + 1).trim().toLowerCase().replace(/;+$/, "").trim();
+      if (prop && val) pairs.push({ property: prop, value: val });
+    }
+    return pairs;
+  }
+
+  function checkCompletion(pairs) {
+    var level = LEVELS[STATE.currentLevel];
+    if (!level) return false;
+    var userMap = {};
+    for (var i = 0; i < pairs.length; i++) userMap[pairs[i].property] = pairs[i].value;
+    for (var a = 0; a < level.accept.length; a++) {
+      var combo = level.accept[a];
+      var match = true;
+      for (var p in combo) {
+        if (Object.prototype.hasOwnProperty.call(combo, p)) {
+          if (userMap[p] !== combo[p]) { match = false; break; }
+        }
+      }
+      if (match) return true;
+    }
+    return false;
+  }
+
+  function validateInput(pairs) {
+    for (var i = 0; i < pairs.length; i++) {
+      var p = pairs[i].property;
+      if (VALID_PROPS.indexOf(p) === -1) {
+        return "'" + p + "' isn't a CSS animation property. Try: transition, transform, animation, animation-delay, animation-direction, etc.";
+      }
+    }
+    return null;
+  }
+
+  function getWrongHint(pairs) {
+    var level = LEVELS[STATE.currentLevel];
+    if (!level) return randomItem(WRONG_MSGS);
+    var userMap = {};
+    for (var i = 0; i < pairs.length; i++) userMap[pairs[i].property] = pairs[i].value;
+
+    var expectedProps = [];
+    var acceptedByProp = {};
+    for (var a = 0; a < level.accept.length; a++) {
+      var combo = level.accept[a];
+      for (var p in combo) {
+        if (Object.prototype.hasOwnProperty.call(combo, p)) {
+          if (expectedProps.indexOf(p) === -1) expectedProps.push(p);
+          if (!acceptedByProp[p]) acceptedByProp[p] = [];
+          if (acceptedByProp[p].indexOf(combo[p]) === -1) acceptedByProp[p].push(combo[p]);
+        }
+      }
+    }
+
+    var wrongProps = [];
+    var missingProps = [];
+    for (var e = 0; e < expectedProps.length; e++) {
+      var prop = expectedProps[e];
+      var val = userMap[prop];
+      if (val === undefined) missingProps.push(prop);
+      else if (acceptedByProp[prop].indexOf(val) === -1) wrongProps.push(prop);
+    }
+    if (wrongProps.length > 0) {
+      return "Wrong value for " + wrongProps.join(", ") + ". Check the hint below!";
+    }
+    if (missingProps.length > 0) {
+      return "Almost! You're still missing " + missingProps.join(", ") + ".";
+    }
+    return randomItem(WRONG_MSGS);
+  }
+
+  // Live preview: apply valid pairs to the stage. Hover levels never apply a
+  // static transform — it is shown on hover only.
+  function applyCSS(pairs) {
+    var stage = $("arena-stage");
+    if (!stage) return;
+    var level = LEVELS[STATE.currentLevel];
+    for (var i = 0; i < pairs.length; i++) {
+      var prop = pairs[i].property;
+      var val = pairs[i].value;
+      if (VALID_PROPS.indexOf(prop) === -1) continue;
+      if (level && level.hover && prop === "transform") continue;
+      stage.style.setProperty(prop, val);
+    }
+  }
+
+  function resetBoard() {
+    var board = $("arena-board");
+    if (!board) return;
+    board.removeAttribute("style");
+    board.style.height = "360px";
+    board.style.width = "100%";
+    board.style.position = "relative";
+    board.style.overflow = "hidden";
+    board.style.borderRadius = "0 0 1rem 1rem";
+    board.style.display = "flex";
+    board.style.alignItems = "center";
+    board.style.justifyContent = "center";
+    board.style.boxSizing = "border-box";
+
+    var stage = $("arena-stage");
+    if (stage) {
+      stage.removeAttribute("style");
+      stage.style.width = "130px";
+      stage.style.height = "130px";
+      stage.style.borderRadius = "24px";
+      stage.style.display = "flex";
+      stage.style.alignItems = "center";
+      stage.style.justifyContent = "center";
+      stage.style.fontSize = "60px";
+      stage.style.position = "relative";
+      stage.style.zIndex = "2";
+      stage.style.boxShadow = "0 12px 32px rgba(0,0,0,0.4), 0 4px 12px rgba(0,0,0,0.3)";
+      stage.style.border = "2px solid rgba(255,255,255,0.25)";
+      stage.style.background = "#8b5cf6";
+      stage.style.transition = "background-color 0.4s ease, opacity 0.6s ease-in-out, transform 0.3s ease, box-shadow 0.3s ease";
+      stage.style.userSelect = "none";
+      stage.style.cursor = "default";
+    }
+  }
+
+  function renderBoard() {
+    var board = $("arena-board");
+    if (!board) return;
+    var level = LEVELS[STATE.currentLevel];
+    if (!level) return;
+
+    board.innerHTML = "";
+
+    var beamLeft = document.createElement("div");
+    beamLeft.className = "arena-beam left";
+    var beamRight = document.createElement("div");
+    beamRight.className = "arena-beam right";
+    var platform = document.createElement("div");
+    platform.className = "arena-platform";
+    var glow = document.createElement("div");
+    glow.className = "arena-glow";
+    var stage = document.createElement("div");
+    stage.id = "arena-stage";
+    stage.className = "arena-stage";
+    var glyph = document.createElement("span");
+    glyph.className = "arena-stage-glyph";
+    glyph.textContent = "\u2726";
+    stage.appendChild(glyph);
+
+    board.appendChild(beamLeft);
+    board.appendChild(beamRight);
+    board.appendChild(platform);
+    board.appendChild(glow);
+    board.appendChild(stage);
+
+    // Dashed goal ring for translate/scale levels.
+    if (typeof level.goalX === "number") {
+      var goal = document.createElement("div");
+      goal.className = "arena-goal";
+      goal.style.left = "calc(50% + " + level.goalX + "px)";
+      goal.style.top = "50%";
+      goal.textContent = "goal";
+      board.appendChild(goal);
+    }
+
+    // Hover levels: bind enter/leave so the transform transition is visible.
+    if (level.hover) {
+      stage.addEventListener("mouseenter", onStageEnter);
+      stage.addEventListener("mouseleave", onStageLeave);
+    }
+  }
+
+  function onStageEnter() {
+    var stage = $("arena-stage");
+    if (!stage) return;
+    var ta = $("css-editor");
+    if (!ta) return;
+    var pairs = parseCSS(ta.value);
+    for (var i = 0; i < pairs.length; i++) {
+      if (pairs[i].property === "transform") {
+        stage.style.transform = pairs[i].value;
+        return;
+      }
+    }
+  }
+
+  function onStageLeave() {
+    var stage = $("arena-stage");
+    if (stage) stage.style.transform = "";
+  }
+
+  // Per-level intro effect so the transition levels visibly demo what a
+  // transition does (otherwise there is no state change for it to animate).
+  function queueIntroFx(level) {
+    var stage = $("arena-stage");
+    if (!stage) return;
+    clearTimeout(STATE.fxTimer);
+    if (level.fx === "bgfade") {
+      stage.style.background = "#d97706";
+      STATE.fxTimer = setTimeout(function () {
+        var s = $("arena-stage");
+        if (s) s.style.background = "#8b5cf6";
+      }, 350);
+    } else if (level.fx === "opacitypulse") {
+      STATE.fxTimer = setTimeout(function () {
+        var s = $("arena-stage");
+        if (s) s.style.opacity = "0.3";
+        setTimeout(function () {
+          var st2 = $("arena-stage");
+          if (st2) st2.style.opacity = "1";
+        }, 500);
+      }, 400);
+    }
+  }
+
+  function showToast(msg, isError) {
+    var t = $("toast");
+    if (!t) return;
+    t.textContent = (isError ? "\u2715 " : "\u2713 ") + msg;
+    t.className = "aaa-status-toast " + (isError ? "error" : "success");
+    t.style.display = "flex";
+    t.style.opacity = "1";
+    clearTimeout(t._timer);
+    t._timer = setTimeout(function () { t.style.opacity = "0"; }, isError ? 4000 : 2500);
+  }
+
+  function hideToast() {
+    var t = $("toast");
+    if (t) { t.style.opacity = "0"; clearTimeout(t._timer); }
+  }
+
+  function showOverlay(title, sub, msg, btnText, action) {
+    var o = $("overlay");
+    if (!o) return;
+    var t = qs(".aaa-complete-text", o);
+    var s = qs(".aaa-complete-sub", o);
+    var m = qs(".aaa-complete-msg", o);
+    var b = qs(".overlay-btn", o);
+    if (t) t.textContent = title;
+    if (s) s.textContent = sub;
+    if (m) m.textContent = msg;
+    if (b) { b.textContent = btnText; b.onclick = action; }
+    o.style.display = "flex";
+  }
+
+  function hideOverlay() {
+    var o = $("overlay");
+    if (o) o.style.display = "none";
+  }
+
+  function renderSolvedNote() {
+    var note = $("aaa-solved-note");
+    if (!note) return;
+    var level = LEVELS[STATE.currentLevel];
+    var done = !!STATE.completed[STATE.currentLevel];
+    note.hidden = !done;
+    if (done && level) {
+      note.innerHTML = "\u2713 Solved! <strong>+" + pointsForLevel(level) + " XP</strong> earned.";
+    } else {
+      note.textContent = "";
+    }
+  }
+
+  function completeLevel(text) {
+    if (STATE.completed[STATE.currentLevel]) return;
+    var level = LEVELS[STATE.currentLevel];
+    if (!level) return;
+    STATE.completed[STATE.currentLevel] = true;
+    STATE.solutions[STATE.currentLevel] = text;
+    STATE.score += pointsForLevel(level);
+
+    var s = $("score-display");
+    if (s) s.textContent = "Score: " + STATE.score;
+
+    var nb = $("next-btn");
+    if (nb) { nb.disabled = false; nb.style.opacity = "1"; }
+    var cb = $("check-btn");
+    if (cb) cb.classList.add("ready");
+
+    renderSolvedNote();
+    renderProgress();
+    emitProgress();
+    publishState();
+
+    showToast("\u2713 Correct! Watch the star move!", false);
+
+    setTimeout(function () {
+      var msg = randomItem(SUCCESS_MSGS);
+      if (level.isFinal) {
+        showOverlay("Champion!", "You mastered every trick in the book.", msg, "See Your Results \u2B50", function () {
+          nextLevel();
+        });
+      } else {
+        showOverlay("Level Complete!", "Great job! You solved it!", msg, "Next Level \u2192", function () {
+          nextLevel();
+        });
+      }
+    }, 1200);
+  }
+
+  function nextLevel() {
+    if (STATE.currentLevel < LEVELS.length - 1) {
+      STATE.currentLevel++;
+      renderLevel();
+      emitProgress();
+    } else {
+      renderVictory();
+      emitProgress();
+    }
+  }
+
+  function prevLevel() {
+    if (STATE.currentLevel > 0) {
+      STATE.currentLevel--;
+      renderLevel();
+      emitProgress();
+    }
+  }
+
+  function gotoLevel(index) {
+    var i = index | 0;
+    if (i < 0 || i >= LEVELS.length) return;
+    if (!isLevelUnlocked(i)) {
+      showToast(lockMessageFor(i), true);
+      return;
+    }
+    STATE.currentLevel = i;
+    renderLevel();
+    emitProgress();
+  }
+
+  function nextHandler() {
+    var nb = $("next-btn");
+    if (nb && !nb.disabled) nextLevel();
+  }
+
+  function checkAnswer() {
+    var ta = $("css-editor");
+    if (!ta) return;
+    var level = LEVELS[STATE.currentLevel];
+    if (!level) {
+      showToast("Level data not loaded yet — reload the page if this persists.", true);
+      return;
+    }
+    var text = ta.value || "";
+    var pairs = parseCSS(text);
+
+    if (!text.trim()) {
+      showToast("Write some CSS first! e.g. " + level.placeholder.replace(/\n/g, " "), true);
+      return;
+    }
+    if (pairs.length === 0) {
+      showToast("That isn't valid CSS — write property: value pairs, one per line.", true);
+      return;
+    }
+    var err = validateInput(pairs);
+    if (err) { showToast(err, true); return; }
+
+    // Preview the exact answer state before judging it.
+    resetBoard();
+    applyCSS(pairs);
+
+    if (STATE.completed[STATE.currentLevel]) {
+      showToast("\u2713 Already solved \u2014 +" + pointsForLevel(level) + " XP earned.", false);
+      return;
+    }
+
+    if (checkCompletion(pairs)) {
+      completeLevel(text);
+    } else {
+      showToast(getWrongHint(pairs), true);
+    }
+  }
+
+  function handleInput() {
+    var ta = $("css-editor");
+    var editorHint = $("aaa-editor-hint");
+    if (ta && editorHint) {
+      editorHint.classList.toggle("has-value", ta.value.trim().length > 0);
+    }
+    if (!ta) return;
+    var text = ta.value;
+    var pairs = parseCSS(text);
+    if (pairs.length === 0) {
+      // Nothing valid to preview yet.
+      hideToast();
+      return;
+    }
+    var err = validateInput(pairs);
+    if (err) { showToast(err, true); return; }
+    hideToast();
+    resetBoard();
+    applyCSS(pairs);
+  }
+
+  function handleReset() {
+    var ta = $("css-editor");
+    if (ta) ta.value = "";
+    hideToast();
+    renderBoard();
+    resetBoard();
+    queueIntroFx(LEVELS[STATE.currentLevel]);
+    var editorHint = $("aaa-editor-hint");
+    if (editorHint) editorHint.classList.remove("has-value");
+  }
+
+  function renderProgress() {
+    var dots = $("progress-dots");
+    if (!dots) return;
+    dots.innerHTML = "";
+    for (var i = 0; i < LEVELS.length; i++) {
+      var dot = document.createElement("span");
+      dot.className =
+        "aaa-progress-dot" +
+        (STATE.completed[i] ? " done" : "") +
+        (i === STATE.currentLevel ? " current" : "");
+      dots.appendChild(dot);
+    }
+  }
+
+  function renderHintArea(level, hintEl) {
+    // Nudges stay hidden behind a "Show Hint" button. Reveals draw from the
+    // shared daily budget (3 hints/day across ALL games) which the page
+    // enforces server-side via /api/games/hints — the engine never unlocks
+    // it directly.
+    hintEl.innerHTML = "";
+    var btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "aaa-hint-reveal";
+    btn.textContent = "\uD83D\uDCA1 Show Hint";
+    btn.onclick = function () {
+      if (typeof window.__onAnimationArenaHintRequest === "function") {
+        window.__onAnimationArenaHintRequest(STATE.currentLevel);
+      }
+    };
+    hintEl.appendChild(btn);
+
+    var left = document.createElement("span");
+    left.className = "aaa-hint-left";
+    left.id = "aaa-hint-left";
+    var n =
+      typeof window.__aaaHintLeft === "number" ? window.__aaaHintLeft : "\u2014";
+    left.textContent = "Hints left today: " + n;
+    hintEl.appendChild(left);
+  }
+
+  function renderLevel() {
+    var level = LEVELS[STATE.currentLevel];
+    if (!level) return renderVictory();
+
+    var titleEl = $("level-title");
+    var numEl = $("level-number");
+    var instrEl = $("level-instruction");
+    var hintEl = $("level-hint");
+    var diffEl = $("level-difficulty");
+    var ta = $("css-editor");
+    var nb = $("next-btn");
+    var pb = $("prev-btn");
+    var cb = $("check-btn");
+
+    if (titleEl) titleEl.textContent = level.title;
+    if (numEl) numEl.textContent = level.id;
+    if (instrEl) instrEl.innerHTML = level.instruction;
+    if (hintEl) renderHintArea(level, hintEl);
+    if (diffEl) {
+      diffEl.textContent = tierLabel(level.tier);
+      diffEl.className = "aaa-level-difficulty " + level.tier;
+    }
+    if (ta) {
+      // Show the saved passing answer on revisited completed levels.
+      ta.value =
+        STATE.completed[STATE.currentLevel] && STATE.solutions[STATE.currentLevel]
+          ? STATE.solutions[STATE.currentLevel]
+          : "";
+      ta.placeholder = level.placeholder;
+      ta.rows = level.multiLine ? 3 : 2;
+      var editorHint = $("aaa-editor-hint");
+      if (editorHint) {
+        editorHint.classList.toggle("has-value", ta.value.trim().length > 0);
+      }
+    }
+    if (pb) { pb.disabled = STATE.currentLevel === 0; pb.style.opacity = STATE.currentLevel === 0 ? "0.4" : "1"; }
+    if (nb) {
+      var done = !!STATE.completed[STATE.currentLevel];
+      nb.disabled = !done;
+      nb.style.opacity = done ? "1" : "0.4";
+    }
+    if (cb) {
+      cb.classList.toggle("ready", !!STATE.completed[STATE.currentLevel]);
+    }
+
+    renderSolvedNote();
+    renderProgress();
+
+    renderBoard();
+    resetBoard();
+    queueIntroFx(level);
+
+    // Re-apply whatever is typed (covers the completed-solution restore).
+    if (ta && ta.value.trim()) {
+      var pairs = parseCSS(ta.value);
+      if (pairs.length > 0 && !validateInput(pairs)) {
+        applyCSS(pairs);
+      }
+    }
+
+    hideOverlay();
+    hideToast();
+  }
+
+  function renderVictory() {
+    var done = 0;
+    for (var k in STATE.completed) if (STATE.completed[k]) done++;
+    var stars = done >= LEVELS.length ? "\u2B50\u2B50\u2B50" : done >= LEVELS.length * 0.7 ? "\u2B50\u2B50" : "\u2B50";
+
+    var t = $("level-title");
+    var n = $("level-number");
+    var i = $("level-instruction");
+    var h = $("level-hint");
+    var d = $("level-difficulty");
+
+    if (t) t.textContent = "You Did It!";
+    if (n) n.textContent = "\uD83C\uDF1F";
+    if (i) i.textContent = "You completed all " + LEVELS.length + " levels and mastered CSS animations!";
+    if (h) h.innerHTML = "You can now bring anything to life. Share your score with friends!";
+    if (d) { d.textContent = "Complete"; d.className = "aaa-level-difficulty beginner"; }
+
+    var board = $("arena-board");
+    if (board) {
+      board.innerHTML =
+        '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;height:100%;text-align:center">' +
+        '<div style="font-size:4rem;margin-bottom:0.5rem">' + stars + '</div>' +
+        '<div style="font-size:2rem;margin-bottom:0.5rem">\uD83C\uDFC6\u2728\uD83C\uDFC6</div>' +
+        '<div style="font-size:1.2rem;font-weight:700;font-family:var(--font-display)">Animation Champion!</div>' +
+        '<div style="font-size:0.85rem;color:hsl(var(--muted));margin-top:0.25rem">Score: ' + STATE.score + ' | Levels: ' + done + '/' + LEVELS.length + '</div>' +
+        '</div>';
+      board.style.display = "flex";
+      board.style.alignItems = "center";
+      board.style.justifyContent = "center";
+    }
+
+    var nb = $("next-btn");
+    if (nb) { nb.disabled = true; nb.style.opacity = "0.4"; }
+    var pb = $("prev-btn");
+    if (pb) { pb.disabled = false; pb.style.opacity = "1"; }
+    var cb = $("check-btn");
+    if (cb) cb.classList.remove("ready");
+
+    var note = $("aaa-solved-note");
+    if (note) { note.hidden = true; note.textContent = ""; }
+
+    hideOverlay();
+    hideToast();
+    var ta = $("css-editor");
+    if (ta) ta.value = "";
+  }
+
+  function initGame() {
+    ensureKeyframes();
+    var ta = $("css-editor");
+    var pb = $("prev-btn");
+    var nb = $("next-btn");
+    var cb = $("check-btn");
+    var rb = $("reset-btn");
+
+    if (ta) {
+      ta.removeEventListener("input", handleInput);
+      ta.addEventListener("input", handleInput);
+    }
+    if (pb) { pb.removeEventListener("click", prevLevel); pb.addEventListener("click", prevLevel); }
+    if (nb) {
+      nb.removeEventListener("click", nextHandler);
+      nb.addEventListener("click", nextHandler);
+    }
+    if (cb) { cb.removeEventListener("click", checkAnswer); cb.addEventListener("click", checkAnswer); }
+    if (rb) { rb.removeEventListener("click", handleReset); rb.addEventListener("click", handleReset); }
+
+    STATE.currentLevel = 0;
+    STATE.score = 0;
+    STATE.completed = {};
+    STATE.solutions = {};
+
+    var s = $("score-display");
+    if (s) s.textContent = "Score: 0";
+
+    renderLevel();
+  }
+
+  if (typeof window !== "undefined") {
+    window.__initAnimationArena = function () { initGame(); };
+    window.__resumeAnimationArena = function (saved) { resumeGame(saved); };
+    window.__getAnimationArenaState = function () {
+      return {
+        currentLevel: STATE.currentLevel,
+        score: STATE.score,
+        completed: STATE.completed,
+        totalLevels: LEVELS.length,
+        version: DATA_VERSION,
+      };
+    };
+    window.__getAnimationArenaLevels = function () {
+      return LEVELS.map(function (lv) {
+        return {
+          id: lv.id,
+          tier: lv.tier,
+          points: pointsForLevel(lv),
+          isFinal: !!lv.isFinal,
+          concepts: lv.concepts || [],
+          title: lv.title,
+          instruction: lv.instruction,
+        };
+      });
+    };
+    window.__goToAnimationArenaLevel = function (index) { gotoLevel(index); };
+    window.__animationArenaCheck = function () { checkAnswer(); };
+    window.__animationArenaShowHint = function (index) {
+      var lvl = LEVELS[index | 0];
+      if (!lvl || (index | 0) !== STATE.currentLevel) return;
+      var hintEl = $("level-hint");
+      if (!hintEl) return;
+      hintEl.innerHTML = "";
+      var spark = document.createElement("span");
+      spark.textContent = "\uD83D\uDCA1 ";
+      hintEl.appendChild(spark);
+      var label = document.createElement("strong");
+      label.textContent = "Hint: ";
+      hintEl.appendChild(label);
+      var hintSpan = document.createElement("span");
+      hintSpan.innerHTML = lvl.hint;
+      hintEl.appendChild(hintSpan);
+    };
+    window.__animationArenaSetHintLeft = function (n) {
+      window.__aaaHintLeft = typeof n === "number" ? Math.max(0, n | 0) : 0;
+      var el = $("aaa-hint-left");
+      if (el) el.textContent = "Hints left today: " + window.__aaaHintLeft;
+    };
+    window.__animationArenaToast = function (msg, isError) { showToast(msg, isError); };
+  }
+})();

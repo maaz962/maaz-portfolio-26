@@ -213,6 +213,12 @@ export interface Gamification {
   longestStreak: number;
   /** UTC date key (YYYY-MM-DD) of the most recent play day, or null if never. */
   lastPlayedAt: string | null;
+  /**
+   * Shared daily hint budget spent across ALL games ({date, used}). One pool
+   * per user per day, so revealing a hint in one game counts against the same
+   * 3-hint daily cap as every other game.
+   */
+  hints?: { date: string; used: number };
   updatedAt: string;
 }
 
