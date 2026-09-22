@@ -276,6 +276,8 @@
     score: 0,
     completed: {},
     solutions: {},
+    fxTimer: null,
+    effectTimer: null,
   };
 
   var DATA_VERSION = 1;
@@ -777,12 +779,17 @@
     var text = ta.value;
     var pairs = parseCSS(text);
     if (pairs.length === 0) {
-      // Nothing valid to preview yet.
+      // Nothing to preview yet — clear the board so stale styles never linger.
+      resetBoard();
       hideToast();
       return;
     }
     var err = validateInput(pairs);
-    if (err) { showToast(err, true); return; }
+    if (err) {
+      resetBoard();
+      showToast(err, true);
+      return;
+    }
     hideToast();
     resetBoard();
     applyCSS(pairs);
@@ -792,11 +799,98 @@
     var ta = $("css-editor");
     if (ta) ta.value = "";
     hideToast();
+    clearEffectTimer();
     renderBoard();
     resetBoard();
     queueIntroFx(LEVELS[STATE.currentLevel]);
     var editorHint = $("aaa-editor-hint");
     if (editorHint) editorHint.classList.remove("has-value");
+  }
+
+  // Replays any CSS animation from scratch so Run always visibly restarts it
+  // instead of freezing on the last painted frame.
+  function replayAnimations(pairs) {
+    var stage = $("arena-stage");
+    if (!stage) return;
+    var hasAnim = false;
+    for (var i = 0; i < pairs.length; i++) {
+      if (pairs[i].property.indexOf("animation") === 0) hasAnim = true;
+    }
+    if (!hasAnim) return;
+    stage.style.animation = "none";
+    void stage.offsetWidth; // force reflow so the animation restarts cleanly
+    for (var j = 0; j < pairs.length; j++) {
+      var p = pairs[j].property;
+      if (VALID_PROPS.indexOf(p) !== -1 && p.indexOf("animation") === 0) {
+        stage.style.setProperty(p, pairs[j].value);
+      }
+    }
+  }
+
+  // Hover levels skip transform while typing; Run simulates one hover so the
+  // player sees exactly what their CSS will do before trying it themselves.
+  function simulateHover(pairs) {
+    var level = LEVELS[STATE.currentLevel];
+    var stage = $("arena-stage");
+    if (!stage || !level || !level.hover) return;
+    var tf = null;
+    for (var i = 0; i < pairs.length; i++) {
+      if (pairs[i].property === "transform") tf = pairs[i].value;
+    }
+    if (!tf) return;
+    stage.style.transform = tf;
+    clearEffectTimer();
+    STATE.effectTimer = setTimeout(function () {
+      var s = $("arena-stage");
+      if (s) s.style.transform = "";
+    }, 1200);
+  }
+
+  function clearEffectTimer() {
+    if (STATE.effectTimer) {
+      clearTimeout(STATE.effectTimer);
+      STATE.effectTimer = null;
+    }
+  }
+
+  function handleRun() {
+    var ta = $("css-editor");
+    if (!ta) return;
+    var level = LEVELS[STATE.currentLevel];
+    if (!level) return;
+    var text = ta.value || "";
+    var pairs = parseCSS(text);
+
+    if (!text.trim()) {
+      resetBoard();
+      hideToast();
+      showToast("Write some CSS first \u2014 then Run to see it play!", true);
+      return;
+    }
+    if (pairs.length === 0) {
+      resetBoard();
+      showToast("That isn't valid CSS \u2014 write property: value pairs, one per line.", true);
+      return;
+    }
+    var err = validateInput(pairs);
+    if (err) {
+      resetBoard();
+      showToast(err, true);
+      return;
+    }
+
+    clearEffectTimer();
+    resetBoard();
+    applyCSS(pairs);
+    replayAnimations(pairs);
+    queueIntroFx(level);
+
+    if (level.hover) {
+      simulateHover(pairs);
+      showToast("\u25B6 Run \u2014 preview hover shown. Hover the robot yourself to try it!", false);
+    } else {
+      showToast("\u25B6 Run \u2014 watch the robot respond to your CSS!", false);
+    }
   }
 
   function renderProgress() {
@@ -887,6 +981,7 @@
     renderSolvedNote();
     renderProgress();
 
+    clearEffectTimer();
     renderBoard();
     resetBoard();
     queueIntroFx(level);
@@ -957,6 +1052,7 @@
     var nb = $("next-btn");
     var cb = $("check-btn");
     var rb = $("reset-btn");
+    var runb = $("run-btn");
 
     if (ta) {
       ta.removeEventListener("input", handleInput);
@@ -969,6 +1065,7 @@
     }
     if (cb) { cb.removeEventListener("click", checkAnswer); cb.addEventListener("click", checkAnswer); }
     if (rb) { rb.removeEventListener("click", handleReset); rb.addEventListener("click", handleReset); }
+    if (runb) { runb.removeEventListener("click", handleRun); runb.addEventListener("click", handleRun); }
 
     STATE.currentLevel = 0;
     STATE.score = 0;

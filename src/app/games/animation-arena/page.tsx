@@ -453,15 +453,22 @@ export default function AnimationArenaPage() {
                     <span className="aaa-editor-dot green" />
                   </div>
                   <span className="aaa-editor-title">style.css</span>
+                  <span
+                    className="aaa-editor-target-badge"
+                    role="note"
+                    aria-label="This CSS targets the arena robot"
+                  >
+                    <span className="aaa-editor-target-dot" aria-hidden="true" />
+                    target: robot
+                  </span>
                 </div>
                 <div className="aaa-editor-body">
                   <div id="aaa-line-numbers" className="aaa-line-numbers">
                     1<br />2<br />3<br />4<br />5<br />6
                   </div>
                   <div className="aaa-code-area">
-                    <div className="aaa-editor-prefix">
+                    <div className="aaa-editor-prefix" aria-hidden="true">
                       <code>#board {"{"}</code>
-                      <span className="aaa-editor-prefix-handle">target: robot</span>
                     </div>
                     <textarea
                       id="css-editor"
@@ -484,6 +491,9 @@ export default function AnimationArenaPage() {
                     className="aaa-reset-btn"
                   >
                     ↺ Reset
+                  </button>
+                  <button id="run-btn" type="button" className="aaa-run-btn">
+                    ▶ Run
                   </button>
                   <div className="aaa-nav-buttons">
                     <button
@@ -556,8 +566,9 @@ export default function AnimationArenaPage() {
               <div className="aaa-hint-bar">
                 <Sparkles className="h-3 w-3 shrink-0 text-primary" />
                 <span>
-                  <strong>Hint:</strong> hit Check to validate your CSS — every{" "}
-                  <code>#board</code> rule targets the robot.
+                  <strong>Hint:</strong> press Run to watch your CSS play live on
+                  the robot — every <code>#board</code> rule targets it. Press{" "}
+                  Check to validate against the goal.
                 </span>
               </div>
             </div>
