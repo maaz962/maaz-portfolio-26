@@ -390,19 +390,49 @@
   function qs(sel, ctx) { return (ctx || document).querySelector(sel); }
   function randomItem(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
 
+  function cleanCssText(text) {
+    return String(text || "")
+      .replace(/\/\*[\s\S]*?\*\//g, " ")
+      .replace(/\/\/[^\n]*/g, " ")
+      .replace(/[{}]/g, " ")
+      .replace(/#board\b/gi, " ");
+  }
+
+  function normValue(v) {
+    var s = String(v || "").toLowerCase().trim();
+    if (!s) return "";
+    s = s.replace(/;+\s*$/, "").trim();
+    s = s.replace(/\s+\(/g, "(").replace(/\(\s+/g, "(").replace(/\s+\)/g, ")");
+    s = s.replace(/\s*,\s*/g, ",");
+    s = s.replace(/\s+/g, " ");
+    s = s.replace(/(\d+(?:\.\d+)?)s\b/g, function (m, n) {
+      return Math.round(parseFloat(n) * 1000) + "ms";
+    });
+    return s;
+  }
+
   function parseCSS(text) {
     if (!text || !text.trim()) return [];
-    var lines = text.split("\n");
+    var lines = cleanCssText(text).split("\n");
     var pairs = [];
     for (var i = 0; i < lines.length; i++) {
-      var line = lines[i].trim().replace(/;+$/, "").trim();
+      var line = lines[i].trim();
       if (!line) continue;
-      var colonIdx = line.indexOf(":");
-      if (colonIdx === -1) continue;
-      var prop = line.substring(0, colonIdx).trim().toLowerCase();
-      var val = line.substring(colonIdx + 1).trim().toLowerCase().replace(/;+$/, "").trim();
-      if (prop && val) pairs.push({ property: prop, value: val });
+      var parts = line.split(";");
+      for (var q = 0; q < parts.length; q++) {
+        var part = parts[q].trim();
+        if (!part) continue;
+        var colonIdx = part.indexOf(":");
+        if (colonIdx === -1) {
+          if (pairs.length) pairs[pairs.length - 1].value += " " + part;
+          continue;
+        }
+        var prop = part.substring(0, colonIdx).trim().toLowerCase();
+        var val = part.substring(colonIdx + 1);
+        if (prop) pairs.push({ property: prop, value: val });
+      }
     }
+    for (var j = 0; j < pairs.length; j++) pairs[j].value = normValue(pairs[j].value);
     return pairs;
   }
 
@@ -416,7 +446,7 @@
       var match = true;
       for (var p in combo) {
         if (Object.prototype.hasOwnProperty.call(combo, p)) {
-          if (userMap[p] !== combo[p]) { match = false; break; }
+          if (normValue(userMap[p]) !== normValue(combo[p])) { match = false; break; }
         }
       }
       if (match) return true;
@@ -448,7 +478,7 @@
         if (Object.prototype.hasOwnProperty.call(combo, p)) {
           if (expectedProps.indexOf(p) === -1) expectedProps.push(p);
           if (!acceptedByProp[p]) acceptedByProp[p] = [];
-          if (acceptedByProp[p].indexOf(combo[p]) === -1) acceptedByProp[p].push(combo[p]);
+          if (acceptedByProp[p].indexOf(normValue(combo[p])) === -1) acceptedByProp[p].push(normValue(combo[p]));
         }
       }
     }
@@ -459,7 +489,7 @@
       var prop = expectedProps[e];
       var val = userMap[prop];
       if (val === undefined) missingProps.push(prop);
-      else if (acceptedByProp[prop].indexOf(val) === -1) wrongProps.push(prop);
+      else if (acceptedByProp[prop].indexOf(normValue(val)) === -1) wrongProps.push(prop);
     }
     if (wrongProps.length > 0) {
       return "Wrong value for " + wrongProps.join(", ") + ". Check the hint below!";
