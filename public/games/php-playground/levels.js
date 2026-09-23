@@ -115,7 +115,7 @@ window.__phpPlaygroundLevels = [
     concepts: ["strtoupper", "trim"],
     shortDesc: "Nest string functions.",
     instruction:
-      'Print <code>strtoupper(trim("   php   "))</code> — the expected output is <code>PHP</code>.',
+      'The recovered phrase was written in a sloppy hand: the word "php" with stray spaces surrounding it. Print it back out clean and LOUD. First strip the leading and trailing whitespace using the <code>trim</code> function, then shout the result using the uppercase function. The returned output must be exactly "PHP".',
     hint: "Trim first (removes the spaces), then uppercase. Nesting order matters.",
     starter: "<?php\n\n",
     passValue: "PHP",
