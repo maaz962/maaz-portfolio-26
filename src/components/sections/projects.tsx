@@ -17,6 +17,7 @@ import { SectionHeading } from "@/components/ui/section-heading";
 import { ProjectCard } from "@/components/ui/project-card";
 import { buttonStyles } from "@/components/ui/button";
 import { FadeIn } from "@/components/animations/fade-in";
+import { games } from "@/data/games";
 import { cn } from "@/lib/utils";
 
 type ActiveFilter = "all" | ProjectFilterCategory;
@@ -153,16 +154,11 @@ export function Projects() {
   );
 }
 
-const gamesTeaserTiles = [
-  { emoji: "??", color: "from-indigo-500/20 to-violet-500/20" },
-  { emoji: "??", color: "from-green-500/20 to-emerald-500/20" },
-  { emoji: "??", color: "from-emerald-500/20 to-teal-500/20" },
-  { emoji: "???", color: "from-yellow-500/20 to-amber-500/20" },
-  { emoji: "??", color: "from-blue-500/20 to-cyan-500/20" },
-  { emoji: "?", color: "from-purple-500/20 to-pink-500/20" },
-  { emoji: "??", color: "from-violet-500/20 to-purple-600/20" },
-  { emoji: "???", color: "from-sky-500/20 to-cyan-600/20" },
-];
+const gameTeaserTiles = games.map((game) => ({
+  slug: game.slug,
+  emoji: game.animal,
+  color: game.color,
+}));
 
 function GamesTeaserCard() {
   return (
@@ -174,15 +170,17 @@ function GamesTeaserCard() {
         aria-hidden="true"
         className="grid grid-cols-3 gap-2 p-6 sm:w-56 sm:grid-cols-2 sm:p-0"
       >
-        {gamesTeaserTiles.map((tile) => (
+        {gameTeaserTiles.map((tile, index) => (
           <span
-            key={tile.emoji}
+            key={tile.slug}
             className={cn(
               "flex h-16 items-center justify-center rounded-xl border border-white/10 bg-gradient-to-br text-3xl transition-transform duration-300 group-hover:scale-105",
+              index === gameTeaserTiles.length - 1 &&
+                "col-span-3 sm:col-span-2",
               tile.color
             )}
           >
-            {tile.emoji}
+            <span aria-hidden="true">{tile.emoji}</span>
           </span>
         ))}
       </div>
@@ -195,12 +193,12 @@ function GamesTeaserCard() {
           Learn Web Dev by Playing
         </h3>
         <p className="mt-3 flex-1 text-sm leading-relaxed text-muted">
-          Interactive games teaching HTML, CSS &amp; JavaScript — built from
-          scratch. Solve coding puzzles, earn XP, and level up while exploring
-          web development hands-on.
+          Interactive games teaching HTML, CSS, JavaScript, PHP &amp; SQL —
+          built from scratch. Solve coding puzzles, earn XP, and level up while
+          exploring web development hands-on.
         </p>
         <ul className="mt-5 flex flex-wrap gap-2" aria-label="Technologies used">
-          {["HTML", "CSS", "JavaScript"].map((tech) => (
+          {["HTML", "CSS", "JavaScript", "PHP", "SQL"].map((tech) => (
             <li
               key={tech}
               className="text-mono rounded-full border border-border bg-background-secondary px-2.5 py-1 text-[0.65rem] text-foreground/85"

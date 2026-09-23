@@ -23,6 +23,7 @@ ListTodo,
 import { AnimatePresence, motion } from "framer-motion";
 import { GlassNavbar } from "@/components/layout/glass-navbar";
 import { cn } from "@/lib/utils";
+import { games, type GameMeta } from "@/data/games";
 import { GameDiscussionPanel } from "./game-discussion-panel";
 import { AuthModal } from "@/components/games/auth-modal";
 import { LeaderboardPanel } from "@/components/games/leaderboard-panel";
@@ -30,106 +31,12 @@ import { Avatar } from "@/components/ui/avatar";
 import { useAuth } from "@/lib/auth-context";
 import type { BlogEngagement, GameProgress, GamificationSummary } from "@/types";
 
-const games = [
-  {
-    slug: "html-hero",
-    title: "HTML Hero",
-    description:
-      "Become an HTML Master! Write real tags for headings, lists, tables, forms and full pages across easy to advanced challenges.",
-    difficulty: "Beginner \u2192 Advanced",
-    topics: ["HTML", "Tags", "Semantics", "Forms"],
-    animal: "🦸",
-    color: "from-indigo-500/20 to-violet-500/20",
-    borderColor: "border-indigo-500/30",
-    accentColor: "text-indigo-500",
-    comingSoon: false,
-  },
-  {
-    slug: "flexbox-zoo",
-    title: "Flexbox Zoo",
-    description:
-      "Help adorable animals find their enclosures by mastering CSS Flexbox properties. Learn justify-content, align-items, flex-direction and more through fun challenges!",
-    difficulty: "Beginner",
-    topics: ["Flexbox", "CSS Layout", "justify-content", "align-items"],
-    animal: "🦁",
-    color: "from-green-500/20 to-emerald-500/20",
-    borderColor: "border-green-500/30",
-    accentColor: "text-green-500",
-    comingSoon: false,
-  },
-  {
-    slug: "grid-garden",
-    title: "Grid Garden",
-    description:
-      "Build layouts and master CSS Grid. Learn grid-template-columns, grid-areas, spanning, and more through fun challenges!",
-    difficulty: "Intermediate",
-    topics: ["CSS Grid", "grid-template", "grid-areas", "spanning"],
-    animal: "🌱",
-    color: "from-emerald-500/20 to-teal-500/20",
-    borderColor: "border-emerald-500/30",
-    accentColor: "text-emerald-500",
-    comingSoon: false,
-  },
-  {
-    slug: "js-detective",
-    title: "JS Detective",
-    description:
-      "Solve coding mysteries and master core JavaScript! Variables, loops, arrays, functions, .map, .filter and event handlers through fun console challenges.",
-    difficulty: "Beginner \u2192 Advanced",
-    topics: ["JavaScript", "Variables", "Loops", "Functions"],
-    animal: "🕵️",
-    color: "from-yellow-500/20 to-amber-500/20",
-    borderColor: "border-amber-500/30",
-    accentColor: "text-amber-500",
-    comingSoon: false,
-  },
-  {
-    slug: "animation-arena",
-    title: "Animation Arena",
-    description:
-      "Bring robots to life with CSS transitions, transforms and keyframes. Fade, spin, float and dance your way from first steps to hover tricks!",
-    difficulty: "Beginner \u2192 Intermediate",
-    topics: ["Animations", "Transitions", "Transforms", "Keyframes"],
-    animal: "\uD83E\uDD16",
-    color: "from-purple-500/20 to-pink-500/20",
-    borderColor: "border-purple-500/30",
-    accentColor: "text-purple-500",
-    comingSoon: false,
-  },
-  {
-    slug: "php-playground",
-    title: "PHP Playground",
-    description:
-      "Type real PHP and watch it run live in your browser. Variables, loops, functions, arrays and string functions - all executed by a WebAssembly PHP engine right on the page.",
-    difficulty: "Beginner \u2192 Advanced",
-    topics: ["PHP", "Echo", "Variables", "Loops", "Functions", "Arrays"],
-    animal: "🐘",
-    color: "from-violet-500/20 to-purple-600/20",
-    borderColor: "border-violet-500/30",
-    accentColor: "text-violet-500",
-    comingSoon: false,
-  },
-  {
-    slug: "query-quest",
-    title: "Query Quest",
-    description:
-      "Master SQL by querying a real in-your-browser database. SELECT, WHERE, ORDER BY, JOIN, GROUP BY and more - run against an actual SQLite engine via sql.js.",
-    difficulty: "Beginner \u2192 Advanced",
-    topics: ["SQL", "SELECT", "WHERE", "ORDER BY", "JOIN", "GROUP BY"],
-    animal: "🗃️",
-    color: "from-sky-500/20 to-cyan-500/20",
-    borderColor: "border-sky-500/30",
-    accentColor: "text-sky-500",
-    comingSoon: false,
-  },
-];
-
 /**
  * Zero-network mini "screenshot" of each game, rendered as pure CSS/JSX so
  * cards show the game in action without a single image request (lighter than
  * any GIF/video). Coming-soon games just show their mascot over the gradient.
  */
-function GamePreview({ game }: { game: (typeof games)[0] }) {
+function GamePreview({ game }: { game: GameMeta }) {
   if (game.comingSoon) {
     return (
       <span
@@ -324,7 +231,7 @@ function GameCard({
   onPlay,
   progress,
 }: {
-  game: (typeof games)[0];
+  game: GameMeta;
   engagement: BlogEngagement;
   onLike: (slug: string) => void;
   onComments: (slug: string) => void;
@@ -614,7 +521,8 @@ export default function GamesPage() {
                   Learn Web Dev by Playing
                 </h1>
                 <p className="text-xs text-muted">
-                  Fun interactive games to master HTML, CSS & JavaScript
+                  Fun interactive games to master HTML, CSS, JavaScript, PHP
+                  &amp; SQL
                 </p>
               </div>
             </div>
@@ -875,8 +783,9 @@ export default function GamesPage() {
             All seven games are ready to play!
           </p>
           <p className="mt-1 text-xs text-muted">
-            HTML, CSS, and JavaScript games to help you learn web development
-            step by step — start at HTML Hero and climb to Query Quest.
+            HTML, CSS, JavaScript, PHP, and SQL games to help you learn web
+            development step by step — start at HTML Hero and climb to Query
+            Quest.
           </p>
         </div>
       </main>
