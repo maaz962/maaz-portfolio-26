@@ -638,8 +638,8 @@ export default function GamesPage() {
             <p className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-amber-500/20 bg-amber-500/10 px-3 py-1.5 text-[0.65rem] text-amber-600">
               <Sparkles className="h-3 w-3" />
               A quick sign-in saves your progress, earns XP, builds daily
-              streaks and gets you on the leaderboard. You stay signed in until
-              you log out.
+              streaks and gets you on the leaderboard. Your session stays
+              active for up to a year, or until you log out.
             </p>
           )}
         </div>

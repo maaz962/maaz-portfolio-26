@@ -120,7 +120,8 @@ export function AuthModal({ open, onClose, onAuthed, initialMode = "login" }: Au
                 </h3>
                 <p className="text-[0.65rem] text-muted">
                   Save progress, earn XP, build streaks and climb the
-                  leaderboard — signed in until you log out
+                  leaderboard — signed in for up to a year, or until you log
+                  out
                 </p>
               </div>
             </div>
