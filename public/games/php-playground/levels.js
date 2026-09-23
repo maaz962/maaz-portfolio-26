@@ -15,8 +15,8 @@ window.__phpPlaygroundLevels = [
     concepts: ["variables"],
     shortDesc: "Declare a variable and echo it.",
     instruction:
-      'Declare <code>$city = "Lahore"</code> and <code>echo</code> it so the output is exactly <code>Lahore</code>.',
-    hint: "Variables start with <code>$</code>. Assign with <code>=</code>, then <code>echo $city;</code>",
+      'Create a variable that holds the string "Lahore" and print it, so the output is exactly <code>Lahore</code>.',
+    hint: "The variable name starts with <code>$</code> - pick a clear name for the city, store the string in it, then print the variable by name.",
     starter: "<?php\n\n",
     passValue: "Lahore",
     isFinal: false,
@@ -43,8 +43,8 @@ window.__phpPlaygroundLevels = [
     concepts: ["operators"],
     shortDesc: "Use arithmetic operators correctly.",
     instruction:
-      'Using <code>$a = 12</code>, <code>$b = 8</code> and <code>$c = 4</code>, print the result of <code>$a * $b + $c</code>.',
-    hint: "PHP follows normal math precedence: multiplication before addition.",
+      'Declare three variables for the values <code>12</code>, <code>8</code>, and <code>4</code>, multiply the first two, add the third to the product, then print the final result. The expected output is <code>100</code>.',
+    hint: "PHP follows normal math precedence - do the multiplication first, then the addition. If your result is wrong, double-check the order you applied the operators.",
     starter: "<?php\n\n",
     passValue: "100",
     isFinal: false,
@@ -187,8 +187,8 @@ window.__phpPlaygroundLevels = [
     concepts: ["??", "operators"],
     shortDesc: "Default values with the null coalescing operator.",
     instruction:
-      'Given <code>$config = ["theme" =&gt; "dark"]</code>, print <code>$config["timezone"]</code> using <code>??</code> so it defaults to <code>"default"</code>. The expected output is <code>default</code>.',
-    hint: "Write <code>$config[\"timezone\"] ?? \"default\"</code>. The <code>??</code> only kicks in when the key is missing.",
+      'A config array holds only a <code>"theme"</code> key right now. Read the <code>"timezone"</code> value from it, and fall back to <code>"default"</code> whenever that key is missing, then print the result. The expected output is <code>default</code>.',
+    hint: "The nullish coalescing operator (<code>??</code>) returns the value on its left, or the fallback on its right when the left side is missing or null. Reach into the config for the timezone value and let <code>??</code> supply the default when it is absent.",
     starter: "<?php\n\n",
     passValue: "default",
     isFinal: false,
