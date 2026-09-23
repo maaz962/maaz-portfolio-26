@@ -7,6 +7,7 @@ import {
   ArrowLeft,
   Gamepad2,
   Sparkles,
+  Trash2,
 } from "lucide-react";
 import { GlassNavbar } from "@/components/layout/glass-navbar";
 import { AuthGate } from "@/components/games/auth-gate";
@@ -134,7 +135,18 @@ export default function GridGardenPage() {
                   <span className="grid-editor-dot yellow" />
                   <span className="grid-editor-dot green" />
                 </div>
-                <span className="grid-editor-title">style.css</span>
+                <div className="grid-editor-title-row">
+                  <span className="grid-editor-title">style.css</span>
+                  <button
+                    id="clear-btn"
+                    type="button"
+                    className="grid-editor-clear"
+                    title="Clear code"
+                    aria-label="Clear code"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
+                </div>
               </div>
               <div className="grid-editor-body">
                 <div className="grid-line-numbers">

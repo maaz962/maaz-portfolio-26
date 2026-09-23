@@ -7,6 +7,7 @@ import {
   ArrowLeft,
   Gamepad2,
   Sparkles,
+  Trash2,
 } from "lucide-react";
 import { GlassNavbar } from "@/components/layout/glass-navbar";
 import { AuthGate } from "@/components/games/auth-gate";
@@ -136,7 +137,18 @@ export default function FlexboxZooPage() {
                   <span className="zoo-editor-dot yellow" />
                   <span className="zoo-editor-dot green" />
                 </div>
-                <span className="zoo-editor-title">style.css</span>
+                <div className="zoo-editor-title-row">
+                  <span className="zoo-editor-title">style.css</span>
+                  <button
+                    id="clear-btn"
+                    type="button"
+                    className="zoo-editor-clear"
+                    title="Clear code"
+                    aria-label="Clear code"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
+                </div>
               </div>
               <div className="zoo-editor-body">
                 <div id="zoo-line-numbers" className="zoo-line-numbers">

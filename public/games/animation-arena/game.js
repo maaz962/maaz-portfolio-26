@@ -1116,6 +1116,8 @@
     }
     if (cb) { cb.removeEventListener("click", checkAnswer); cb.addEventListener("click", checkAnswer); }
     if (runb) { runb.removeEventListener("click", handleRun); runb.addEventListener("click", handleRun); }
+    var clr = $("clear-btn");
+    if (clr) { clr.removeEventListener("click", handleReset); clr.addEventListener("click", handleReset); }
 
     STATE.currentLevel = 0;
     STATE.score = 0;

@@ -188,6 +188,25 @@
   margin-left: 0.25rem;
 }
 
+.hh-editor-clear {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: auto;
+  padding: 0.25rem;
+  border-radius: 0.375rem;
+  border: none;
+  background: none;
+  color: hsl(var(--muted));
+  cursor: pointer;
+  transition: color 0.15s ease, background 0.15s ease;
+}
+
+.hh-editor-clear:hover {
+  color: hsl(var(--foreground));
+  background: hsl(var(--foreground) / 0.08);
+}
+
 .hh-editor-body {
   position: relative;
   background: #282c34;

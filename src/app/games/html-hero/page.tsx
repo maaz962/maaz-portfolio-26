@@ -9,6 +9,7 @@ import {
   Sparkles,
   Terminal,
   Check,
+  Trash2,
 } from "lucide-react";
 import { GlassNavbar } from "@/components/layout/glass-navbar";
 import { AuthGate } from "@/components/games/auth-gate";
@@ -120,6 +121,15 @@ export default function HtmlHeroPage() {
                   <span className="hh-editor-dot green" />
                 </div>
                 <span className="hh-editor-title">index.html</span>
+                <button
+                  id="clear-btn"
+                  type="button"
+                  className="hh-editor-clear"
+                  title="Clear code"
+                  aria-label="Clear code"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </button>
               </div>
               <div className="hh-editor-body">
                 <textarea

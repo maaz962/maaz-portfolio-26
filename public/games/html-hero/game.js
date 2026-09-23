@@ -789,6 +789,15 @@
     }
   }
 
+  function handleClear() {
+    var level = LEVELS[STATE.currentLevel];
+    var ta = $("html-editor");
+    if (!ta) return;
+    ta.value = level.starter || "";
+    hideToast();
+    applyHTML(level.starter || "");
+  }
+
   function initGame() {
     var ta = $("html-editor");
     var pb = $("prev-btn");
@@ -809,6 +818,8 @@
       nb.removeEventListener("click", nextHandler);
       nb.addEventListener("click", nextHandler);
     }
+    var clr = $("clear-btn");
+    if (clr) { clr.removeEventListener("click", handleClear); clr.addEventListener("click", handleClear); }
 
     STATE.currentLevel = 0;
     STATE.score = 0;

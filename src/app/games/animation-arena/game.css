@@ -217,6 +217,30 @@
   color: hsl(var(--muted));
 }
 
+.aaa-editor-title-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.aaa-editor-clear {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.25rem;
+  border-radius: 0.375rem;
+  border: none;
+  background: none;
+  color: hsl(var(--muted));
+  cursor: pointer;
+  transition: color 0.15s ease, background 0.15s ease;
+}
+
+.aaa-editor-clear:hover {
+  color: hsl(var(--foreground));
+  background: hsl(var(--foreground) / 0.08);
+}
+
 .aaa-editor-body {
   display: flex;
   flex: 1;

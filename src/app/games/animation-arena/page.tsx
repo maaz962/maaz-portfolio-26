@@ -11,6 +11,7 @@ import {
   Gamepad2,
   Lock,
   Sparkles,
+  Trash2,
 } from "lucide-react";
 import { GlassNavbar } from "@/components/layout/glass-navbar";
 import { AuthGate } from "@/components/games/auth-gate";
@@ -454,14 +455,25 @@ export default function AnimationArenaPage() {
                     <span className="aaa-editor-dot green" />
                   </div>
                   <span className="aaa-editor-title">style.css</span>
-                  <span
-                    className="aaa-editor-target-badge"
-                    role="note"
-                    aria-label="This CSS targets the arena robot"
-                  >
-                    <span className="aaa-editor-target-dot" aria-hidden="true" />
-                    target: robot
-                  </span>
+                  <div className="aaa-editor-title-row">
+                    <button
+                      id="clear-btn"
+                      type="button"
+                      className="aaa-editor-clear"
+                      title="Clear code"
+                      aria-label="Clear code"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                    <span
+                      className="aaa-editor-target-badge"
+                      role="note"
+                      aria-label="This CSS targets the arena robot"
+                    >
+                      <span className="aaa-editor-target-dot" aria-hidden="true" />
+                      target: robot
+                    </span>
+                  </div>
                 </div>
                 <div className="aaa-editor-body">
                   <div id="aaa-line-numbers" className="aaa-line-numbers">

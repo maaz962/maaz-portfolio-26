@@ -887,6 +887,8 @@
     }
     if (run) { run.removeEventListener("click", handleRun); run.addEventListener("click", handleRun); }
     if (check) { check.removeEventListener("click", checkAnswer); check.addEventListener("click", checkAnswer); }
+    var clr = $("clear-btn");
+    if (clr) { clr.removeEventListener("click", handleReset); clr.addEventListener("click", handleReset); }
 
     STATE.currentLevel = 0;
     STATE.score = 0;
