@@ -1,11 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import Script from "next/script";
 import {
   ArrowLeft,
+  Check,
+  ChevronDown,
+  FolderOpen,
   Gamepad2,
+  Lock,
   Sparkles,
   Trash2,
 } from "lucide-react";
@@ -18,11 +22,41 @@ import { useAuth } from "@/lib/auth-context";
 import "./game.css";
 
 const GAME_SLUG = "flexbox-zoo";
+const FALLBACK_TOTAL_LEVELS = 15;
+
+interface ZooLevelMeta {
+  id: number;
+  title: string;
+  difficulty: string;
+}
+
+interface ZooGameState {
+  currentLevel: number;
+  score: number;
+  completed: Record<number, boolean>;
+  totalLevels: number;
+}
+
+const DIFFICULTY_ORDER = ["beginner", "intermediate", "advanced"];
+
+const DIFFICULTY_LABELS: Record<string, string> = {
+  beginner: "Beginner",
+  intermediate: "Intermediate",
+  advanced: "Advanced",
+};
 
 export default function FlexboxZooPage() {
   const { user: currentUser, loading: authLoading } = useAuth();
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authRequest, setAuthRequest] = useState<"login" | "register">("login");
+  const [showLevelSelect, setShowLevelSelect] = useState(false);
+  const [levels, setLevels] = useState<ZooLevelMeta[]>([]);
+  const [gameState, setGameState] = useState<ZooGameState>({
+    currentLevel: 0,
+    score: 0,
+    completed: {},
+    totalLevels: FALLBACK_TOTAL_LEVELS,
+  });
 
   const gamesAuthed = Boolean(currentUser) && !authLoading;
 
@@ -33,6 +67,59 @@ export default function FlexboxZooPage() {
     resumeKey: "__resumeFlexboxZoo",
     emitterKey: "__onFlexboxZooProgress",
   });
+
+  useEffect(() => {
+    if (!gamesAuthed) return;
+    const w = window as any;
+    let alive = true;
+    let levelsTimer: ReturnType<typeof setTimeout> | undefined;
+    let stateTimer: ReturnType<typeof setTimeout> | undefined;
+
+    const pollLevels = () => {
+      if (!alive) return;
+      if (typeof w.__getFlexboxZooLevels === "function") {
+        const meta = w.__getFlexboxZooLevels();
+        if (Array.isArray(meta) && meta.length) {
+          setLevels(meta);
+        } else {
+          levelsTimer = setTimeout(pollLevels, 120);
+        }
+      } else {
+        levelsTimer = setTimeout(pollLevels, 100);
+      }
+    };
+
+    const pullState = () => {
+      if (!alive) return;
+      if (typeof w.__getFlexboxZooState === "function") {
+        const s = w.__getFlexboxZooState();
+        if (s && s.totalLevels > 0) {
+          setGameState({ ...gameState, ...s });
+        } else {
+          stateTimer = setTimeout(pullState, 120);
+        }
+      } else {
+        stateTimer = setTimeout(pullState, 120);
+      }
+    };
+
+    const onState = (e: Event) => {
+      const detail = (e as CustomEvent)?.detail;
+      if (detail) setGameState(detail);
+    };
+
+    pollLevels();
+    const bootTimer = setTimeout(pullState, 150);
+    window.addEventListener("zoo-state", onState);
+    return () => {
+      alive = false;
+      clearTimeout(levelsTimer);
+      clearTimeout(stateTimer);
+      clearTimeout(bootTimer);
+      window.removeEventListener("zoo-state", onState);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gamesAuthed]);
 
   const openAuthModal = () => {
     setAuthRequest("login");
@@ -85,6 +172,100 @@ export default function FlexboxZooPage() {
         <div className="zoo-game-wrapper">
           {/* LEFT SIDEBAR — html structure */}
           <div className="zoo-sidebar">
+            {/* All Levels Drawer */}
+            <div className="zoo-level-select">
+              <button
+                type="button"
+                className={"zoo-level-select-toggle" + (showLevelSelect ? " open" : "")}
+                aria-expanded={showLevelSelect}
+                onClick={() => setShowLevelSelect((v) => !v)}
+              >
+                <span className="zoo-ls-label">
+                  <FolderOpen className="h-3 w-3" />
+                  All Levels
+                </span>
+                <span className="zoo-ls-count">
+                  {levels.filter((l) => gameState.completed[l.id - 1]).length}/{gameState.totalLevels}
+                </span>
+                <ChevronDown
+                  className={"zoo-ls-chevron" + (showLevelSelect ? " open" : "")}
+                />
+              </button>
+
+              {showLevelSelect && (
+                <div className="zoo-level-select-body">
+                  {DIFFICULTY_ORDER.map((tierKey) => {
+                    const tierLevels = levels.filter((l) => l.difficulty === tierKey);
+                    if (!tierLevels.length) return null;
+                    const doneCount = tierLevels.filter(
+                      (l) => gameState.completed[l.id - 1]
+                    ).length;
+                    return (
+                      <div key={tierKey} className={"zoo-tier-group " + tierKey}>
+                        <div className="zoo-tier-head">
+                          <span className="zoo-tier-name">
+                            {DIFFICULTY_LABELS[tierKey] || tierKey}
+                          </span>
+                          <span className="zoo-tier-count">
+                            {doneCount}/{tierLevels.length}
+                          </span>
+                        </div>
+                        <div className="zoo-level-grid">
+                          {tierLevels.map((level) => {
+                            const idx = level.id - 1;
+                            const doneLevel = !!gameState.completed[idx];
+                            const current = gameState.currentLevel === idx;
+                            const locked = !doneLevel && idx > gameState.currentLevel;
+                            return (
+                              <button
+                                key={level.id}
+                                type="button"
+                                disabled={locked}
+                                className={
+                                  "zoo-level-card " +
+                                  level.difficulty +
+                                  (doneLevel ? " done" : "") +
+                                  (current ? " current" : "")
+                                }
+                                title={level.title}
+                                onClick={() => {
+                                  const win = window as any;
+                                  if (typeof win.__goToFlexboxZooLevel === "function") {
+                                    win.__goToFlexboxZooLevel(idx);
+                                  }
+                                  setShowLevelSelect(false);
+                                }}
+                              >
+                                <span className="zoo-lk-num">
+                                  {doneLevel ? (
+                                    <Check className="zoo-lk-check" />
+                                  ) : locked ? (
+                                    <Lock className="zoo-lk-lock" />
+                                  ) : (
+                                    level.id
+                                  )}
+                                </span>
+                                <span className="zoo-lk-title">{level.title}</span>
+                                <span className="zoo-lk-meta">
+                                  <span className="zoo-lk-diff">
+                                    {DIFFICULTY_LABELS[level.difficulty] || level.difficulty}
+                                  </span>
+                                </span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })}
+                  <div className="zoo-ls-legend">
+                    Levels unlock in order - solve a level to unlock the next.
+                    Solved levels stay accessible.
+                  </div>
+                </div>
+              )}
+            </div>
+
             {/* Level Info — html */}
             <div className="zoo-level-info">
               <div className="zoo-level-header">

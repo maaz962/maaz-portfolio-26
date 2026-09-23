@@ -1,14 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import Script from "next/script";
 import {
   ArrowLeft,
+  Check,
+  ChevronDown,
+  FolderOpen,
   Gamepad2,
   Sparkles,
   Terminal,
-  Check,
   Trash2,
 } from "lucide-react";
 import { GlassNavbar } from "@/components/layout/glass-navbar";
@@ -22,10 +24,39 @@ import "./game.css";
 const GAME_SLUG = "html-hero";
 const TOTAL_LEVELS = 16;
 
+interface HhLevelMeta {
+  id: number;
+  title: string;
+  difficulty: string;
+}
+
+interface HhGameState {
+  currentLevel: number;
+  score: number;
+  completed: Record<number, boolean>;
+  totalLevels: number;
+}
+
+const DIFFICULTY_ORDER = ["easy", "intermediate", "advanced"];
+
+const DIFFICULTY_LABELS: Record<string, string> = {
+  easy: "Easy",
+  intermediate: "Intermediate",
+  advanced: "Advanced",
+};
+
 export default function HtmlHeroPage() {
   const { user: currentUser, loading: authLoading } = useAuth();
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authRequest, setAuthRequest] = useState<"login" | "register">("login");
+  const [showLevelSelect, setShowLevelSelect] = useState(false);
+  const [levels, setLevels] = useState<HhLevelMeta[]>([]);
+  const [gameState, setGameState] = useState<HhGameState>({
+    currentLevel: 0,
+    score: 0,
+    completed: {},
+    totalLevels: TOTAL_LEVELS,
+  });
 
   const gamesAuthed = Boolean(currentUser) && !authLoading;
 
@@ -36,6 +67,59 @@ export default function HtmlHeroPage() {
     resumeKey: "__resumeHtmlHero",
     emitterKey: "__onHtmlHeroProgress",
   });
+
+  useEffect(() => {
+    if (!gamesAuthed) return;
+    const w = window as any;
+    let alive = true;
+    let levelsTimer: ReturnType<typeof setTimeout> | undefined;
+    let stateTimer: ReturnType<typeof setTimeout> | undefined;
+
+    const pollLevels = () => {
+      if (!alive) return;
+      if (typeof w.__getHtmlHeroLevels === "function") {
+        const meta = w.__getHtmlHeroLevels();
+        if (Array.isArray(meta) && meta.length) {
+          setLevels(meta);
+        } else {
+          levelsTimer = setTimeout(pollLevels, 120);
+        }
+      } else {
+        levelsTimer = setTimeout(pollLevels, 100);
+      }
+    };
+
+    const pullState = () => {
+      if (!alive) return;
+      if (typeof w.__getHtmlHeroState === "function") {
+        const s = w.__getHtmlHeroState();
+        if (s && s.totalLevels > 0) {
+          setGameState({ ...gameState, ...s });
+        } else {
+          stateTimer = setTimeout(pullState, 120);
+        }
+      } else {
+        stateTimer = setTimeout(pullState, 120);
+      }
+    };
+
+    const onState = (e: Event) => {
+      const detail = (e as CustomEvent)?.detail;
+      if (detail) setGameState(detail);
+    };
+
+    pollLevels();
+    const bootTimer = setTimeout(pullState, 150);
+    window.addEventListener("hh-state", onState);
+    return () => {
+      alive = false;
+      clearTimeout(levelsTimer);
+      clearTimeout(stateTimer);
+      clearTimeout(bootTimer);
+      window.removeEventListener("hh-state", onState);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gamesAuthed]);
 
   const openAuthModal = () => {
     setAuthRequest("login");
@@ -88,6 +172,96 @@ export default function HtmlHeroPage() {
         <div className="hh-game">
           {/* LEFT COLUMN */}
           <div className="hh-sidebar">
+            {/* All Levels Drawer */}
+            <div className="hh-level-select">
+              <button
+                type="button"
+                className={"hh-level-select-toggle" + (showLevelSelect ? " open" : "")}
+                aria-expanded={showLevelSelect}
+                onClick={() => setShowLevelSelect((v) => !v)}
+              >
+                <span className="hh-ls-label">
+                  <FolderOpen className="h-3 w-3" />
+                  All Levels
+                </span>
+                <span className="hh-ls-count">
+                  {levels.filter((l) => gameState.completed[l.id - 1]).length}/{gameState.totalLevels}
+                </span>
+                <ChevronDown
+                  className={"hh-ls-chevron" + (showLevelSelect ? " open" : "")}
+                />
+              </button>
+
+              {showLevelSelect && (
+                <div className="hh-level-select-body">
+                  {DIFFICULTY_ORDER.map((tierKey) => {
+                    const tierLevels = levels.filter((l) => l.difficulty === tierKey);
+                    if (!tierLevels.length) return null;
+                    const doneCount = tierLevels.filter(
+                      (l) => gameState.completed[l.id - 1]
+                    ).length;
+                    return (
+                      <div key={tierKey} className={"hh-tier-group " + tierKey}>
+                        <div className="hh-tier-head">
+                          <span className="hh-tier-name">
+                            {DIFFICULTY_LABELS[tierKey] || tierKey}
+                          </span>
+                          <span className="hh-tier-count">
+                            {doneCount}/{tierLevels.length}
+                          </span>
+                        </div>
+                        <div className="hh-level-grid">
+                          {tierLevels.map((level) => {
+                            const idx = level.id - 1;
+                            const doneLevel = !!gameState.completed[idx];
+                            const current = gameState.currentLevel === idx;
+                            return (
+                              <button
+                                key={level.id}
+                                type="button"
+                                className={
+                                  "hh-level-card " +
+                                  level.difficulty +
+                                  (doneLevel ? " done" : "") +
+                                  (current ? " current" : "")
+                                }
+                                title={level.title}
+                                onClick={() => {
+                                  const win = window as any;
+                                  if (typeof win.__goToHtmlHeroLevel === "function") {
+                                    win.__goToHtmlHeroLevel(idx);
+                                  }
+                                  setShowLevelSelect(false);
+                                }}
+                              >
+                                <span className="hh-lk-num">
+                                  {doneLevel ? (
+                                    <Check className="hh-lk-check" />
+                                  ) : (
+                                    level.id
+                                  )}
+                                </span>
+                                <span className="hh-lk-title">{level.title}</span>
+                                <span className="hh-lk-meta">
+                                  <span className="hh-lk-diff">
+                                    {DIFFICULTY_LABELS[level.difficulty] || level.difficulty}
+                                  </span>
+                                </span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })}
+                  <div className="hh-ls-legend">
+                    All levels are open - jump to any challenge. Every card is
+                    clickable; Preview always reflects the level you pick.
+                  </div>
+                </div>
+              )}
+            </div>
+
             <div className="hh-level-info">
               <div className="hh-level-header">
                 <span className="hh-level-badge">

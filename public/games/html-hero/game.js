@@ -234,6 +234,23 @@
         totalLevels: LEVELS.length,
       });
     }
+    publishState();
+  }
+
+  function publishState() {
+    if (typeof window === "undefined") return;
+    try {
+      window.dispatchEvent(
+        new CustomEvent("hh-state", {
+          detail: {
+            currentLevel: STATE.currentLevel,
+            score: STATE.score,
+            completed: STATE.completed,
+            totalLevels: LEVELS.length,
+          },
+        })
+      );
+    } catch (e) { /* no-op */ }
   }
 
   function resumeGame(saved) {
@@ -246,6 +263,7 @@
     var s = $("score-display");
     if (s) s.textContent = "Score: " + STATE.score;
     renderLevel();
+    publishState();
   }
 
   function $(id) { return document.getElementById(id); }
@@ -613,6 +631,22 @@
     }
   }
 
+  function isLevelUnlocked(i) {
+    return i >= 0 && i < LEVELS.length;
+  }
+
+  function gotoLevel(index) {
+    var i = index | 0;
+    if (i < 0 || i >= LEVELS.length) return;
+    if (!isLevelUnlocked(i)) {
+      showToast("This level is locked - solve the earlier levels to unlock it.", true);
+      return;
+    }
+    STATE.currentLevel = i;
+    renderLevel();
+    emitProgress();
+  }
+
   function nextHandler() {
     nextLevel();
   }
@@ -849,5 +883,11 @@
         totalLevels: LEVELS.length,
       };
     };
+    window.__getHtmlHeroLevels = function () {
+      return LEVELS.map(function (lv) {
+        return { id: lv.id, title: lv.title, difficulty: lv.difficulty };
+      });
+    };
+    window.__goToHtmlHeroLevel = function (index) { gotoLevel(index); };
   }
 })();
