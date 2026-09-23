@@ -511,13 +511,9 @@
   font-weight: 700;
   border: none;
   cursor: pointer;
-  background: hsl(0 0% 100% / 0.12);
+  background: hsl(var(--foreground) / 0.1);
   color: hsl(var(--foreground));
   transition: all 0.2s ease;
-}
-
-.dark .aaa-check-btn {
-  background: hsl(var(--foreground) / 0.1);
 }
 
 .aaa-check-btn:hover {

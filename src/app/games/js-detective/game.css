@@ -348,6 +348,12 @@
   filter: brightness(1.1);
 }
 
+.jsd-run-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  filter: none;
+}
+
 .jsd-nav-buttons {
   display: flex;
   gap: 0.4rem;
@@ -390,17 +396,19 @@
   font-weight: 700;
   border: none;
   cursor: pointer;
-  background: hsl(0 0% 100% / 0.12);
+  background: hsl(var(--foreground) / 0.1);
   color: hsl(var(--foreground));
   transition: all 0.2s ease;
 }
 
-.dark .jsd-check-btn {
-  background: hsl(var(--foreground) / 0.1);
-}
-
 .jsd-check-btn:hover {
   filter: brightness(1.1);
+}
+
+.jsd-check-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  filter: none;
 }
 
 .jsd-check-btn.ready {
