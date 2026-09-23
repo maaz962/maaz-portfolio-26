@@ -11,7 +11,7 @@
       hint: "Create the tag with <code>&lt;h1&gt;</code>, put the text in the middle, then close it with <code>&lt;/h1&gt;</code>.",
       accept: { tags: ["h1"], textContains: "hello world" },
       starter: "",
-      placeholder: "<h1>Hello World</h1>",
+      placeholder: "Write your HTML here...",
     },
     {
       id: 2,
@@ -22,7 +22,7 @@
       hint: "Wrap a sentence in <code>&lt;p&gt;...&lt;/p&gt;</code>. Try to make it at least 15 characters long.",
       accept: { tags: ["p"], minTextLength: 15 },
       starter: "",
-      placeholder: "<p>I love building things for the web!</p>",
+      placeholder: "Write your HTML here...",
     },
     {
       id: 3,
@@ -33,7 +33,7 @@
       hint: "Use <code>&lt;ul&gt;</code> for the list and a <code>&lt;li&gt;</code> inside it for every point.",
       accept: { tags: ["ul"], count: [{ tag: "li", min: 2 }] },
       starter: "",
-      placeholder: "<ul>\n  <li>Learn HTML</li>\n  <li>Master CSS</li>\n</ul>",
+      placeholder: "Write your HTML here...",
     },
     {
       id: 4,
@@ -44,7 +44,7 @@
       hint: "Write <code>&lt;a href=\"https://...\"&gt;Link text&lt;/a&gt;</code>. The address goes inside the quotes.",
       accept: { tags: ["a"], attrs: [{ tag: "a", attr: "href" }] },
       starter: "",
-      placeholder: '<a href="https://developer.mozilla.org">Learn more</a>',
+      placeholder: "Write your HTML here...",
     },
     {
       id: 5,
@@ -55,7 +55,7 @@
       hint: "Use <code>&lt;img src=\"https://...\"&gt;</code>. Img is a self-closing tag, so no closing tag is needed.",
       accept: { tags: ["img"], attrs: [{ tag: "img", attr: "src" }] },
       starter: "",
-      placeholder: '<img src="https://picsum.photos/200" alt="A nice photo">',
+      placeholder: "Write your HTML here...",
     },
     {
       id: 6,
@@ -66,7 +66,7 @@
       hint: "An <code>&lt;ol&gt;</code> numbers its items automatically. Put <code>&lt;li&gt;</code> items inside.",
       accept: { tags: ["ol"], count: [{ tag: "li", min: 2 }] },
       starter: "",
-      placeholder: "<ol>\n  <li>Open the editor</li>\n  <li>Write some HTML</li>\n</ol>",
+      placeholder: "Write your HTML here...",
     },
     {
       id: 7,
@@ -77,7 +77,7 @@
       hint: "<code>&lt;strong&gt;</code> makes text bold, <code>&lt;em&gt;</code> makes it italic.",
       accept: { tags: ["strong", "em", "p"] },
       starter: "",
-      placeholder: "<p>HTML is <strong>powerful</strong> and <em>elegant</em>.</p>",
+      placeholder: "Write your HTML here...",
     },
     {
       id: 8,
@@ -88,7 +88,7 @@
       hint: "<code>&lt;h1&gt;</code> is the biggest, <code>&lt;h2&gt;</code> smaller, <code>&lt;h3&gt;</code> smaller still. Structure your page as a news site would.",
       accept: { tags: ["h1", "h2", "h3"] },
       starter: "",
-      placeholder: "<h1>Site Title</h1>\n<h2>Section</h2>\n<h3>Story</h3>",
+      placeholder: "Write your HTML here...",
     },
     {
       id: 9,
@@ -99,7 +99,7 @@
       hint: "A table has <code>&lt;table&gt;</code> → <code>&lt;tr&gt;</code> (row) → <code>&lt;td&gt;</code> (cell). Define all cells first.",
       accept: { tags: ["table"], count: [{ tag: "td", min: 4 }] },
       starter: "",
-      placeholder: "<table>\n  <tr>\n    <td>Name</td>\n    <td>Skill</td>\n  </tr>\n  <tr>\n    <td>Maaz</td>\n    <td>HTML</td>\n  </tr>\n</table>",
+      placeholder: "Write your HTML here...",
     },
     {
       id: 10,
@@ -110,7 +110,7 @@
       hint: "Write <code>&lt;button&gt;Click me&lt;/button&gt;</code>. The text between the tags is what people see.",
       accept: { tags: ["button"] },
       starter: "",
-      placeholder: "<button>Join the adventure</button>",
+      placeholder: "Write your HTML here...",
     },
     {
       id: 11,
@@ -121,7 +121,7 @@
       hint: "<code>&lt;div&gt;</code> is a block container, <code>&lt;span&gt;</code> wraps text inline. Both need closing tags.",
       accept: { tags: ["div", "span"] },
       starter: "",
-      placeholder: "<div>\n  <h2>Hobbies</h2>\n  <p>I love <span>coding</span> and <span>design</span>.</p>\n</div>",
+      placeholder: "Write your HTML here...",
     },
     {
       id: 12,
@@ -136,7 +136,7 @@
         count: [{ tag: "a", min: 2 }],
       },
       starter: "",
-      placeholder: "<nav>\n  <a href=\"#home\">Home</a>\n  <a href=\"#about\">About</a>\n</nav>",
+      placeholder: "Write your HTML here...",
     },
     {
       id: 13,
@@ -150,7 +150,7 @@
         attrs: [{ tag: "label", attr: "for" }],
       },
       starter: "",
-      placeholder: '<form>\n  <label for="city">Your city</label>\n  <input id="city" type="text">\n</form>',
+      placeholder: "Write your HTML here...",
     },
     {
       id: 14,
@@ -164,7 +164,7 @@
         count: [{ tag: "option", min: 3 }],
       },
       starter: "",
-      placeholder: "<select>\n  <option>Tea</option>\n  <option>Coffee</option>\n  <option>Water</option>\n</select>\n<textarea rows=\"3\">Write your thoughts...</textarea>",
+      placeholder: "Write your HTML here...",
     },
     {
       id: 15,
@@ -175,7 +175,7 @@
       hint: "Semantic tags give meaning: <code>&lt;header&gt;</code> top, <code>&lt;main&gt;</code> middle, <code>&lt;footer&gt;</code> bottom. Sections split content.",
       accept: { tags: ["header", "main", "section", "footer", "h1"] },
       starter: "",
-      placeholder: "<header>\n  <h1>My Portfolio</h1>\n</header>\n<main>\n  <section>\n    <h2>About</h2>\n  </section>\n</main>\n<footer>\n  <p>&copy; 2026</p>\n</footer>",
+      placeholder: "Write your HTML here...",
     },
     {
       id: 16,

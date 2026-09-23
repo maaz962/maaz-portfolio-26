@@ -8,7 +8,7 @@
       hint: "The magic property is <code>display: flex</code>",
       difficulty: "beginner",
       accept: [{ display: "flex" }],
-      placeholder: "display: flex",
+      placeholder: "Write your flexbox code here...",
       items: [
         { name: "Lion", icon: "\uD83E\uDD81", bg: "linear-gradient(135deg, #f97316, #ea580c)" },
         { name: "Tiger", icon: "\uD83D\uDC2F", bg: "linear-gradient(135deg, #f59e0b, #d97706)" },
@@ -23,7 +23,7 @@
       hint: "Use <code>flex-direction</code> with a value that reverses the row.",
       difficulty: "beginner",
       accept: [{ "flex-direction": "row-reverse" }],
-      placeholder: "flex-direction: row-reverse",
+      placeholder: "Write your flexbox code here...",
       items: [
         { name: "Crow", icon: "\uD83D\uDC26", bg: "linear-gradient(135deg, #1e293b, #334155)" },
         { name: "Duck", icon: "\uD83D\uDC24", bg: "linear-gradient(135deg, #facc15, #eab308)" },
@@ -38,7 +38,7 @@
       hint: "Change <code>flex-direction</code> so items flow downward.",
       difficulty: "beginner",
       accept: [{ "flex-direction": "column" }],
-      placeholder: "flex-direction: column",
+      placeholder: "Write your flexbox code here...",
       items: [
         { name: "Dog", icon: "\uD83D\uDC36", bg: "linear-gradient(135deg, #92400e, #78350f)" },
         { name: "Cat", icon: "\uD83D\uDC31", bg: "linear-gradient(135deg, #f97316, #ea580c)" },
@@ -53,7 +53,7 @@
       hint: "Use <code>flex-wrap</code> to allow wrapping.",
       difficulty: "beginner",
       accept: [{ "flex-wrap": "wrap" }, { "flex-wrap": "wrap-reverse" }],
-      placeholder: "flex-wrap: wrap",
+      placeholder: "Write your flexbox code here...",
       items: [
         { name: "Dog", icon: "\uD83D\uDC36", bg: "linear-gradient(135deg, #92400e, #78350f)" },
         { name: "Horse", icon: "\uD83D\uDC34", bg: "linear-gradient(135deg, #78350f, #57534e)" },
@@ -69,7 +69,7 @@
       hint: "<code>justify-content</code> controls horizontal alignment. Which value pushes to the end?",
       difficulty: "beginner",
       accept: [{ "justify-content": "flex-end" }],
-      placeholder: "justify-content: flex-end",
+      placeholder: "Write your flexbox code here...",
       items: [
         { name: "Monkey", icon: "\uD83E\uDD85", bg: "linear-gradient(135deg, #78350f, #57534e)" },
         { name: "Dolphin", icon: "\uD83E\uDD89", bg: "linear-gradient(135deg, #0ea5e9, #0284c7)" },
@@ -84,7 +84,7 @@
       hint: "There's a <code>justify-content</code> value specifically for centering.",
       difficulty: "beginner",
       accept: [{ "justify-content": "center" }],
-      placeholder: "justify-content: center",
+      placeholder: "Write your flexbox code here...",
       items: [
         { name: "Ape", icon: "\uD83D\uDC35", bg: "linear-gradient(135deg, #d97706, #b45309)" },
         { name: "Monkey", icon: "\uD83D\uDE35", bg: "linear-gradient(135deg, #ca8a04, #a16207)" },
@@ -99,7 +99,7 @@
       hint: "<code>justify-content</code> has a value that puts equal space on both sides of each item.",
       difficulty: "beginner",
       accept: [{ "justify-content": "space-around" }],
-      placeholder: "justify-content: space-around",
+      placeholder: "Write your flexbox code here...",
       items: [
         { name: "Fish", icon: "\uD83D\uDC1F", bg: "linear-gradient(135deg, #3b82f6, #2563eb)" },
         { name: "Tropical", icon: "\uD83D\uDC20", bg: "linear-gradient(135deg, #06b6d4, #0891b2)" },
@@ -114,7 +114,7 @@
       hint: "<code>justify-content</code> has a value that puts space only between items.",
       difficulty: "beginner",
       accept: [{ "justify-content": "space-between" }],
-      placeholder: "justify-content: space-between",
+      placeholder: "Write your flexbox code here...",
       items: [
         { name: "Fish", icon: "\uD83D\uDC1F", bg: "linear-gradient(135deg, #3b82f6, #2563eb)" },
         { name: "Tropical", icon: "\uD83D\uDC20", bg: "linear-gradient(135deg, #06b6d4, #0891b2)" },
@@ -129,7 +129,7 @@
       hint: "<code>align-items</code> controls the vertical (cross) axis.",
       difficulty: "intermediate",
       accept: [{ "align-items": "flex-end" }],
-      placeholder: "align-items: flex-end",
+      placeholder: "Write your flexbox code here...",
       items: [
         { name: "Croc", icon: "\uD83D\uDC0A", bg: "linear-gradient(135deg, #15803d, #166534)" },
         { name: "Turtle", icon: "\uD83D\uDC22", bg: "linear-gradient(135deg, #65a30d, #4d7c0f)" },
@@ -147,7 +147,7 @@
         { "justify-content": "center", "align-items": "center" },
         { "align-items": "center", "justify-content": "center" },
       ],
-      placeholder: "justify-content: center\nalign-items: center",
+      placeholder: "Write your flexbox code here...",
       multiLine: true,
       items: [
         { name: "Rabbit", icon: "\uD83D\uDC30", bg: "linear-gradient(135deg, #f472b6, #ec4899)" },
@@ -166,7 +166,7 @@
         { "justify-content": "flex-end", "align-items": "flex-end" },
         { "align-items": "flex-end", "justify-content": "flex-end" },
       ],
-      placeholder: "justify-content: flex-end\nalign-items: flex-end",
+      placeholder: "Write your flexbox code here...",
       multiLine: true,
       items: [
         { name: "Cat", icon: "\uD83D\uDC31", bg: "linear-gradient(135deg, #f97316, #ea580c)" },
@@ -182,7 +182,7 @@
       hint: "Use <code>align-self</code> to override the group on one child.",
       difficulty: "advanced",
       accept: [{ "align-self": "flex-end" }],
-      placeholder: "align-self: flex-end",
+      placeholder: "Write your flexbox code here...",
       items: [
         { name: "Lion", icon: "\uD83E\uDD81", bg: "linear-gradient(135deg, #ea580c, #c2410c)", special: true },
         { name: "Elephant", icon: "\uD83D\uDC18", bg: "linear-gradient(135deg, #6b7280, #4b5563)" },
@@ -200,7 +200,7 @@
         { "flex-direction": "row-reverse", "justify-content": "flex-end" },
         { "justify-content": "flex-end", "flex-direction": "row-reverse" },
       ],
-      placeholder: "flex-direction: row-reverse\njustify-content: flex-end",
+      placeholder: "Write your flexbox code here...",
       multiLine: true,
       items: [
         { name: "Wolf", icon: "\uD83D\uDC3A", bg: "linear-gradient(135deg, #475569, #334155)" },
@@ -219,7 +219,7 @@
         { gap: "20px" }, { gap: "2rem" }, { gap: "30px" },
         { gap: "40px" }, { gap: "50px" }, { gap: "2.5rem" },
       ],
-      placeholder: "gap: 20px",
+      placeholder: "Write your flexbox code here...",
       items: [
         { name: "Unicorn", icon: "\uD83E\uDD84", bg: "linear-gradient(135deg, #a855f7, #9333ea)" },
         { name: "Dragon", icon: "\uD83D\uDC32", bg: "linear-gradient(135deg, #16a34a, #15803d)" },
@@ -241,7 +241,7 @@
         { "flex-wrap": "wrap", "justify-content": "center", "align-content": "center" },
         { "flex-wrap": "wrap", "align-content": "center", "justify-content": "center" },
       ],
-      placeholder: "justify-content: center\nalign-content: center\nflex-wrap: wrap",
+      placeholder: "Write your flexbox code here...",
       multiLine: true,
       items: [
         { name: "Unicorn", icon: "\uD83E\uDD84", bg: "linear-gradient(135deg, #a855f7, #9333ea)" },

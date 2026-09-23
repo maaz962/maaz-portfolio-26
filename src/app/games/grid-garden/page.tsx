@@ -340,7 +340,7 @@ export default function GridGardenPage() {
                   <textarea
                     id="css-editor"
                     className="grid-editor-textarea"
-                    placeholder="display: grid"
+                    placeholder="Write your grid code here..."
                     autoFocus
                     autoCapitalize="none"
                     spellCheck={false}

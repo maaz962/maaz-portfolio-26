@@ -309,7 +309,7 @@ export default function HtmlHeroPage() {
                 <textarea
                   id="html-editor"
                   className="hh-editor-textarea"
-                  placeholder='<h1>Hello World</h1>'
+                  placeholder="Write your HTML here..."
                   autoFocus
                   autoCapitalize="none"
                   autoCorrect="off"

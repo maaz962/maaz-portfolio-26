@@ -342,7 +342,7 @@ export default function FlexboxZooPage() {
                   <textarea
                     id="css-editor"
                     className="zoo-editor-textarea"
-                    placeholder="display: flex"
+                    placeholder="Write your flexbox code here..."
                     autoFocus
                     autoCapitalize="none"
                     spellCheck={false}

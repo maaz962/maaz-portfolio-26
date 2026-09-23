@@ -64,7 +64,7 @@
       accept: [
         { "transition": "background-color 0.4s" },
       ],
-      placeholder: "transition: background-color 0.4s",
+      placeholder: "Write your CSS here...",
       multiLine: false,
       hover: false,
       concepts: ["transition", "duration"],
@@ -80,7 +80,7 @@
       accept: [
         { "transition": "opacity 0.6s ease-in-out" },
       ],
-      placeholder: "transition: opacity 0.6s ease-in-out",
+      placeholder: "Write your CSS here...",
       multiLine: false,
       hover: false,
       concepts: ["transition", "timing"],
@@ -96,7 +96,7 @@
       accept: [
         { "transform": "translatex(80px)" },
       ],
-      placeholder: "transform: translateX(80px)",
+      placeholder: "Write your CSS here...",
       multiLine: false,
       hover: false,
       concepts: ["transform", "translate"],
@@ -113,7 +113,7 @@
       accept: [
         { "transform": "rotate(45deg)" },
       ],
-      placeholder: "transform: rotate(45deg)",
+      placeholder: "Write your CSS here...",
       multiLine: false,
       hover: false,
       concepts: ["transform", "rotate"],
@@ -129,7 +129,7 @@
       accept: [
         { "transform": "scale(1.5)" },
       ],
-      placeholder: "transform: scale(1.5)",
+      placeholder: "Write your CSS here...",
       multiLine: false,
       hover: false,
       concepts: ["transform", "scale"],
@@ -145,7 +145,7 @@
       accept: [
         { "animation": "pulse 1.5s" },
       ],
-      placeholder: "animation: pulse 1.5s",
+      placeholder: "Write your CSS here...",
       multiLine: false,
       hover: false,
       concepts: ["animation", "keyframes"],
@@ -166,7 +166,7 @@
           "animation-iteration-count": "infinite",
         },
       ],
-      placeholder: "animation: spin 1s infinite",
+      placeholder: "Write your CSS here...",
       multiLine: true,
       hover: false,
       concepts: ["animation", "iteration", "shorthand"],
@@ -188,7 +188,7 @@
           "animation-iteration-count": "infinite",
         },
       ],
-      placeholder: "animation: float 3s ease-in-out infinite",
+      placeholder: "Write your CSS here...",
       multiLine: true,
       hover: false,
       concepts: ["animation", "shorthand"],
@@ -207,7 +207,7 @@
           "animation-delay": "1s",
         },
       ],
-      placeholder: "animation: pop 2s ease-in-out\nanimation-delay: 1s",
+      placeholder: "Write your CSS here...",
       multiLine: true,
       hover: false,
       concepts: ["animation-delay", "delay"],
@@ -230,7 +230,7 @@
           "animation-direction": "alternate",
         },
       ],
-      placeholder: "animation: pulse 2s ease-in-out infinite alternate",
+      placeholder: "Write your CSS here...",
       multiLine: true,
       hover: false,
       concepts: ["animation-direction"],
@@ -246,7 +246,7 @@
       accept: [
         { "transition": "transform 0.3s ease", "transform": "translatey(-8px)" },
       ],
-      placeholder: "transition: transform 0.3s ease\ntransform: translateY(-8px)",
+      placeholder: "Write your CSS here...",
       multiLine: true,
       hover: true,
       concepts: ["transition", "transform", "hover"],
@@ -262,7 +262,7 @@
       accept: [
         { "transition": "transform 0.3s ease", "transform": "translatey(-8px) scale(1.1)" },
       ],
-      placeholder: "transition: transform 0.3s ease\ntransform: translateY(-8px) scale(1.1)",
+      placeholder: "Write your CSS here...",
       multiLine: true,
       hover: true,
       concepts: ["transition", "transform", "hover"],
@@ -772,8 +772,8 @@
     var pairs = parseCSS(text);
 
     if (!text.trim()) {
-      renderResult("fail", "Write some CSS first! e.g. " + level.placeholder.replace(/\n/g, " "));
-      showToast("Write some CSS first! e.g. " + level.placeholder.replace(/\n/g, " "), true);
+      renderResult("fail", "Write some CSS first!");
+      showToast("Write some CSS first!", true);
       return;
     }
     if (pairs.length === 0) {

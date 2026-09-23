@@ -8,7 +8,7 @@
       hint: "The magic property is <code>display: grid</code>",
       difficulty: "beginner",
       accept: [{ "display": "grid" }],
-      placeholder: "display: grid",
+      placeholder: "Write your grid code here...",
       columns: 2, rows: 2,
       items: [
         { label: "Header", color: "linear-gradient(135deg, #6366f1, #4f46e5)" },
@@ -26,7 +26,7 @@
         { "grid-template-columns": "1fr 1fr 1fr" },
         { "grid-template-columns": "1fr  1fr  1fr" },
       ],
-      placeholder: "grid-template-columns: 1fr 1fr 1fr",
+      placeholder: "Write your grid code here...",
       columns: 3, rows: 2,
       items: [
         { label: "Shop", color: "linear-gradient(135deg, #f97316, #ea580c)" },
@@ -45,7 +45,7 @@
       accept: [
         { "grid-template-columns": "150px 1fr" },
       ],
-      placeholder: "grid-template-columns: 150px 1fr",
+      placeholder: "Write your grid code here...",
       columns: 2, rows: 2,
       items: [
         { label: "Sidebar", color: "linear-gradient(135deg, #0ea5e9, #0284c7)" },
@@ -65,7 +65,7 @@
         { "grid-template-columns": "repeat(4,1 fr)" },
         { "grid-template-columns": "repeat(4, 1 fr)" },
       ],
-      placeholder: "grid-template-columns: repeat(4, 1fr)",
+      placeholder: "Write your grid code here...",
       columns: 4, rows: 2,
       items: [
         { label: "A", color: "linear-gradient(135deg, #f43f5e, #e11d48)" },
@@ -86,7 +86,7 @@
       accept: [
         { gap: "20px" }, { gap: "2rem" }, { gap: "30px" }, { gap: "15px" },
       ],
-      placeholder: "gap: 20px",
+      placeholder: "Write your grid code here...",
       columns: 3, rows: 2,
       items: [
         { label: "Bed", color: "linear-gradient(135deg, #6366f1, #4f46e5)" },
@@ -106,7 +106,7 @@
         { "grid-column": "span 2" },
         { "grid-column": "span  2" },
       ],
-      placeholder: "grid-column: span 2",
+      placeholder: "Write your grid code here...",
       columns: 3, rows: 2, itemTarget: 0,
       items: [
         { label: "Banner", color: "linear-gradient(135deg, #f43f5e, #e11d48)" },
@@ -126,7 +126,7 @@
         { "grid-row": "span 2" },
         { "grid-row": "span  2" },
       ],
-      placeholder: "grid-row: span 2",
+      placeholder: "Write your grid code here...",
       columns: 3, rows: 2, itemTarget: 0,
       items: [
         { label: "Sidebar", color: "linear-gradient(135deg, #f97316, #ea580c)" },
@@ -146,7 +146,7 @@
         { "grid-template-columns": "1fr 1fr 1fr", "column-gap": "25px " },
         { "grid-template-columns": "1fr  1fr  1fr", "column-gap": "25px" },
       ],
-      placeholder: "grid-template-columns: 1fr 1fr 1fr\ncolumn-gap: 25px",
+      placeholder: "Write your grid code here...",
       multiLine: true,
       columns: 3, rows: 2,
       items: [
@@ -167,7 +167,7 @@
         { "justify-items": "center", "align-items": "center" },
         { "align-items": "center", "justify-items": "center" },
       ],
-      placeholder: "justify-items: center\nalign-items: center",
+      placeholder: "Write your grid code here...",
       multiLine: true,
       columns: 3, rows: 2,
       items: [
@@ -185,7 +185,7 @@
       hint: "Use <code>justify-content: center</code> to center the grid tracks.",
       difficulty: "intermediate",
       accept: [{ "justify-content": "center" }],
-      placeholder: "justify-content: center",
+      placeholder: "Write your grid code here...",
       columns: 2, rows: 2,
       items: [
         { label: "A", color: "linear-gradient(135deg, #14b8a6, #0d9488)" },
@@ -200,7 +200,7 @@
       hint: "Use <code>grid-auto-flow: dense</code> to fill empty spaces.",
       difficulty: "advanced",
       accept: [{ "grid-auto-flow": "dense" }],
-      placeholder: "grid-auto-flow: dense",
+      placeholder: "Write your grid code here...",
       columns: 3, rows: 2,
       items: [
         { label: "Wide", color: "linear-gradient(135deg, #f43f5e, #e11d48)", span: 2 },
@@ -219,7 +219,7 @@
         { "grid-template-areas": "\"header header\" \"sidebar main\"" },
         { "grid-template-areas": "\"header  header\" \"sidebar  main\"" },
       ],
-      placeholder: 'grid-template-areas:\n  "header header"\n  "sidebar main"',
+      placeholder: "Write your grid code here...",
       multiLine: true,
       columns: 2, rows: 2,
       items: [
@@ -238,7 +238,7 @@
         { "grid-template-columns": "200px  1fr  200px", gap: "16px" },
         { "grid-template-columns": "200px 1fr 200px", gap: "16px " },
       ],
-      placeholder: "grid-template-columns: 200px 1fr 200px\ngap: 16px",
+      placeholder: "Write your grid code here...",
       multiLine: true,
       columns: 3, rows: 2,
       items: [
@@ -260,7 +260,7 @@
         { "grid-template-columns": "1fr  1fr  1fr", gap: "20px", "place-items": "center", "justify-content": "center" },
         { "grid-template-columns": "1fr 1fr 1fr", gap: "20px ", "place-items": "center", "justify-content": "center" },
       ],
-      placeholder: "grid-template-columns: 1fr 1fr 1fr\ngap: 20px\nplace-items: center\njustify-content: center",
+      placeholder: "Write your grid code here...",
       multiLine: true,
       columns: 3, rows: 2,
       items: [
@@ -281,7 +281,7 @@
         { "grid-template-areas": '"header header" "sidebar main" "footer footer"' },
         { "grid-template-areas": '"header  header" "sidebar  main" "footer  footer"' },
       ],
-      placeholder: 'grid-template-areas:\n  "header header"\n  "sidebar main"\n  "footer footer"',
+      placeholder: "Write your grid code here...",
       multiLine: true,
       columns: 2, rows: 3, isFinal: true,
       items: [

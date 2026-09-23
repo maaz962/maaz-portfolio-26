@@ -485,7 +485,7 @@ export default function AnimationArenaPage() {
                     <textarea
                       id="css-editor"
                       className="aaa-editor-textarea"
-                      placeholder="transition: background-color 0.4s"
+                      placeholder="Write your CSS here..."
                       autoFocus
                       autoCapitalize="none"
                       spellCheck={false}
