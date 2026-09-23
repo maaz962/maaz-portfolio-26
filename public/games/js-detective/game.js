@@ -1189,17 +1189,37 @@
     }
   }
 
+  var HINTS_PER_DAY = 3;
+
+  function todayStr() {
+    var d = new Date();
+    return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+  }
+
   function renderHintArea(level, hintEl) {
-    // Hints are nudges hidden behind a reveal button on every tier. There is no
-    // daily limit on reveals; a hint is only shown after the button is tapped.
+    // Hints are nudges hidden behind a reveal button. Each user gets up to
+    // 3 reveals per day (matching PHP Playground and Query Quest); the count
+    // resets on a new day and is persisted with the saved game state.
     var reveal = document.createElement("button");
     reveal.type = "button";
     reveal.className = "jsd-hint-reveal";
     reveal.textContent = "\uD83D\uDCA1 Show Hint";
     var usage = document.createElement("div");
     usage.className = "jsd-hint-usage";
-    usage.textContent = "hints used today: 0";
+    usage.textContent = "hints used today: " + (STATE.hintsUsed || 0);
     var onReveal = function () {
+      var today = todayStr();
+      if (STATE.hintsDate !== today) {
+        STATE.hintsDate = today;
+        STATE.hintsUsed = 0;
+      }
+      if (STATE.hintsUsed >= HINTS_PER_DAY) {
+        showToast("You've used all " + HINTS_PER_DAY + " hints for today - come back tomorrow for more.", true);
+        usage.textContent = "hints used today: " + STATE.hintsUsed;
+        emitProgress();
+        publishState();
+        return;
+      }
       hintEl.innerHTML = "";
       var spark = document.createElement("span");
       spark.textContent = "\uD83D\uDCA1 ";
@@ -1210,11 +1230,13 @@
       var hintSpan = document.createElement("span");
       hintSpan.innerHTML = level.hint;
       hintEl.appendChild(hintSpan);
-      hintEl.appendChild(usage);
       STATE.hintsUsed = (STATE.hintsUsed || 0) + 1;
       usage.textContent = "hints used today: " + STATE.hintsUsed;
+      hintEl.appendChild(usage);
       updateSolvedNote();
       handleInput();
+      emitProgress();
+      publishState();
     };
     reveal.onclick = onReveal;
     hintEl.appendChild(reveal);
