@@ -431,7 +431,6 @@ export default function AnimationArenaPage() {
                     Beginner
                   </span>
                 </div>
-                <div id="progress-dots" className="aaa-progress" />
                 <h2
                   id="level-title"
                   className="aaa-level-title font-display"
@@ -573,6 +572,7 @@ export default function AnimationArenaPage() {
                   </button>
                 </div>
               </div>
+              <div id="progress-dots" className="aaa-progress" />
               <div className="aaa-hint-bar">
                 <Sparkles className="h-3 w-3 shrink-0 text-primary" />
                 <span>

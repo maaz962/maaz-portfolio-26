@@ -279,7 +279,6 @@ export default function GridGardenPage() {
                   Beginner
                 </span>
               </div>
-              <div id="grid-progress" className="grid-progress" />
               <h2
                 id="level-title"
                 className="font-display text-sm font-bold text-foreground"
@@ -416,6 +415,7 @@ export default function GridGardenPage() {
                   Next Level →
                 </button>
               </div>
+              <div id="grid-progress" className="grid-progress" />
             </div>
           </div>
         </div>

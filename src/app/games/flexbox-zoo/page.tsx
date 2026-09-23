@@ -279,7 +279,6 @@ export default function FlexboxZooPage() {
                   Beginner
                 </span>
               </div>
-              <div id="zoo-progress" className="zoo-progress" />
               <h2
                 id="level-title"
                 className="font-display text-sm font-bold text-foreground"
@@ -425,13 +424,14 @@ export default function FlexboxZooPage() {
                   Great job! You solved it!
                 </div>
                 <div className="zoo-complete-msg"></div>
-                <button
+<button
                   type="button"
                   className="zoo-complete-btn overlay-btn"
                 >
                   Next Level →
                 </button>
               </div>
+              <div id="zoo-progress" className="zoo-progress" />
             </div>
           </div>
         </div>

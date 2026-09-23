@@ -52,9 +52,11 @@
 .zoo-progress {
   display: flex;
   align-items: center;
-  gap: 0.375rem;
+  justify-content: center;
+  gap: 0.4rem;
   flex-wrap: wrap;
-  margin: 0.125rem 0 0.75rem;
+  padding: 0.15rem 0.25rem;
+  margin: 0;
 }
 
 .zoo-progress-label {
