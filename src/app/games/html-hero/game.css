@@ -159,6 +159,7 @@
 .hh-editor-header {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 0.6rem;
   padding: 0.65rem 1rem;
   border-bottom: 1px solid hsl(var(--border) / 0.6);
@@ -186,6 +187,12 @@
   font-weight: 600;
   color: hsl(var(--muted));
   margin-left: 0.25rem;
+}
+
+.hh-editor-title-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 .hh-editor-clear {

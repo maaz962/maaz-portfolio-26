@@ -16,6 +16,7 @@ import {
   Lock,
   Sparkles,
   Terminal,
+  Trash2,
   X,
 } from "lucide-react";
 import { GlassNavbar } from "@/components/layout/glass-navbar";
@@ -618,7 +619,18 @@ export default function PhpPlaygroundPage() {
                       <span className="php-editor-dot yellow" />
                       <span className="php-editor-dot green" />
                     </div>
-                    <span className="php-editor-title">solution.php</span>
+                    <div className="php-editor-title-row">
+                      <span className="php-editor-title">solution.php</span>
+                      <button
+                        type="button"
+                        className="php-editor-clear"
+                        title="Clear code"
+                        aria-label="Clear code"
+                        onClick={() => setCode(current.seedCode)}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
                   </div>
                   <div className="php-editor-body">
                     <div className="php-editor-wrap">

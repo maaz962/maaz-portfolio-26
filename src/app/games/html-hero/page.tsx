@@ -294,16 +294,18 @@ export default function HtmlHeroPage() {
                   <span className="hh-editor-dot yellow" />
                   <span className="hh-editor-dot green" />
                 </div>
-                <span className="hh-editor-title">index.html</span>
-                <button
-                  id="clear-btn"
-                  type="button"
-                  className="hh-editor-clear"
-                  title="Clear code"
-                  aria-label="Clear code"
-                >
-                  <Trash2 className="h-3.5 w-3.5" />
-                </button>
+                <div className="hh-editor-title-row">
+                  <span className="hh-editor-title">index.html</span>
+                  <button
+                    id="clear-btn"
+                    type="button"
+                    className="hh-editor-clear"
+                    title="Clear code"
+                    aria-label="Clear code"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
+                </div>
               </div>
               <div className="hh-editor-body">
                 <textarea

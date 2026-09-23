@@ -16,6 +16,7 @@ import {
   Lock,
   Sparkles,
   Terminal,
+  Trash2,
   X,
 } from "lucide-react";
 import { GlassNavbar } from "@/components/layout/glass-navbar";
@@ -607,7 +608,18 @@ export default function QueryQuestPage() {
                       <span className="qq-editor-dot yellow" />
                       <span className="qq-editor-dot green" />
                     </div>
-                    <span className="qq-editor-title">solution.sql</span>
+                    <div className="qq-editor-title-row">
+                      <span className="qq-editor-title">solution.sql</span>
+                      <button
+                        type="button"
+                        className="qq-editor-clear"
+                        title="Clear code"
+                        aria-label="Clear code"
+                        onClick={() => setCode(current.seedCode)}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
                   </div>
                   <div className="qq-editor-body">
                     <div className="qq-editor-wrap">

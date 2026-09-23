@@ -12,6 +12,7 @@ import {
   Lock,
   Sparkles,
   Terminal,
+  Trash2,
 } from "lucide-react";
 import { GlassNavbar } from "@/components/layout/glass-navbar";
 import { AuthGate } from "@/components/games/auth-gate";
@@ -394,7 +395,18 @@ export default function JsDetectivePage() {
                     <span className="jsd-editor-dot yellow" />
                     <span className="jsd-editor-dot green" />
                   </div>
-                  <span className="jsd-editor-title">solution.js</span>
+                  <div className="jsd-editor-title-row">
+                    <span className="jsd-editor-title">solution.js</span>
+                    <button
+                      id="clear-btn"
+                      type="button"
+                      className="jsd-editor-clear"
+                      title="Clear code"
+                      aria-label="Clear code"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
                 </div>
                 <div className="jsd-editor-body">
                   <div id="jsd-line-numbers" className="jsd-line-numbers">

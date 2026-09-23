@@ -1352,6 +1352,15 @@
     }
   }
 
+  function handleClear() {
+    var level = LEVELS[STATE.currentLevel];
+    var ta = $("js-editor");
+    if (!ta || !level) return;
+    ta.value = level.starter || "";
+    hideToast();
+    handleInput();
+  }
+
   function handleReset() {
     var level = LEVELS[STATE.currentLevel];
     var ta = $("js-editor");
@@ -1421,6 +1430,8 @@
 
     var resetBtn = $("reset-btn");
     if (resetBtn) { resetBtn.removeEventListener("click", handleReset); resetBtn.addEventListener("click", handleReset); }
+    var clr = $("clear-btn");
+    if (clr) { clr.removeEventListener("click", handleClear); clr.addEventListener("click", handleClear); }
 
     STATE.currentLevel = 0;
     STATE.score = 0;
