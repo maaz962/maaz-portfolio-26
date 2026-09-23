@@ -3,7 +3,7 @@
 
   // LEVELS starts empty. levels.js sets window.LJS_LEVELS before/after this
   // script (both load with strategy="afterInteractive", so execution order is
-  // not guaranteed) — tryLoadLevels/ensureLevels populate it when ready and
+  // not guaranteed); tryLoadLevels/ensureLevels populate it when ready and
   // every render/state access re-checks so an empty array can never win.
   var LEVELS = [];
 
@@ -253,7 +253,7 @@
    * resumeGame consumes: completed/solutions keyed by 0..LEVELS.length-1 and
    * currentLevel as a v2 index. v3 id keys map straight back to indices; v1/v2
    * index keys are remapped and accidental repeat remaps are undone (a few
-   * rounds at most — the output always converges to a plausible set).
+   * rounds at most; the output always converges to a plausible set).
    */
   function normalizeSavedToIndices(saved) {
     var form = savedProgressForm(saved);
@@ -410,7 +410,7 @@
         }
         STATE.completed = clean;
         // Rebuild the score from the completed set instead of trusting the
-        // stored running total — so existing saves converge on the current
+        // stored running total; so existing saves converge on the current
         // per-level points (e.g. after a level is removed or points rescale).
         STATE.score = 0;
         for (var sk in clean) {
@@ -584,7 +584,7 @@
 
     // Async case files reject promises their fetches can't fulfill (e.g.
     // fetch("/broken")). A learner's first attempt often leaves that rejection
-    // unhandled, which makes the BROWSER throw an "Uncaught (in promise)" —
+    // unhandled, which makes the BROWSER throw an "Uncaught (in promise)";
     // scary and misleading on the page. While a solution is evaluating we
     // therefore swallow unhandled rejections and turn them into an ordinary,
     // readable console line with a hint instead.
@@ -601,7 +601,7 @@
           value: undefined,
           text:
             "✕ Unhandled promise rejection: " + msg +
-            " — every rejected promise needs catching. Wrap await fetch('/broken') in try/catch.",
+            " (every rejected promise needs catching). Wrap await fetch('/broken') in try/catch.",
           isError: true,
         });
       };
@@ -646,8 +646,8 @@
     // or a never-settling fetch). Without a guard the Check/Run chain stalls,
     // the busy state never clears and the buttons stay wedged. Race the
     // evaluation against a timeout so the UI always recovers with a clear
-    // message. (A synchronous `while (true) {}` freezes the tab itself — no
-    // in-page timer can fire then — but never-resolving awaits are the common
+    // message. (A synchronous `while (true) {}` freezes the tab itself, so no
+    // in-page timer can fire then; but never-resolving awaits are the common
     // hang and ARE recoverable this way.)
     return new Promise(function (resolve) {
       var timer = setTimeout(function () {
@@ -657,7 +657,7 @@
         logs.push({
           value: undefined,
           text:
-            "✕ Timed out after " + (TIMEOUT_MS / 1000) + "s — your code never finished." +
+            "✕ Timed out after " + (TIMEOUT_MS / 1000) + "s. Your code never finished." +
             " Check for an infinite loop or an await that never resolves.",
           isError: true,
         });
@@ -665,7 +665,7 @@
           setupError = {
             kind: "timeout",
             message:
-              "Your code took too long (over " + (TIMEOUT_MS / 1000) + "s) and was stopped —" +
+              "Your code took too long (over " + (TIMEOUT_MS / 1000) + "s) and was stopped; " +
               " look for an infinite loop or an await that never settles.",
             line: null,
           };
@@ -869,7 +869,7 @@
     if (!note) return;
     if (STATE.completed[STATE.currentLevel]) {
       note.hidden = false;
-      note.textContent = "✓ Solved — this is your passing solution. Tweak it and hit Check to retry anytime.";
+      note.textContent = "Solved! Answers are saved - you can return to this case anytime.";
     } else {
       note.hidden = true;
       note.textContent = "";
@@ -881,7 +881,7 @@
     if (!ta) return;
     var level = LEVELS[STATE.currentLevel];
     if (!level) {
-      showToast("Case data not loaded yet — try again in a moment.", true);
+      showToast("Case data not loaded yet. Try again in a moment.", true);
       return;
     }
     evaluateUserCodeAsync(ta.value, level.setUp).then(function (result) {
@@ -1012,7 +1012,7 @@
       showOverlay(
         "Case Solved!",
         "Great work, detective!",
-        randomItem(SUCCESS_MSGS),
+        "+" + pointsForLevel(level) + " XP · Saved to your profile",
         level.isFinal ? "See Your Results \u2B50" : "Next Case \u2192",
         function () { nextLevel(); }
       );
@@ -1064,7 +1064,7 @@
       // loading, wait for it and re-run; otherwise surface a clear message.
       ensureLevels(function () {
         if (LEVELS.length === 0) {
-          showToast("Case data not loaded yet — reload the page if this persists.", true);
+          showToast("Case data not loaded yet. Reload the page if this persists.", true);
         } else {
           checkAnswer();
         }
@@ -1099,7 +1099,7 @@
           state: "error",
           icon: "⚠️",
           title: "Console Error",
-          text: "Your code logged an error — read the console and fix it.",
+          text: "Your code logged an error. Read the console and fix it.",
         });
         showToast("Your code threw an error. Read the console and fix it.", true);
         return;
@@ -1121,7 +1121,7 @@
             state: "pass",
             icon: "✓",
             title: "Still Correct!",
-            text: "This case was already solved — your solution still passes, so no extra XP.",
+            text: "This case was already solved. Your solution still passes, so no extra XP.",
           });
           showToast("Still correct! This case was already solved.", false);
           return;
@@ -1129,8 +1129,8 @@
         renderResult({
           state: "pass",
           icon: "✓",
-          title: "Solved!",
-          text: "All checks passed. Great work, detective.",
+          title: "Correct!",
+          text: "+" + pointsForLevel(level) + " XP · All checks passed. Great work, detective.",
         });
         completeLevel();
       } else {
@@ -1147,7 +1147,7 @@
       // failure in the async chain above.
       STATE.thinking = false;
       setButtonsDisabled(false);
-      showToast("Something went wrong running your code — try again.", true);
+      showToast("Something went wrong running your code. Try again.", true);
     });
   }
 
@@ -1170,6 +1170,8 @@
         d.innerHTML = "\u2713";
       } else if (!unlocked) {
         d.innerHTML = "\uD83D\uDD12";
+      } else {
+        d.innerHTML = String(i + 1);
       }
       (function (idx) {
         d.addEventListener("click", function () {
@@ -1189,12 +1191,15 @@
 
   function renderHintArea(level, hintEl) {
     // Hints are nudges hidden behind a reveal button on every tier. There is no
-    // daily limit on reveals — a hint is only shown after the button is tapped.
+    // daily limit on reveals; a hint is only shown after the button is tapped.
     var reveal = document.createElement("button");
     reveal.type = "button";
     reveal.className = "jsd-hint-reveal";
     reveal.textContent = "\uD83D\uDCA1 Show Hint";
-    reveal.onclick = function () {
+    var usage = document.createElement("div");
+    usage.className = "jsd-hint-usage";
+    usage.textContent = "hints used today: 0";
+    var onReveal = function () {
       hintEl.innerHTML = "";
       var spark = document.createElement("span");
       spark.textContent = "\uD83D\uDCA1 ";
@@ -1205,10 +1210,15 @@
       var hintSpan = document.createElement("span");
       hintSpan.innerHTML = level.hint;
       hintEl.appendChild(hintSpan);
+      hintEl.appendChild(usage);
+      STATE.hintsUsed = (STATE.hintsUsed || 0) + 1;
+      usage.textContent = "hints used today: " + STATE.hintsUsed;
       updateSolvedNote();
       handleInput();
     };
+    reveal.onclick = onReveal;
     hintEl.appendChild(reveal);
+    hintEl.appendChild(usage);
   }
 
   function renderLevel() {
@@ -1274,7 +1284,7 @@
 
     if (t) t.textContent = "You Did It!";
     if (n) n.textContent = "\uD83C\uDF1F";
-    if (i) i.textContent = "All " + LEVELS.length + " cases closed — Beginner, Easy, Intermediate and Most Hard. You mastered the core of JavaScript.";
+    if (i) i.textContent = "All " + LEVELS.length + " cases closed: Beginner, Easy, Intermediate and Most Hard. You mastered the core of JavaScript.";
     if (h) h.innerHTML = "Hint: You can now write variables, loops, functions, objects, DOM handlers, storage and async code. Share your score!";
     if (d) { d.textContent = "Detective Master"; d.className = "jsd-level-difficulty mostHard"; }
 
@@ -1402,7 +1412,7 @@
 
     ensureLevels(function () {
       if (LEVELS.length === 0) {
-        showToast("Case files still loading — if this keeps up, reload the page.", true);
+        showToast("Case files still loading. If this keeps up, reload the page.", true);
         return;
       }
       renderLevel();

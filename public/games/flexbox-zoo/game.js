@@ -140,7 +140,7 @@
     },
     {
       id: 10, title: "Center Both Axes!",
-      instruction: "Center the pets BOTH horizontally AND vertically \u2014 dead center!",
+      instruction: "Center the pets BOTH horizontally AND vertically, dead center!",
       hint: "You need <code>justify-content: center</code> AND <code>align-items: center</code> on separate lines.",
       difficulty: "intermediate",
       accept: [
@@ -296,6 +296,39 @@
 
   function pointsForLevel(level) {
     return POINTS[level.difficulty] || 5;
+  }
+
+  var CHECK_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>';
+  var X_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>';
+
+  function renderProgress() {
+    var c = $("zoo-progress");
+    if (!c) return;
+    c.innerHTML = "";
+    for (var i = 0; i < LEVELS.length; i++) {
+      var btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "zoo-progress-dot";
+      btn.setAttribute("aria-label", "Level " + (i + 1));
+      btn.title = "Level " + (i + 1);
+      if (i === STATE.currentLevel) btn.classList.add("current");
+      var isDone = !!STATE.completed[i];
+      var isLocked = !isDone && i > STATE.currentLevel;
+      if (isDone) btn.classList.add("done");
+      if (isLocked) btn.classList.add("locked");
+      if (isLocked) btn.disabled = true;
+      btn.textContent = isDone ? "\u2713" : String(i + 1);
+      if (!isLocked) {
+        (function (idx) {
+          btn.addEventListener("click", function () {
+            STATE.currentLevel = idx;
+            renderLevel();
+            emitProgress();
+          });
+        })(i);
+      }
+      c.appendChild(btn);
+    }
   }
 
   function emitProgress() {
@@ -506,6 +539,83 @@
     if (t) { t.style.opacity = "0"; clearTimeout(t._timer); }
   }
 
+  function updateSolvedNote() {
+    var n = $("zoo-solved-note");
+    if (!n) return;
+    if (STATE.completed[STATE.currentLevel]) {
+      n.style.display = "flex";
+    } else {
+      n.style.display = "none";
+    }
+  }
+
+  function renderResult(type, pointsOrMsg) {
+    var r = $("zoo-result");
+    if (!r) return;
+    if (type === "pass") {
+      r.className = "zoo-result pass";
+      r.innerHTML =
+        '<div class="zoo-result-icon">' + CHECK_SVG + '</div>' +
+        '<div class="zoo-result-content">' +
+        '<strong>Correct!</strong>' +
+        '<span class="zoo-result-detail"><span class="zoo-result-xp">+' + pointsOrMsg + ' XP</span> · Saved to your profile</span>' +
+        '</div>';
+      r.style.display = "flex";
+    } else if (type === "fail") {
+      r.className = "zoo-result fail";
+      r.innerHTML =
+        '<div class="zoo-result-icon">' + X_SVG + '</div>' +
+        '<div class="zoo-result-content">' +
+        '<strong>Not quite yet</strong>' +
+        '<span class="zoo-result-detail">' + pointsOrMsg + '</span>' +
+        '</div>';
+      r.style.display = "flex";
+    } else {
+      r.style.display = "none";
+    }
+  }
+
+  function handleRun() {
+    var ta = $("css-editor");
+    if (!ta) return;
+    var pairs = parseCSS(ta.value);
+    hideToast();
+    renderResult("none");
+    resetBoard();
+    if (STATE.currentLevel === 0) {
+      var board = $("zoo-board");
+      if (board) board.style.display = "block";
+    }
+    applyCSS(pairs);
+    if (pairs.length > 0) {
+      showToast("CSS applied - press Check when ready.", false);
+    }
+  }
+
+  function checkAnswer() {
+    var ta = $("css-editor");
+    if (!ta) return;
+    var pairs = parseCSS(ta.value);
+    hideToast();
+    if (!pairs.length) {
+      renderResult("fail", "Type some CSS first, then press Check.");
+      return;
+    }
+    var err = validateInput(pairs);
+    if (err) {
+      renderResult("fail", err);
+      showToast(err, true);
+      return;
+    }
+    if (checkCompletion(pairs)) {
+      completeLevel();
+      return;
+    }
+    var hint = getWrongHint(pairs);
+    renderResult("fail", hint);
+    showToast(hint, true);
+  }
+
   function showOverlay(title, msg, btnText, action) {
     var o = $("overlay");
     if (!o) return;
@@ -536,10 +646,14 @@
 
     emitProgress();
 
+    renderProgress();
+    updateSolvedNote();
+    renderResult("pass", pointsForLevel(LEVELS[STATE.currentLevel]));
+
     showToast("\u2713 Correct! See how the animals moved?", false);
 
     setTimeout(function () {
-      showOverlay("Level Complete!", randomItem(SUCCESS_MSGS), "Next Level \u2192", function () {
+      showOverlay("Level Complete!", "+" + pointsForLevel(LEVELS[STATE.currentLevel]) + " XP \u00B7 Saved to your profile", "Next Level \u2192", function () {
         nextLevel();
       });
     }, 1800);
@@ -606,6 +720,9 @@
     resetBoard();
     hideOverlay();
     hideToast();
+    renderProgress();
+    updateSolvedNote();
+    renderResult("none");
   }
 
   function renderVictory() {
@@ -646,6 +763,9 @@
     if (nb) { nb.disabled = true; nb.style.opacity = "0.4"; }
     var pb = $("prev-btn");
     if (pb) { pb.disabled = false; pb.style.opacity = "1"; }
+    renderProgress();
+    updateSolvedNote();
+    renderResult("none");
   }
 
   function handleInput() {
@@ -694,7 +814,8 @@
     var ta = $("css-editor");
     var pb = $("prev-btn");
     var nb = $("next-btn");
-    var rb = $("reset-btn");
+    var run = $("run-btn");
+    var check = $("check-btn");
 
     if (ta) { ta.removeEventListener("input", handleInput); ta.addEventListener("input", handleInput); }
     if (pb) { pb.removeEventListener("click", prevLevel); pb.addEventListener("click", prevLevel); }
@@ -702,7 +823,8 @@
       nb.removeEventListener("click", nextHandler);
       nb.addEventListener("click", nextHandler);
     }
-    if (rb) { rb.removeEventListener("click", handleReset); rb.addEventListener("click", handleReset); }
+    if (run) { run.removeEventListener("click", handleRun); run.addEventListener("click", handleRun); }
+    if (check) { check.removeEventListener("click", checkAnswer); check.addEventListener("click", checkAnswer); }
 
     STATE.currentLevel = 0;
     STATE.score = 0;

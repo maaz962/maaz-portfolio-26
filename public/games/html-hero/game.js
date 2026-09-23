@@ -19,7 +19,7 @@
       difficulty: "easy",
       instruction:
         "Add a paragraph of text about yourself using the <p> tag.",
-      hint: "Wrap a sentence in <code>&lt;p&gt;...&lt;/p&gt;</code> — try to make it at least 15 characters long.",
+      hint: "Wrap a sentence in <code>&lt;p&gt;...&lt;/p&gt;</code>. Try to make it at least 15 characters long.",
       accept: { tags: ["p"], minTextLength: 15 },
       starter: "",
       placeholder: "<p>I love building things for the web!</p>",
@@ -41,7 +41,7 @@
       difficulty: "easy",
       instruction:
         "Create a link using the <a> tag. It needs an href so clicking it actually goes somewhere.",
-      hint: "Write <code>&lt;a href=\"https://...\"&gt;Link text&lt;/a&gt;</code> — the address goes inside the quotes.",
+      hint: "Write <code>&lt;a href=\"https://...\"&gt;Link text&lt;/a&gt;</code>. The address goes inside the quotes.",
       accept: { tags: ["a"], attrs: [{ tag: "a", attr: "href" }] },
       starter: "",
       placeholder: '<a href="https://developer.mozilla.org">Learn more</a>',
@@ -52,7 +52,7 @@
       difficulty: "easy",
       instruction:
         "Show an image on your page with the <img> tag. A real image needs a src.",
-      hint: "Use <code>&lt;img src=\"https://...\"&gt;</code> — note: img is a self-closing tag, no closing tag needed.",
+      hint: "Use <code>&lt;img src=\"https://...\"&gt;</code>. Img is a self-closing tag, so no closing tag is needed.",
       accept: { tags: ["img"], attrs: [{ tag: "img", attr: "src" }] },
       starter: "",
       placeholder: '<img src="https://picsum.photos/200" alt="A nice photo">',
@@ -63,7 +63,7 @@
       difficulty: "intermediate",
       instruction:
         "Give your visitor ordered steps using an ordered list (<ol>) with at least two items.",
-      hint: "An <code>&lt;ol&gt;</code> numbers its items automatically — put <code>&lt;li&gt;</code> items inside.",
+      hint: "An <code>&lt;ol&gt;</code> numbers its items automatically. Put <code>&lt;li&gt;</code> items inside.",
       accept: { tags: ["ol"], count: [{ tag: "li", min: 2 }] },
       starter: "",
       placeholder: "<ol>\n  <li>Open the editor</li>\n  <li>Write some HTML</li>\n</ol>",
@@ -84,7 +84,7 @@
       title: "Climb the Headings",
       difficulty: "intermediate",
       instruction:
-        "Headings have levels! Use <h1>, <h2> and <h3> — biggest first.",
+        "Headings have levels! Use <h1>, <h2> and <h3>, biggest first.",
       hint: "<code>&lt;h1&gt;</code> is the biggest, <code>&lt;h2&gt;</code> smaller, <code>&lt;h3&gt;</code> smaller still. Structure your page as a news site would.",
       accept: { tags: ["h1", "h2", "h3"] },
       starter: "",
@@ -95,7 +95,7 @@
       title: "Table Time",
       difficulty: "intermediate",
       instruction:
-        "Build a mini table with <table>, row(s) with <tr> and cells with <td> — at least 4 cells.",
+        "Build a mini table with <table>, row(s) with <tr> and cells with <td>. Aim for at least 4 cells.",
       hint: "A table has <code>&lt;table&gt;</code> → <code>&lt;tr&gt;</code> (row) → <code>&lt;td&gt;</code> (cell). Define all cells first.",
       accept: { tags: ["table"], count: [{ tag: "td", min: 4 }] },
       starter: "",
@@ -107,7 +107,7 @@
       difficulty: "intermediate",
       instruction:
         "Add a clickable <button> to your page so visitors can take action.",
-      hint: "Write <code>&lt;button&gt;Click me&lt;/button&gt;</code> — the text between the tags is what people see.",
+      hint: "Write <code>&lt;button&gt;Click me&lt;/button&gt;</code>. The text between the tags is what people see.",
       accept: { tags: ["button"] },
       starter: "",
       placeholder: "<button>Join the adventure</button>",
@@ -128,7 +128,7 @@
       title: "Nav Time",
       difficulty: "intermediate",
       instruction:
-        "Build a navigation — wrap at least two links in a <nav> tag.",
+        "Build a navigation. Wrap at least two links in a <nav> tag.",
       hint: "A <code>&lt;nav&gt;</code> holds the site menus. Put <code>&lt;a href=\"...\"&gt;</code> links inside it.",
       accept: {
         tags: ["nav", "a"],
@@ -144,7 +144,7 @@
       difficulty: "advanced",
       instruction:
         "Create a form with <form>, an <input> field and a <label> that points to it with a for attribute.",
-      hint: "Give the input an id and let the label's <code>for</code> match it — that links them together.",
+      hint: "Give the input an id and let the label's <code>for</code> match it. That links them together.",
       accept: {
         tags: ["form", "input", "label"],
         attrs: [{ tag: "label", attr: "for" }],
@@ -191,14 +191,14 @@
         ],
       },
       starter: "",
-      placeholder: "A complete page — you got this!",
+      placeholder: "A complete page. You got this!",
       isFinal: true,
     },
   ];
 
   var SUCCESS_MSGS = [
     "That's exactly right! Your page does exactly what it should.",
-    "Perfect! Look how it renders in the preview — that's HTML magic.",
+    "Perfect! Look how it renders in the preview. That's HTML magic.",
     "Nailed it! You really understand this tag.",
     "Spot on! The browser renders it beautifully.",
     "Great work! You're becoming an HTML hero!",
@@ -212,7 +212,7 @@
   var WRONG_MSGS = [
     "Not quite right yet. Compare your tags with the hint and try again!",
     "Hmm, that doesn't solve this level. Check the hint below.",
-    "Almost! You're on the right track — but the page still doesn't match the task.",
+    "Almost! You're on the right track, but the page still doesn't match the task.",
     "Nope, wrong code! Look at the hint and fix your tags.",
     "Not yet! Make sure your HTML contains what the task is asking for.",
   ];
@@ -341,13 +341,13 @@
 
   // Structural syntax gate (runs BEFORE the forgiving DOM check). Browsers
   // auto-correct malformed markup, so without this a submission like
-  // '<h1>hello world /h1>' — missing the '<' on the closing tag — would pass
+  // '<h1>hello world /h1>', missing the '<' on the closing tag, would pass
   // by rendering as-if valid. Returns a message string, or null when OK.
   function htmlSyntaxError(html) {
     var text = html || "";
     if (!text.trim()) return null;
     if (text.indexOf("<") === -1) {
-      return "That doesn't look like HTML. Tags live between < and > — try one from the hint.";
+      return "That doesn't look like HTML. Tags live between < and >. Try one from the hint.";
     }
 
     // A closing tag typed without its '<' (e.g. "/h1>" inside text). The
@@ -360,20 +360,20 @@
       if (VOID_TAGS.indexOf(name) !== -1) continue;
       var openRe = new RegExp("<\\s*" + name + "\\b", "i");
       if (openRe.test(text)) {
-        return "Your closing tag is missing '<' — it should be `</" + name + ">` not `/" + name + ">`.";
+        return "Your closing tag is missing '<'. It should be `</" + name + ">`, not `/" + name + ">`.";
       }
     }
 
     var voidCloseRe = /<\s*\/\s*(area|base|br|col|embed|hr|img|input|link|meta|source|track|wbr)\s*>/i;
     var vm = voidCloseRe.exec(text);
     if (vm) {
-      return "A void tag like <" + vm[1] + "> doesn't need a closing tag — remove the </" + vm[1] + ">.";
+      return "A void tag like <" + vm[1] + "> doesn't need a closing tag. Remove the </" + vm[1] + ">.";
     }
 
     var issue = tagIssues(text);
     if (issue) {
       if (issue.unclosed) {
-        return "'<" + issue.unclosed + ">' isn't closed — every opening tag needs a matching </" + issue.unclosed + ">.";
+        return "'<" + issue.unclosed + ">' isn't closed. Every opening tag needs a matching </" + issue.unclosed + ">.";
       }
       if (issue.mismatch) {
         return "Oops! '</" + issue.mismatch + ">' doesn't close the last tag you opened ('<" + issue.expected + ">'). Check your nesting.";
@@ -391,12 +391,12 @@
       return "You haven't written any HTML yet. Type your code, then press Check!";
     }
     if (text.indexOf("<") === -1) {
-      return "That doesn't look like HTML. Tags live between < and > — try one from the hint.";
+      return "That doesn't look like HTML. Tags live between < and >. Try one from the hint.";
     }
     var issue = tagIssues(text);
     if (issue) {
       if (issue.unclosed) {
-        return "'<" + issue.unclosed + ">' isn't closed — every opening tag needs a matching </" + issue.unclosed + ">.";
+        return "'<" + issue.unclosed + ">' isn't closed. Every opening tag needs a matching </" + issue.unclosed + ">.";
       }
       if (issue.mismatch) {
         return "Oops! '</" + issue.mismatch + ">' doesn't close the last tag you opened ('<" + issue.expected + ">'). Check your nesting.";
@@ -434,7 +434,7 @@
       if (!found) { missingAttr = { tag: attrs[a].tag, attr: attrs[a].attr }; break; }
     }
     if (missingAttr) {
-      return "Close! Your <" + missingAttr.tag + "> tag needs a '" + missingAttr.attr + "' attribute — add it inside the <" + missingAttr.tag + ">.";
+      return "Close! Your <" + missingAttr.tag + "> tag needs a '" + missingAttr.attr + "' attribute. Add it inside the <" + missingAttr.tag + ">.";
     }
 
     var counts = acc.count || [];
@@ -455,7 +455,7 @@
     if (acc.minTextLength) {
       var bodyText = (doc.body.textContent || "").trim();
       if (bodyText.length < acc.minTextLength) {
-        return "Add a bit more text — your paragraph should be at least " + acc.minTextLength + " characters.";
+        return "Add a bit more text. Your paragraph should be at least " + acc.minTextLength + " characters.";
       }
     }
 
@@ -467,7 +467,7 @@
     if (!frame) return;
     var h = html || "";
     // Feed the raw source into srcdoc so the preview mirrors exactly what was
-    // typed — no re-serialization/auto-correction of the user's characters.
+    // typed; no re-serialization/auto-correction of the user's characters.
     var full = /<\s*(html|!doctype)[\s>]/i.test(h)
       ? h
       : "<!DOCTYPE html><html><head><meta charset=\"utf-8\">" +
@@ -490,6 +490,51 @@
   function hideToast() {
     var t = $("toast");
     if (t) { t.style.opacity = "0"; clearTimeout(t._timer); }
+  }
+
+  function renderResult(o) {
+    var el = $("hh-result");
+    if (!el) return;
+    el.innerHTML = "";
+    if (!o || !o.text) {
+      el.hidden = true;
+      el.className = "hh-result";
+      return;
+    }
+    el.hidden = false;
+    el.className = "hh-result " + (o.state || "");
+    var icon = document.createElement("span");
+    icon.className = "hh-result-icon";
+    icon.textContent = o.icon || "";
+    var body = document.createElement("span");
+    body.className = "hh-result-body";
+    if (o.title) {
+      var title = document.createElement("strong");
+      title.textContent = o.title + " ";
+      body.appendChild(title);
+    }
+    body.appendChild(document.createTextNode(o.text));
+    el.appendChild(icon);
+    el.appendChild(body);
+  }
+
+  function updateSolvedNote() {
+    var note = $("hh-solved-note");
+    if (!note) return;
+    if (STATE.completed[STATE.currentLevel]) {
+      note.hidden = false;
+      note.textContent = "Solved! Answers are saved - you can return to this level anytime.";
+    } else {
+      note.hidden = true;
+      note.textContent = "";
+    }
+  }
+
+  function handleRun() {
+    var ta = $("html-editor");
+    if (!ta) return;
+    applyHTML(ta.value);
+    hideToast();
   }
 
   function showOverlay(title, sub, msg, btnText, action) {
@@ -524,14 +569,21 @@
 
     renderProgress();
     emitProgress();
+    updateSolvedNote();
+    renderResult({
+      state: "pass",
+      icon: "✓",
+      title: "Correct!",
+      text: "+" + pointsForLevel(LEVELS[STATE.currentLevel]) + " XP · Your page renders perfectly. Nice work.",
+    });
 
-    showToast("\u2713 Correct! Your page renders beautifully — see it in the preview.", false);
+    showToast("\u2713 Correct! Your page renders beautifully. See it in the preview.", false);
 
     setTimeout(function () {
       showOverlay(
-        "Level Complete!",
+        "Case Solved!",
         "Great job, code wrangler!",
-        randomItem(SUCCESS_MSGS),
+        "+" + pointsForLevel(LEVELS[STATE.currentLevel]) + " XP · Saved to your profile",
         LEVELS[STATE.currentLevel].isFinal ? "Finish & See Results \u2B50" : "Next Level \u2192",
         function () { nextLevel(); }
       );
@@ -576,13 +628,26 @@
     }
     var syntaxErr = htmlSyntaxError(text);
     if (syntaxErr) {
+      renderResult({
+        state: "error",
+        icon: "⚠️",
+        title: "Syntax Error",
+        text: syntaxErr,
+      });
       showToast(syntaxErr, true);
       return;
     }
     if (checkCompletion(text)) {
       completeLevel();
     } else {
-      showToast(getError(text), true);
+      var err = getError(text);
+      renderResult({
+        state: "fail",
+        icon: "✕",
+        title: "Not Quite",
+        text: err,
+      });
+      showToast(err, true);
     }
   }
 
@@ -602,7 +667,7 @@
       if (STATE.completed[i]) {
         d.innerHTML = "\u2713";
       } else {
-        d.textContent = "";
+        d.textContent = String(i + 1);
       }
       (function (idx) {
         d.addEventListener("click", function () {
@@ -652,6 +717,8 @@
 
     renderProgress();
     applyHTML(level.starter || "");
+    updateSolvedNote();
+    renderResult(null);
     hideOverlay();
     hideToast();
   }
@@ -727,7 +794,7 @@
     var pb = $("prev-btn");
     var nb = $("next-btn");
     var cb = $("check-btn");
-    var rb = $("reset-btn");
+    var rb = $("run-btn");
 
     if (ta) {
       ta.removeEventListener("input", handleInput);
@@ -736,12 +803,12 @@
       ta.addEventListener("keydown", handleKey);
     }
     if (pb) { pb.removeEventListener("click", prevLevel); pb.addEventListener("click", prevLevel); }
+    if (rb) { rb.removeEventListener("click", handleRun); rb.addEventListener("click", handleRun); }
     if (cb) { cb.removeEventListener("click", checkAnswer); cb.addEventListener("click", checkAnswer); }
     if (nb) {
       nb.removeEventListener("click", nextHandler);
       nb.addEventListener("click", nextHandler);
     }
-    if (rb) { rb.removeEventListener("click", handleReset); rb.addEventListener("click", handleReset); }
 
     STATE.currentLevel = 0;
     STATE.score = 0;

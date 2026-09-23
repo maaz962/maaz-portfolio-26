@@ -1,14 +1,14 @@
 (function () {
   "use strict";
 
-  // ANIMATION ARENA — CSS transitions + keyframe animations, taught through
+  // ANIMATION ARENA: CSS transitions + keyframe animations, taught through
   // 12 levels across two tiers (8 Beginner, 4 Intermediate). Players compose
   // CSS property: value pairs in the editor and hit Check; a live preview
   // applies valid pairs to the #arena-stage element on the board.
 
   // A fixed <style> block defines the keyframes players refer to by name
   // (pulse, spin, float, pop, wiggle), so the answer is always just composing
-  // the `animation` shorthand from the editor — no keyframes authoring needed.
+  // the `animation` shorthand from the editor; no keyframes authoring needed.
   var KEYFRAMES_CSS = [
     "@keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.15); } }",
     "@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }",
@@ -35,7 +35,7 @@
     "Not quite. Compare your property and value with the task.",
     "Almost! Re-read the instruction and double-check the value.",
     "Hmm, that doesn't animate the way the task asks. Check the hint!",
-    "Keep at it — the property is right but the value needs work.",
+    "Keep at it. The property is right, but the value needs work.",
   ];
 
   var VALID_PROPS = [
@@ -59,8 +59,8 @@
       tier: "beginner",
       title: "First Fade",
       instruction:
-        "The star flashes in with zero smoothness. Give it a transition so its background color changes gradually — property background-color, duration 0.4s.",
-      hint: "A transition needs the property name and how long it lasts — write <code>transition: background-color 0.4s</code>.",
+        "The star flashes in with zero smoothness. Give it a transition so its background color changes gradually. Use the property background-color with a 0.4s duration.",
+      hint: "A transition needs the property name and how long it lasts. Write <code>transition: background-color 0.4s</code>.",
       accept: [
         { "transition": "background-color 0.4s" },
       ],
@@ -75,8 +75,8 @@
       tier: "beginner",
       title: "Easy Does It",
       instruction:
-        "The star dims abruptly. Smooth it out with the transition shorthand — fade opacity over 0.6s using the ease-in-out timing function.",
-      hint: "Use the shortcut — <code>transition: opacity 0.6s ease-in-out</code>.",
+        "The star dims abruptly. Smooth it out with the transition shorthand. Fade opacity over 0.6s using the ease-in-out timing function.",
+      hint: "Use the shortcut here: <code>transition: opacity 0.6s ease-in-out</code>.",
       accept: [
         { "transition": "opacity 0.6s ease-in-out" },
       ],
@@ -91,7 +91,7 @@
       tier: "beginner",
       title: "Slide Over",
       instruction:
-        "Slide the star over to the dashed goal ring by transforming it — translate it 80px along the X axis.",
+        "Slide the star over to the dashed goal ring by transforming it. Translate it 80px along the X axis.",
       hint: "Transform moves the star. Try <code>transform: translateX(80px)</code>.",
       accept: [
         { "transform": "translatex(80px)" },
@@ -108,7 +108,7 @@
       tier: "beginner",
       title: "Turn the Dial",
       instruction:
-        "Spin the star a quarter turn — rotate it 45deg.",
+        "Spin the star a quarter turn by rotating it 45deg.",
       hint: "Rotations happen with <code>transform: rotate(45deg)</code>.",
       accept: [
         { "transform": "rotate(45deg)" },
@@ -124,7 +124,7 @@
       tier: "beginner",
       title: "Super Size",
       instruction:
-        "Blow the star up — scale it to 1.5 times its size.",
+        "Blow the star up. Scale it to 1.5 times its size.",
       hint: "<code>transform: scale(1.5)</code> will grow it for you.",
       accept: [
         { "transform": "scale(1.5)" },
@@ -140,7 +140,7 @@
       tier: "beginner",
       title: "First Loop",
       instruction:
-        "Make the star pulse on a loop using the built-in pulse keyframes — the animation property with a 1.5s duration.",
+        "Make the star pulse on a loop using the built-in pulse keyframes. Use the animation property with a 1.5s duration.",
       hint: "Keyframes run through the animation property, like <code>animation: pulse 1.5s</code>.",
       accept: [
         { "animation": "pulse 1.5s" },
@@ -156,8 +156,8 @@
       tier: "beginner",
       title: "Endless Motion",
       instruction:
-        "Set the star spinning non-stop — animation spin 1s, and make it iterate infinitely.",
-      hint: "Keep it moving with <code>animation: spin 1s infinite</code> — the iteration count lives in the shorthand.",
+        "Set the star spinning non-stop with animation spin 1s, and make it iterate infinitely.",
+      hint: "Keep it moving with <code>animation: spin 1s infinite</code>. The iteration count lives in the shorthand.",
       accept: [
         { "animation": "spin 1s infinite" },
         {
@@ -177,7 +177,7 @@
       tier: "beginner",
       title: "On Repeat",
       instruction:
-        "Send the star gently bobbing — a float animation over 3s with ease-in-out timing and infinite repeats, all in one shorthand.",
+        "Send the star gently bobbing with a float animation over 3s, ease-in-out timing, and infinite repeats, all in one shorthand.",
       hint: "Compose it all at once: <code>animation: float 3s ease-in-out infinite</code>.",
       accept: [
         { "animation": "float 3s ease-in-out infinite" },
@@ -218,7 +218,7 @@
       tier: "intermediate",
       title: "Zoom In, Zoom Out",
       instruction:
-        "Make the star zoom back and forth — a pulse animation over 2s with ease-in-out timing, repeated infinitely, and the direction reversed on every other cycle with alternate.",
+        "Make the star zoom back and forth with a pulse animation over 2s, ease-in-out timing, repeated infinitely, and the direction reversed on every other cycle with alternate.",
       hint: "Turning around each cycle is the <code>animation-direction</code> value <code>alternate</code>, inside the shorthand: <code>animation: pulse 2s ease-in-out infinite alternate</code>.",
       accept: [
         { "animation": "pulse 2s ease-in-out infinite alternate" },
@@ -241,7 +241,7 @@
       tier: "intermediate",
       title: "Hover Lift",
       instruction:
-        "Lift the star when you hover it! Add a transition for transform (0.3s, ease), then a transform that raises it 8px — then hover the star.",
+        "Lift the star when you hover it! Add a transition for transform (0.3s, ease), then a transform that raises it 8px. Then hover the star.",
       hint: "Two lines: <code>transition: transform 0.3s ease</code> and <code>transform: translateY(-8px)</code>. Hover the star to see it rise.",
       accept: [
         { "transition": "transform 0.3s ease", "transform": "translatey(-8px)" },
@@ -257,7 +257,7 @@
       tier: "intermediate",
       title: "Grand Finale",
       instruction:
-        "The grand finale! Hover the star — it should rise 8px and grow to 1.1x at once, with a 0.3s ease transition on transform.",
+        "The grand finale! Hover the star. It should rise 8px and grow to 1.1x at once, with a 0.3s ease transition on transform.",
       hint: "Chain the transforms together: <code>transition: transform 0.3s ease</code> and <code>transform: translateY(-8px) scale(1.1)</code>. Then hover the star.",
       accept: [
         { "transition": "transform 0.3s ease", "transform": "translatey(-8px) scale(1.1)" },
@@ -471,7 +471,7 @@
   }
 
   // Live preview: apply valid pairs to the stage. Hover levels never apply a
-  // static transform — it is shown on hover only.
+  // static transform; it is shown on hover only.
   function applyCSS(pairs) {
     var stage = $("arena-stage");
     if (!stage) return;
@@ -648,13 +648,41 @@
   function renderSolvedNote() {
     var note = $("aaa-solved-note");
     if (!note) return;
-    var level = LEVELS[STATE.currentLevel];
     var done = !!STATE.completed[STATE.currentLevel];
     note.hidden = !done;
-    if (done && level) {
-      note.innerHTML = "\u2713 Solved! <strong>+" + pointsForLevel(level) + " XP</strong> earned.";
+    if (done) {
+      note.textContent = "Solved! Answers are saved - you can return to this level anytime.";
     } else {
       note.textContent = "";
+    }
+  }
+
+  var CHECK_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>';
+  var X_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>';
+
+  function renderResult(type, pointsOrMsg) {
+    var r = $("aaa-result");
+    if (!r) return;
+    if (type === "pass") {
+      r.className = "aaa-result pass";
+      r.innerHTML =
+        '<div class="aaa-result-icon">' + CHECK_SVG + '</div>' +
+        '<div class="aaa-result-content">' +
+        '<strong>Correct!</strong>' +
+        '<span class="aaa-result-detail"><span class="aaa-result-xp">+' + pointsOrMsg + ' XP</span> · Saved to your profile</span>' +
+        '</div>';
+      r.style.display = "flex";
+    } else if (type === "fail") {
+      r.className = "aaa-result fail";
+      r.innerHTML =
+        '<div class="aaa-result-icon">' + X_SVG + '</div>' +
+        '<div class="aaa-result-content">' +
+        '<strong>Not quite yet</strong>' +
+        '<span class="aaa-result-detail">' + pointsOrMsg + '</span>' +
+        '</div>';
+      r.style.display = "flex";
+    } else {
+      r.style.display = "none";
     }
   }
 
@@ -678,11 +706,12 @@
     renderProgress();
     emitProgress();
     publishState();
+    renderResult("pass", pointsForLevel(level));
 
     showToast("\u2713 Correct! Watch the star move!", false);
 
     setTimeout(function () {
-      var msg = randomItem(SUCCESS_MSGS);
+      var msg = "+" + pointsForLevel(level) + " XP \u00B7 Saved to your profile";
       if (level.isFinal) {
         showOverlay("Champion!", "You mastered every trick in the book.", msg, "See Your Results \u2B50", function () {
           nextLevel();
@@ -736,36 +765,41 @@
     if (!ta) return;
     var level = LEVELS[STATE.currentLevel];
     if (!level) {
-      showToast("Level data not loaded yet — reload the page if this persists.", true);
+      showToast("Level data not loaded yet. Reload the page if this persists.", true);
       return;
     }
     var text = ta.value || "";
     var pairs = parseCSS(text);
 
     if (!text.trim()) {
+      renderResult("fail", "Write some CSS first! e.g. " + level.placeholder.replace(/\n/g, " "));
       showToast("Write some CSS first! e.g. " + level.placeholder.replace(/\n/g, " "), true);
       return;
     }
     if (pairs.length === 0) {
-      showToast("That isn't valid CSS — write property: value pairs, one per line.", true);
+      renderResult("fail", "That isn't valid CSS. Write property: value pairs, one per line.");
+      showToast("That isn't valid CSS. Write property: value pairs, one per line.", true);
       return;
     }
     var err = validateInput(pairs);
-    if (err) { showToast(err, true); return; }
+    if (err) { renderResult("fail", err); showToast(err, true); return; }
 
     // Preview the exact answer state before judging it.
     resetBoard();
     applyCSS(pairs);
 
     if (STATE.completed[STATE.currentLevel]) {
-      showToast("\u2713 Already solved \u2014 +" + pointsForLevel(level) + " XP earned.", false);
+      renderResult("pass", pointsForLevel(level));
+      showToast("\u2713 Already solved. +" + pointsForLevel(level) + " XP earned.", false);
       return;
     }
 
     if (checkCompletion(pairs)) {
       completeLevel(text);
     } else {
-      showToast(getWrongHint(pairs), true);
+      var hint = getWrongHint(pairs);
+      renderResult("fail", hint);
+      showToast(hint, true);
     }
   }
 
@@ -779,7 +813,7 @@
     var text = ta.value;
     var pairs = parseCSS(text);
     if (pairs.length === 0) {
-      // Nothing to preview yet — clear the board so stale styles never linger.
+      // Nothing to preview yet; clear the board so stale styles never linger.
       resetBoard();
       hideToast();
       return;
@@ -864,12 +898,12 @@
     if (!text.trim()) {
       resetBoard();
       hideToast();
-      showToast("Write some CSS first \u2014 then Run to see it play!", true);
+      showToast("Write some CSS first, then Run to see it play!", true);
       return;
     }
     if (pairs.length === 0) {
       resetBoard();
-      showToast("That isn't valid CSS \u2014 write property: value pairs, one per line.", true);
+      showToast("That isn't valid CSS; write property: value pairs, one per line.", true);
       return;
     }
     var err = validateInput(pairs);
@@ -884,12 +918,13 @@
     applyCSS(pairs);
     replayAnimations(pairs);
     queueIntroFx(level);
+    renderResult("none");
 
     if (level.hover) {
       simulateHover(pairs);
-      showToast("\u25B6 Run \u2014 preview hover shown. Hover the robot yourself to try it!", false);
+      showToast("\u25B6 Run: preview hover shown. Hover the robot yourself to try it!", false);
     } else {
-      showToast("\u25B6 Run \u2014 watch the robot respond to your CSS!", false);
+      showToast("\u25B6 Run: watch the robot respond to your CSS!", false);
     }
   }
 
@@ -898,19 +933,34 @@
     if (!dots) return;
     dots.innerHTML = "";
     for (var i = 0; i < LEVELS.length; i++) {
-      var dot = document.createElement("span");
-      dot.className =
-        "aaa-progress-dot" +
-        (STATE.completed[i] ? " done" : "") +
-        (i === STATE.currentLevel ? " current" : "");
-      dots.appendChild(dot);
+      var btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "aaa-progress-dot";
+      btn.setAttribute("aria-label", "Level " + (i + 1));
+      btn.title = "Level " + (i + 1);
+      if (i === STATE.currentLevel) btn.classList.add("current");
+      var isDone = !!STATE.completed[i];
+      var locked = !isDone && !isLevelUnlocked(i);
+      if (isDone) btn.classList.add("done");
+      if (locked) btn.classList.add("locked");
+      if (locked) btn.disabled = true;
+      btn.textContent = isDone ? "\u2713" : String(i + 1);
+      if (!locked) {
+        btn.addEventListener("click", function () {
+          if (i !== STATE.currentLevel) {
+            gotoLevel(i);
+            publishState();
+          }
+        });
+      }
+      dots.appendChild(btn);
     }
   }
 
   function renderHintArea(level, hintEl) {
     // Nudges stay hidden behind a "Show Hint" button. Reveals draw from the
     // shared daily budget (3 hints/day across ALL games) which the page
-    // enforces server-side via /api/games/hints — the engine never unlocks
+    // enforces server-side via /api/games/hints; the engine never unlocks
     // it directly.
     hintEl.innerHTML = "";
     var btn = document.createElement("button");
@@ -928,7 +978,7 @@
     left.className = "aaa-hint-left";
     left.id = "aaa-hint-left";
     var n =
-      typeof window.__aaaHintLeft === "number" ? window.__aaaHintLeft : "\u2014";
+      typeof window.__aaaHintLeft === "number" ? window.__aaaHintLeft : "-";
     left.textContent = "Hints left today: " + n;
     hintEl.appendChild(left);
   }
@@ -980,6 +1030,7 @@
 
     renderSolvedNote();
     renderProgress();
+    renderResult("none");
 
     clearEffectTimer();
     renderBoard();
@@ -1038,6 +1089,7 @@
 
     var note = $("aaa-solved-note");
     if (note) { note.hidden = true; note.textContent = ""; }
+    renderResult("none");
 
     hideOverlay();
     hideToast();
@@ -1051,7 +1103,6 @@
     var pb = $("prev-btn");
     var nb = $("next-btn");
     var cb = $("check-btn");
-    var rb = $("reset-btn");
     var runb = $("run-btn");
 
     if (ta) {
@@ -1064,7 +1115,6 @@
       nb.addEventListener("click", nextHandler);
     }
     if (cb) { cb.removeEventListener("click", checkAnswer); cb.addEventListener("click", checkAnswer); }
-    if (rb) { rb.removeEventListener("click", handleReset); rb.addEventListener("click", handleReset); }
     if (runb) { runb.removeEventListener("click", handleRun); runb.addEventListener("click", handleRun); }
 
     STATE.currentLevel = 0;

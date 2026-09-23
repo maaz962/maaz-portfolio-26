@@ -7,8 +7,7 @@ import {
   ArrowLeft,
   Gamepad2,
   Sparkles,
-  RefreshCw,
-  Play,
+  Terminal,
   Check,
 } from "lucide-react";
 import { GlassNavbar } from "@/components/layout/glass-navbar";
@@ -110,6 +109,7 @@ export default function HtmlHeroPage() {
                 <Sparkles className="icon h-3 w-3" />
                 <span>Hint: your hint appears here.</span>
               </div>
+              <div id="hh-solved-note" className="hh-solved-note" hidden />
             </div>
 
             <div className="hh-editor">
@@ -132,19 +132,19 @@ export default function HtmlHeroPage() {
                   spellCheck={false}
                 />
               </div>
+              <div id="hh-result" className="hh-result" hidden />
               <div id="toast" className="hh-status-toast" />
               <div className="hh-editor-actions">
-                <button id="reset-btn" type="button" className="hh-btn hh-reset-btn">
-                  <RefreshCw className="h-3 w-3" />
-                  Reset
+                <button id="run-btn" type="button" className="hh-btn hh-run-btn">
+                  <Terminal className="h-3 w-3" />
+                  Run
                 </button>
                 <div className="hh-nav-buttons">
-                  <button id="check-btn" type="button" className="hh-btn hh-check-btn">
-                    <Play className="h-3 w-3" />
-                    Check
-                  </button>
                   <button id="prev-btn" type="button" className="hh-btn hh-nav-btn prev" disabled>
                     ← Prev
+                  </button>
+                  <button id="check-btn" type="button" className="hh-btn hh-check-btn">
+                    Check
                   </button>
                   <button id="next-btn" type="button" className="hh-btn hh-nav-btn next">
                     Next →

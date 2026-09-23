@@ -47,6 +47,73 @@
   margin-bottom: 0.5rem;
 }
 
+/* ---------- Level Progress Dots ---------- */
+
+.zoo-progress {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  flex-wrap: wrap;
+  margin: 0.125rem 0 0.75rem;
+}
+
+.zoo-progress-label {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  color: hsl(var(--muted) / 0.6);
+  margin-right: 0.125rem;
+}
+
+.zoo-progress-dot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 9999px;
+  border: 1px solid hsl(var(--border));
+  background: hsl(var(--background-secondary));
+  color: hsl(var(--muted));
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  line-height: 1;
+  padding: 0;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.zoo-progress-dot:hover:not(:disabled) {
+  border-color: hsl(var(--primary));
+  color: hsl(var(--primary));
+}
+
+.zoo-progress-dot.current {
+  background: hsl(var(--primary));
+  border-color: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+  box-shadow: 0 0 0 3px hsl(var(--primary) / 0.15);
+}
+
+.zoo-progress-dot.done {
+  background: hsl(142 70% 40%);
+  border-color: hsl(142 70% 40%);
+  color: #fff;
+}
+
+.zoo-progress-dot.done.current {
+  box-shadow: 0 0 0 3px hsl(142 70% 40% / 0.25);
+}
+
+.zoo-progress-dot.locked {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.zoo-progress-dot.locked:hover {
+  border-color: hsl(var(--border));
+  color: hsl(var(--muted));
+}
+
 .zoo-level-badge {
   display: inline-flex;
   align-items: center;
@@ -113,6 +180,27 @@
   font-size: 0.65rem;
 }
 
+/* ---------- Solved Note ---------- */
+
+.zoo-solved-note {
+  margin-top: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  background: hsl(142 70% 40% / 0.12);
+  border: 1px solid hsl(142 70% 40% / 0.4);
+  color: hsl(142 70% 45%);
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.75rem;
+  font-size: 0.68rem;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.zoo-solved-note-icon {
+  flex-shrink: 0;
+}
+
 /* ---------- Code Editor ---------- */
 
 .zoo-editor {
@@ -167,11 +255,11 @@
   display: flex;
   flex: 1;
   min-height: 160px;
-  background: hsl(225 15% 8%);
+  background: #282c34;
 }
 
 .dark .zoo-editor-body {
-  background: hsl(225 20% 5%);
+  background: #282c34;
 }
 
 .zoo-line-numbers {
@@ -180,17 +268,17 @@
   font-family: var(--font-mono);
   font-size: 0.75rem;
   line-height: 1.7;
-  color: hsl(var(--muted) / 0.4);
+  color: hsl(220 10% 38%);
   user-select: none;
   min-width: 2.5rem;
   padding-right: 0.625rem;
   padding-left: 0.625rem;
   border-right: 1px solid hsl(0 0% 100% / 0.06);
-  background: hsl(225 15% 8%);
+  background: #282c34;
 }
 
 .dark .zoo-line-numbers {
-  background: hsl(225 20% 5%);
+  background: #282c34;
 }
 
 .zoo-code-area {
@@ -230,7 +318,7 @@
   font-family: var(--font-mono);
   font-size: 0.75rem;
   line-height: 1.7;
-  color: hsl(270 80% 75%);
+  color: #abb2bf;
   caret-color: hsl(var(--primary));
   tab-size: 2;
   position: relative;
@@ -238,7 +326,7 @@
 }
 
 .zoo-editor-textarea::placeholder {
-  color: hsl(0 0% 100% / 0.18);
+  color: hsl(0 0% 100% / 0.25);
   font-style: italic;
 }
 
@@ -247,7 +335,7 @@
   font-size: 0.6rem;
   color: hsl(var(--muted) / 0.5);
   padding: 0.3rem 0.75rem 0.5rem;
-  background: hsl(225 15% 8%);
+  background: #282c34;
   transition: opacity 0.3s ease, color 0.3s ease;
   white-space: nowrap;
   overflow: hidden;
@@ -261,7 +349,7 @@
 }
 
 .dark .zoo-editor-hint {
-  background: hsl(225 20% 5%);
+  background: #282c34;
 }
 
 .zoo-editor-actions {
@@ -273,24 +361,86 @@
   background: hsl(var(--background-secondary));
 }
 
-.zoo-reset-btn {
+.zoo-run-btn {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 0.375rem;
+  padding: 0.4rem 1rem;
+  border-radius: 9999px;
   font-size: 0.7rem;
-  font-weight: 600;
-  color: hsl(var(--muted));
-  background: none;
+  font-weight: 700;
   border: none;
   cursor: pointer;
-  padding: 0.375rem 0.625rem;
-  border-radius: 0.375rem;
+  background: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
   transition: all 0.15s ease;
 }
 
-.zoo-reset-btn:hover {
-  color: hsl(var(--foreground));
-  background: hsl(var(--border));
+.zoo-run-btn:hover {
+  filter: brightness(1.1);
+}
+
+.zoo-run-btn:active {
+  transform: translateY(0);
+}
+
+/* ---------- Result Panel ---------- */
+
+.zoo-result {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0.5rem 0.875rem;
+  border-radius: 0.875rem;
+  margin: 0.5rem 0.5rem 0;
+  font-size: 0.7rem;
+  line-height: 1.45;
+}
+
+.zoo-result-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.zoo-result-icon svg {
+  width: 14px;
+  height: 14px;
+  display: block;
+}
+
+.zoo-result-content {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.zoo-result-content strong {
+  font-weight: 700;
+}
+
+.zoo-result-xp {
+  color: inherit;
+  font-weight: 700;
+}
+
+.zoo-result-detail {
+  opacity: 0.8;
+  color: hsl(var(--muted));
+}
+
+.zoo-result.pass {
+  background: hsl(142 70% 50% / 0.12);
+  border: 1px solid hsl(142 70% 50% / 0.5);
+  color: hsl(142 70% 50%);
+}
+
+.zoo-result.fail {
+  background: hsl(0 84% 60% / 0.1);
+  border: 1px solid hsl(0 84% 60% / 0.4);
+  color: hsl(0 84% 60%);
 }
 
 .zoo-nav-buttons {
@@ -333,6 +483,25 @@
   opacity: 0.4;
   cursor: not-allowed;
   filter: none;
+}
+
+.zoo-check-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.4rem 0.875rem;
+  border-radius: 9999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  background: hsl(var(--foreground) / 0.1);
+  color: hsl(var(--foreground));
+  transition: all 0.15s ease;
+}
+
+.zoo-check-btn:hover {
+  background: hsl(var(--foreground) / 0.18);
 }
 
 /* ---------- Status / Feedback Toast ---------- */
@@ -637,7 +806,7 @@
 .zoo-complete-overlay {
   position: absolute;
   inset: 0;
-  background: hsl(var(--background) / 0.85);
+  background: hsl(240 20% 5% / 0.88);
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
   display: flex;

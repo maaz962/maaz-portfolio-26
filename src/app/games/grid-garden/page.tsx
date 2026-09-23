@@ -97,6 +97,7 @@ export default function GridGardenPage() {
                   Beginner
                 </span>
               </div>
+              <div id="grid-progress" className="grid-progress" />
               <h2
                 id="level-title"
                 className="font-display text-sm font-bold text-foreground"
@@ -106,6 +107,17 @@ export default function GridGardenPage() {
               <p id="level-instruction" className="grid-instruction mt-1">
                 The blocks are stacked vertically. Activate CSS Grid to arrange them!
               </p>
+              <div
+                id="grid-solved-note"
+                className="grid-solved-note"
+                style={{ display: "none" }}
+              >
+                <span className="grid-solved-note-icon">✓</span>
+                <span>
+                  Solved! Answers are saved - you can return to this level
+                  anytime.
+                </span>
+              </div>
               <div id="level-hint" className="grid-hint">
                 <Sparkles className="mt-0.5 h-3 w-3 shrink-0 text-primary" />
                 <span>
@@ -147,13 +159,21 @@ export default function GridGardenPage() {
                 </div>
               </div>
               <div id="toast" className="grid-status-toast" />
+              <div
+                id="grid-result"
+                className="grid-result"
+                style={{ display: "none" }}
+              />
               <div className="grid-editor-actions">
-                <button id="reset-btn" type="button" className="grid-reset-btn">
-                  ↺ Reset
+                <button id="run-btn" type="button" className="grid-run-btn">
+                  ▶ Run
                 </button>
                 <div className="grid-nav-buttons">
                   <button id="prev-btn" type="button" className="grid-nav-btn prev" disabled>
                     ← Prev
+                  </button>
+                  <button id="check-btn" type="button" className="grid-check-btn">
+                    ✓ Check
                   </button>
                   <button id="next-btn" type="button" className="grid-nav-btn next" disabled>
                     Next →

@@ -97,6 +97,7 @@ export default function FlexboxZooPage() {
                   Beginner
                 </span>
               </div>
+              <div id="zoo-progress" className="zoo-progress" />
               <h2
                 id="level-title"
                 className="font-display text-sm font-bold text-foreground"
@@ -107,6 +108,17 @@ export default function FlexboxZooPage() {
                 Right now the animals are stacked on top of each other. Turn on
                 CSS Flexbox so they line up in a row!
               </p>
+              <div
+                id="zoo-solved-note"
+                className="zoo-solved-note"
+                style={{ display: "none" }}
+              >
+                <span className="zoo-solved-note-icon">✓</span>
+                <span>
+                  Solved! Answers are saved - you can return to this level
+                  anytime.
+                </span>
+              </div>
               <div id="level-hint" className="zoo-hint">
                 <Sparkles className="mt-0.5 h-3 w-3 shrink-0 text-primary" />
                 <span>
@@ -149,13 +161,18 @@ export default function FlexboxZooPage() {
                 </div>
               </div>
               <div id="toast" className="zoo-status-toast" />
+              <div
+                id="zoo-result"
+                className="zoo-result"
+                style={{ display: "none" }}
+              />
               <div className="zoo-editor-actions">
                 <button
-                  id="reset-btn"
+                  id="run-btn"
                   type="button"
-                  className="zoo-reset-btn"
+                  className="zoo-run-btn"
                 >
-                  ↺ Reset
+                  ▶ Run
                 </button>
                 <div className="zoo-nav-buttons">
                   <button
@@ -165,6 +182,13 @@ export default function FlexboxZooPage() {
                     disabled
                   >
                     ← Prev
+                  </button>
+                  <button
+                    id="check-btn"
+                    type="button"
+                    className="zoo-check-btn"
+                  >
+                    ✓ Check
                   </button>
                   <button
                     id="next-btn"

@@ -1,4 +1,4 @@
-/* Query Quest — level data (matches game.js contract).
+/* Query Quest: level data (matches game.js contract).
  * 16 levels, 4 tiers (easy 1-5 / intermediate 6-10 / hard 11-13 / mostHard 14-16).
  * Judges compare the returned result set against expectedColumns + expectedRows
  * in EXACT column order and EXACT row order, so every expectation below is
@@ -6,7 +6,7 @@
  * ORDER BY where multicple row orders are possible).
  *
  * Anti-answer-leak rule (house lesson): every `starter` is left blank ("").
- * The task is stated in `instruction`/`hint` above the editor — never repeated
+ * The task is stated in `instruction`/`hint` above the editor; never repeated
  * as a code comment inside the starter template.
  */
 window.__queryQuestLevels = [
@@ -16,7 +16,7 @@ window.__queryQuestLevels = [
     tier: "easy",
     title: "See Everything",
     concepts: ["select"],
-    shortDesc: "SELECT * — the very first query",
+    shortDesc: "SELECT *: the very first query",
     instruction:
       "Your first mission: return <em>every column and every row</em> from the <code>users</code> table. Yes, that includes the id, the email and the age.",
     hint: "SELECT needs two parts: the columns you want (a one-character wildcard means 'all columns') and the table you're reading from.",
@@ -38,7 +38,7 @@ window.__queryQuestLevels = [
     tier: "easy",
     title: "London Calls",
     concepts: ["where"],
-    shortDesc: "WHERE — filter a column",
+    shortDesc: "WHERE: filter a column",
     instruction:
       "Only the Londoners, please. Return <em>every column</em> of every user who lives in <code>London</code>.",
     hint: "A WHERE clause narrows rows by a condition. Compare the city column to the text 'London'.",
@@ -56,7 +56,7 @@ window.__queryQuestLevels = [
     tier: "easy",
     title: "Oldest to Youngest",
     concepts: ["order-by"],
-    shortDesc: "ORDER BY — sort your rows",
+    shortDesc: "ORDER BY: sort your rows",
     instruction:
       "Return only the <code>name</code> and <code>age</code> of every user, sorted <em>youngest first</em> (age ascending).",
     hint: "An ORDER BY clause sorts the output. 'Youngest first' means ascending on the age column.",
@@ -78,7 +78,7 @@ window.__queryQuestLevels = [
     tier: "easy",
     title: "Top of the Class",
     concepts: ["limit"],
-    shortDesc: "LIMIT — cap the result set",
+    shortDesc: "LIMIT: cap the result set",
     instruction:
       "Show the <em>3 oldest</em> users, by <code>name</code> only, oldest first.",
     hint: "Order by age the other way around, then a LIMIT stops the query after 3 rows.",
@@ -93,12 +93,12 @@ window.__queryQuestLevels = [
     tier: "easy",
     title: "Two-Way Filter",
     concepts: ["where", "and-or"],
-    shortDesc: "WHERE with OR — combine conditions",
+    shortDesc: "WHERE with OR: combine conditions",
     instruction:
       "Show the <code>name</code> and <code>city</code> of every user who is <em>under 40</em> OR lives in <code>Boston</code>.",
-    hint: "Two conditions joined by OR — one matches on age, the other on city. A row matches if either is true.",
+    hint: "Two conditions joined by OR. One matches on age, the other on city. A row matches if either is true.",
     starter: "",
-    seedErr: "WHERE needs both conditions — age less than 40, or city equal to 'Boston' — joined with OR.",
+    seedErr: "WHERE needs both conditions, age less than 40 or city equal to 'Boston', joined with OR.",
     expectedColumns: ["name", "city"],
     expectedRows: [
       ["Ada Lovelace", "London"],
@@ -117,7 +117,7 @@ window.__queryQuestLevels = [
     shortDesc: "INNER JOIN two tables",
     instruction:
       "Match every order to the product it bought. Return the <code>order id</code> and the <code>product name</code>, one row per order.",
-    hint: "orders and products share a column — product_id. Join on it so each order picks up its product's name.",
+    hint: "orders and products share a column, product_id. Join on it so each order picks up its product's name.",
     starter: "",
     seedErr: "Join orders to products on product_id. Select the order's id and the product's name.",
     expectedColumns: ["id", "name"],
@@ -140,7 +140,7 @@ window.__queryQuestLevels = [
     concepts: ["left-join"],
     shortDesc: "LEFT JOIN keeps unmatched rows",
     instruction:
-      "Show <em>every</em> user with the ids of their orders — users who have never ordered must still appear, once, with an empty order id.",
+      "Show <em>every</em> user with the ids of their orders. Users who have never ordered must still appear, once, with an empty order id.",
     hint: "An inner join silently drops someone with no orders. A different join kind keeps every left-hand row.",
     starter: "",
     seedErr: "Use a LEFT JOIN (users on the left, orders on the right) so Barbara, who has no orders, still shows up as a NULL id.",
@@ -163,9 +163,9 @@ window.__queryQuestLevels = [
     tier: "intermediate",
     title: "Count the Catalog",
     concepts: ["count"],
-    shortDesc: "COUNT(*) — total rows",
+    shortDesc: "COUNT(*): total rows",
     instruction:
-      "How many products are in the catalog? Return a single count — nothing else.",
+      "How many products are in the catalog? Return a single count, and nothing else.",
     hint: "COUNT is an aggregate function that counts rows. COUNT(*) counts every row in the table.",
     starter: "",
     seedErr: "Use COUNT(*) to count all rows in the products table. No other columns.",
@@ -178,7 +178,7 @@ window.__queryQuestLevels = [
     tier: "intermediate",
     title: "All The Items",
     concepts: ["sum"],
-    shortDesc: "SUM — add up a column",
+    shortDesc: "SUM: add up a column",
     instruction:
       "Every order has a <code>quantity</code>. Return the <em>total number of items</em> ordered across all orders.",
     hint: "SUM adds up a numeric column. Sum the quantity column across all rows of orders.",
@@ -193,7 +193,7 @@ window.__queryQuestLevels = [
     tier: "intermediate",
     title: "City Census",
     concepts: ["group-by", "count"],
-    shortDesc: "GROUP BY — count per group",
+    shortDesc: "GROUP BY: count per group",
     instruction:
       "For each city, return the city name and <em>how many users live there</em>. One row per city.",
     hint: "GROUP BY collects rows that share a value into one group. Count within each group.",
@@ -215,9 +215,9 @@ window.__queryQuestLevels = [
     tier: "hard",
     title: "The Never-Ored Product",
     concepts: ["subquery"],
-    shortDesc: "Subquery — find ordered products",
+    shortDesc: "Subquery: find ordered products",
     instruction:
-      "List the <code>name</code> of every product that has been ordered <em>at least once</em>. One product is never ordered — it must NOT appear.",
+      "List the <code>name</code> of every product that has been ordered <em>at least once</em>. One product is never ordered. It must NOT appear.",
     hint: "A subquery inside WHERE can answer 'which product ids appear in orders?', then compare each product id against it.",
     starter: "",
     seedErr: "Use WHERE id IN (SELECT ...). The inner query should return every product_id from orders.",
@@ -232,7 +232,7 @@ window.__queryQuestLevels = [
     concepts: ["insert"],
     shortDesc: "INSERT a new row, then prove it",
     instruction:
-      "Add a product named <code>Smart Watch</code> in category <code>electronics</code> priced <code>250</code>. The id is automatic — don't supply it. Then return its <code>name</code>, <code>category</code> and <code>price</code>.",
+      "Add a product named <code>Smart Watch</code> in category <code>electronics</code> priced <code>250</code>. The id is automatic. Don't supply it. Then return its <code>name</code>, <code>category</code> and <code>price</code>.",
     hint: "INSERT INTO names the target columns and VALUES lists the new data. Finish with a SELECT that shows the row you just added.",
     starter: "",
     seedErr: "INSERT INTO products (name, category, price) with the three values, then SELECT name, category, price for the new product.",
@@ -279,7 +279,7 @@ window.__queryQuestLevels = [
     concepts: ["join", "group-by", "sum"],
     shortDesc: "LEFT JOIN + GROUP BY + SUM",
     instruction:
-      "Total revenue per user from <em>paid</em> orders only (<code>quantity &times; price</code>). Users with no paid orders show NULL — but still appear. Name the total column <code>total</code>.",
+      "Total revenue per user from <em>paid</em> orders only (<code>quantity &times; price</code>). Users with no paid orders show NULL, but still appear. Name the total column <code>total</code>.",
     hint: "Cross order and product for prices, but filter the paid status inside the join so non-paid users aren't dropped. Group by user so SUM works per person.",
     starter: "",
     seedErr: "LEFT JOIN orders with status filter in the ON, LEFT JOIN products for prices, GROUP BY the user's id, ORDER BY that id. SUM(quantity * price) AS total.",
@@ -299,7 +299,7 @@ window.__queryQuestLevels = [
     tier: "mostHard",
     title: "The Final Report",
     concepts: ["group-by", "having", "avg", "order-by", "limit"],
-    shortDesc: "The boss — HAVING + AVG + LIMIT",
+    shortDesc: "The boss: HAVING + AVG + LIMIT",
     instruction:
       "For cities with <em>more than one</em> user: return the <code>city</code> and its <code>average age</code>, oldest average first, top 2.",
     hint: "HAVING filters whole groups (not rows). Average ages with AVG, order descending, then LIMIT the report to two cities.",

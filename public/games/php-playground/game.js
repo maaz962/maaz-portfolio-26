@@ -1,5 +1,5 @@
 ﻿/* ==========================================================================
-   PHP PLAYGROUND — Engine (vanilla IIFE, js-detective contract)
+   PHP PLAYGROUND: Engine (vanilla IIFE, js-detective contract)
    window API:
      __initPhpPlayground                init/reset state (called by hook)
      __resumePhpPlayground(saved)       restore DB progress (hook)

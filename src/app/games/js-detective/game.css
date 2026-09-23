@@ -176,11 +176,11 @@
   display: flex;
   flex: 1;
   min-height: 360px;
-  background: hsl(225 15% 8%);
+  background: #282c34;
 }
 
 .dark .jsd-editor-body {
-  background: hsl(225 20% 5%);
+  background: #282c34;
 }
 
 .jsd-line-numbers {
@@ -189,18 +189,18 @@
   font-family: var(--font-mono);
   font-size: 0.75rem;
   line-height: 1.7;
-  color: hsl(var(--muted) / 0.4);
+  color: hsl(220 10% 38%);
   user-select: none;
   min-width: 2.5rem;
   padding-right: 0.625rem;
   padding-left: 0.625rem;
   border-right: 1px solid hsl(0 0% 100% / 0.06);
-  background: hsl(225 15% 8%);
+  background: #282c34;
   overflow: hidden;
 }
 
 .dark .jsd-line-numbers {
-  background: hsl(225 20% 5%);
+  background: #282c34;
 }
 
 .jsd-code-area {
@@ -255,7 +255,7 @@
 .jsd-editor-highlight {
   z-index: 1;
   pointer-events: none;
-  color: hsl(52 100% 62%);
+  color: #abb2bf;
   overflow: auto;
   scrollbar-width: none;
 }
@@ -264,20 +264,20 @@
   display: none;
 }
 
-/* Token colors (VS Code-like). */
-.jsd-editor-highlight .tok-comment  { color: hsl(120 20% 50%); font-style: italic; }
-.jsd-editor-highlight .tok-string   { color: hsl(9 95% 62%); }
-.jsd-editor-highlight .tok-number   { color: hsl(200 95% 68%); }
-.jsd-editor-highlight .tok-keyword  { color: hsl(262 85% 74%); }
-.jsd-editor-highlight .tok-literal  { color: hsl(200 90% 60%); }
-.jsd-editor-highlight .tok-variable { color: hsl(230 50% 85%); }
+/* Token colors (oneDark / VS Code-like). */
+.jsd-editor-highlight .tok-comment  { color: #5c6370; font-style: italic; }
+.jsd-editor-highlight .tok-string   { color: #98c379; }
+.jsd-editor-highlight .tok-number   { color: #d19a66; }
+.jsd-editor-highlight .tok-keyword  { color: #c678dd; }
+.jsd-editor-highlight .tok-literal  { color: #56b6c2; }
+.jsd-editor-highlight .tok-variable { color: #e06c75; }
 
 .jsd-editor-hint {
   font-family: var(--font-mono);
   font-size: 0.6rem;
   color: hsl(var(--muted) / 0.5);
   padding: 0.3rem 0.75rem 0.5rem;
-  background: hsl(225 15% 8%);
+  background: #282c34;
   transition: opacity 0.3s ease, color 0.3s ease;
   white-space: nowrap;
   overflow: hidden;
@@ -291,7 +291,7 @@
 }
 
 .dark .jsd-editor-hint {
-  background: hsl(225 20% 5%);
+  background: #282c34;
 }
 
 .jsd-editor-actions {
@@ -524,9 +524,9 @@
 
 .jsd-hint-usage {
   flex-basis: 100%;
-  margin-top: 0.375rem;
+  margin-top: 0.5rem;
   font-family: var(--font-mono);
-  font-size: 0.6rem;
+  font-size: 0.62rem;
   color: hsl(var(--muted) / 0.7);
 }
 
@@ -596,12 +596,12 @@
   font-family: var(--font-mono);
   font-size: 0.78rem;
   line-height: 1.6;
-  background: hsl(225 15% 6%);
+  background: #1e222a;
   color: hsl(var(--foreground) / 0.85);
 }
 
 .dark .jsd-console {
-  background: hsl(225 20% 3%);
+  background: #161a20;
 }
 
 .jsd-console-line {
@@ -667,8 +667,8 @@
 }
 
 .jsd-progress-dot {
-  width: 22px;
-  height: 22px;
+  width: 24px;
+  height: 24px;
   border-radius: 9999px;
   border: 1px solid hsl(var(--border));
   background: hsl(var(--background-secondary));
@@ -703,7 +703,7 @@
 .jsd-complete-overlay {
   position: absolute;
   inset: 0;
-  background: hsl(var(--background) / 0.85);
+  background: hsl(240 20% 5% / 0.88);
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
   display: flex;

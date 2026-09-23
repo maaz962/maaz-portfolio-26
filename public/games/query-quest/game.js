@@ -1,5 +1,5 @@
 /* ==========================================================================
-   QUERY QUEST — SQL engine (sql.js / SQLite via WebAssembly).
+   QUERY QUEST: SQL engine (sql.js / SQLite via WebAssembly).
    Follows the php-playground engine contract so the shared page + hook
    wiring (level meta, tier gate, points, hints, solutions, DB progress)
    behave identically across games.
@@ -338,7 +338,7 @@
       var rowsOk = rowsMatch(lvl.expectedRows, r.values);
       var ok = colsOk && rowsOk;
       var detail = [];
-      if (!colsOk) detail.push("Expected columns: " + lvl.expectedColumns.join(", ") + " — got: " + r.columns.join(", "));
+      if (!colsOk) detail.push("Expected columns: " + lvl.expectedColumns.join(", ") + "; got: " + r.columns.join(", "));
       if (!rowsOk) detail.push("Expected " + lvl.expectedRows.length + " row(s), got " + r.values.length + ". Row order matters.");
       if (ok) {
         STATE.completed[index] = true;

@@ -430,6 +430,7 @@ export default function AnimationArenaPage() {
                     Beginner
                   </span>
                 </div>
+                <div id="progress-dots" className="aaa-progress" />
                 <h2
                   id="level-title"
                   className="aaa-level-title font-display"
@@ -484,14 +485,12 @@ export default function AnimationArenaPage() {
                   Type a CSS property like <code>transition: ...</code>
                 </div>
                 <div id="toast" className="aaa-status-toast" />
+                <div
+                  id="aaa-result"
+                  className="aaa-result"
+                  style={{ display: "none" }}
+                />
                 <div className="aaa-editor-actions">
-                  <button
-                    id="reset-btn"
-                    type="button"
-                    className="aaa-reset-btn"
-                  >
-                    ↺ Reset
-                  </button>
                   <button id="run-btn" type="button" className="aaa-run-btn">
                     ▶ Run
                   </button>
@@ -543,9 +542,9 @@ export default function AnimationArenaPage() {
                   style={{ display: "none" }}
                 >
                   <div id="aaa-stars" className="aaa-stars">
-                    <span className="aaa-star">⭐</span>
-                    <span className="aaa-star">⭐</span>
-                    <span className="aaa-star">⭐</span>
+                    <span className="aaa-star earned">⭐</span>
+                    <span className="aaa-star earned">⭐</span>
+                    <span className="aaa-star earned">⭐</span>
                   </div>
                   <div className="aaa-complete-text" id="aaa-complete-text">
                     Level Complete!
@@ -562,7 +561,6 @@ export default function AnimationArenaPage() {
                   </button>
                 </div>
               </div>
-              <div id="progress-dots" className="aaa-progress" />
               <div className="aaa-hint-bar">
                 <Sparkles className="h-3 w-3 shrink-0 text-primary" />
                 <span>

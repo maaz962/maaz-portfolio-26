@@ -1,5 +1,5 @@
 ﻿/* ==========================================================================
-   PHP PLAYGROUND — Level Data (16 levels across 4 difficulty tiers)
+   PHP PLAYGROUND: Level Data (16 levels across 4 difficulty tiers)
    Sets window.__phpPlaygroundLevels for the browser. game.js re-reads it
    lazily and polls until the data arrives, so script order is safe.
    Points come from the tier (POINTS in game.js), not per-level here.
@@ -44,7 +44,7 @@ window.__phpPlaygroundLevels = [
     shortDesc: "Use arithmetic operators correctly.",
     instruction:
       'Using <code>$a = 12</code>, <code>$b = 8</code> and <code>$c = 4</code>, print the result of <code>$a * $b + $c</code>.',
-    hint: "PHP follows normal math precedence — multiplication before addition.",
+    hint: "PHP follows normal math precedence: multiplication before addition.",
     starter: "<?php\n\n",
     passValue: "100",
     isFinal: false,
@@ -102,7 +102,7 @@ window.__phpPlaygroundLevels = [
     shortDesc: "Use array helpers to summarize data.",
     instruction:
       'Print <code>count()</code> and <code>array_sum()</code> of <code>$prices = [10, 20, 30]</code>, space-separated. Expected: <code>3 60</code>.',
-    hint: "Both are built-ins — <code>echo count($prices) . \" \" . array_sum($prices);</code>",
+    hint: "Both are built-ins: <code>echo count($prices) . \" \" . array_sum($prices);</code>",
     starter: "<?php\n\n",
     passValue: "3 60",
     isFinal: false,
@@ -188,7 +188,7 @@ window.__phpPlaygroundLevels = [
     shortDesc: "Default values with the null coalescing operator.",
     instruction:
       'Given <code>$config = ["theme" =&gt; "dark"]</code>, print <code>$config["timezone"]</code> using <code>??</code> so it defaults to <code>"default"</code>. The expected output is <code>default</code>.',
-    hint: "Write <code>$config[\"timezone\"] ?? \"default\"</code> — the <code>??</code> only kicks in when the key is missing.",
+    hint: "Write <code>$config[\"timezone\"] ?? \"default\"</code>. The <code>??</code> only kicks in when the key is missing.",
     starter: "<?php\n\n",
     passValue: "default",
     isFinal: false,
@@ -204,7 +204,7 @@ window.__phpPlaygroundLevels = [
     shortDesc: "Transform every item in an array.",
     instruction:
       'Uppercase every fruit in <code>$fruits = ["apple", "banana", "mango"]</code> with <code>array_map()</code>, then join the result with a single space. Expected: <code>APPLE BANANA MANGO</code>.',
-    hint: '<code>array_map("strtoupper", $fruits)</code> returns a new array — feed it to <code>implode(" ", ...)</code>.',
+    hint: '<code>array_map("strtoupper", $fruits)</code> returns a new array. Feed it to <code>implode(" ", ...)</code>.',
     starter: "<?php\n\n",
     passValue: "APPLE BANANA MANGO",
     isFinal: false,
