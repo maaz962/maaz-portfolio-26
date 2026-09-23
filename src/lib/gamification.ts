@@ -75,11 +75,30 @@ export const GAME_LEVEL_POINTS: Record<string, number[]> = {
   "animation-arena": [8, 8, 8, 8, 8, 8, 8, 8, 9, 9, 9, 9],
 };
 
+/**
+ * Stores for games whose progress is keyed by a stable 1-based level id
+ * instead of a 0-based index, so adding/removing/reordering levels can never
+ * misalign saved progress. Lists every level's id -> XP explicitly rather than
+ * deriving it from position, so a future reorder needs zero logic changes.
+ */
+export const GAME_LEVEL_POINTS_BY_ID: Record<string, Record<number, number>> = {
+  "js-detective": {
+    1: 2, 2: 2, 3: 2, 4: 2, // beginner
+    5: 5, 6: 5, 7: 5, 8: 5, // easy
+    9: 6, 10: 6, 11: 6, 12: 6, 13: 6, 14: 6, 15: 6, // intermediate
+    16: 10, 17: 10, 18: 10, // most hard
+  },
+};
+
 /** Shared daily hint budget: every game draws from one pool of 3 hints per user per day. */
 export const DAILY_HINT_LIMIT = 3;
 
 /** Total XP a game is worth when every level is beaten (100 for all seven games). */
 export function maxScoreForGame(gameSlug: string): number | null {
+  const byId = GAME_LEVEL_POINTS_BY_ID[gameSlug];
+  if (byId) {
+    return Object.values(byId).reduce((sum, p) => sum + p, 0);
+  }
   const points = GAME_LEVEL_POINTS[gameSlug];
   return points ? points.reduce((sum, p) => sum + p, 0) : null;
 }
@@ -93,6 +112,17 @@ export function scoreForCompleted(
   gameSlug: string,
   completed: Record<string, boolean>
 ): number | null {
+  const byId = GAME_LEVEL_POINTS_BY_ID[gameSlug];
+  if (byId) {
+    let sum = 0;
+    for (const [key, found] of Object.entries(completed)) {
+      if (found === true) {
+        const pts = byId[Number(key)];
+        if (pts !== undefined) sum += pts;
+      }
+    }
+    return sum;
+  }
   const points = GAME_LEVEL_POINTS[gameSlug];
   if (!points) return null;
   return points.reduce(

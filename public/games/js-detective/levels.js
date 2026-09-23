@@ -184,7 +184,7 @@ var LJS_LEVELS = [
       'Your first day on the force. The department just wants proof the console can speak. Log the exact message <code>Hello, Detective!</code> on its own line.',
     hint:
       'Use <code>console.log(...)</code> and put the exact text <code>Hello, Detective!</code> between quotes. The console prints whatever string you hand it, cleanly, on one line.',
-    starter: '// log "Hello, Detective!"\n',
+    starter: "",
     check: function (ctx, logs) {
       return logs.some(function (l) { return String(l.value) === "Hello, Detective!"; });
     },
@@ -200,7 +200,7 @@ var LJS_LEVELS = [
       'Two fragments of a clue have been recovered: <code>"The suspect is "</code> and <code>"Ada"</code>. Join them into one string with the <code>+</code> operator and log the full sentence — it must print <code>The suspect is Ada</code>.',
     hint:
       'A <code>+</code> between two strings stitches them into one. Log the joined result on a single line — the trailing space inside the first fragment keeps the words apart.',
-    starter: '// join the two fragments with + and log them\n',
+    starter: "",
     check: function (ctx, logs) {
       return logs.some(function (l) { return String(l.value) === "The suspect is Ada"; });
     },
@@ -216,7 +216,7 @@ var LJS_LEVELS = [
       'The safe opens at a three-number combination. Log the result of <code>6 * 7</code>, then the result of <code>10 - 3</code>, then the result of <code>20 / 4</code> — three lines, in that order.',
     hint:
       'One <code>console.log</code> per expression. JavaScript does the arithmetic for you — hand each whole expression to the log and read the computed result.',
-    starter: '// log 6*7, then 10-3, then 20/4\n',
+    starter: "",
     check: function (ctx, logs) {
       return !!logs && logs.length >= 3 &&
         logs[0].value === 42 &&
@@ -235,7 +235,7 @@ var LJS_LEVELS = [
       'Create a new suspect file. Declare a variable <code>suspect</code> holding the string <code>"Riley"</code>, then declare <code>evidence</code> holding the number <code>12</code>. Log <code>suspect</code> first, then <code>evidence</code> — two lines.',
     hint:
       'Use <code>let</code> or <code>const</code> to store a value under a name, then put that name inside <code>console.log(...)</code>. Two declarations, two logs, in order.',
-    starter: '// declare suspect = "Riley" and evidence = 12\n// then log both\n',
+    starter: "",
     check: function (ctx, logs) {
       return !!logs && logs.length >= 2 &&
         String(logs[0].value) === "Riley" &&
@@ -253,7 +253,7 @@ var LJS_LEVELS = [
       'Our very first case. Declare a variable <code>name</code> holding the string "Ada" and a variable <code>age</code> holding the number 36. Then log the sentence <code>Ada is 36</code> using <em>any</em> string-building technique.',
     hint:
       'Store <code>name</code> and <code>age</code> in variables first, then print one sentence reading <code>Ada is 36</code>. You can join values with <code>+</code>, or drop them into a template literal with <code>${...}</code> — either way works.',
-    starter: "// declare name and age here\n// then log \"Ada is 36\"\n",
+    starter: "",
     check: function (ctx, logs) {
       return logs.some(function (l) { return String(l.value) === "Ada is 36"; });
     },
@@ -269,7 +269,7 @@ var LJS_LEVELS = [
       "Every detective should know their data types. Log the result of <code>typeof []</code>, <code>typeof null</code>, <code>typeof 42</code>, and <code>typeof \"hi\"</code> — one per line, in that order. Then log the string <code>typeof [] is object</code>.",
     hint:
       'Five lines in total: four <code>typeof</code> results in the given order, then the exact sentence. Run the four types and read the output — <code>[]</code> and <code>null</code> have a well-known surprise.',
-    starter: "// log the five lines in order\n",
+    starter: "",
     check: function (ctx, logs) {
       var expect = ["object", "object", "number", "string"];
       if (!logs || logs.length < 5) return false;
@@ -290,7 +290,7 @@ var LJS_LEVELS = [
       'The corner store hands you two IDs: <code>str</code> holds "10" (a string) and <code>num</code> holds 10 (a number). Log two comparisons, in order: first <code>str == num</code>, then <code>str === num</code>. One is true, one is false — you tell me which.',
     hint:
       'Both variables are handed to you. Compare them twice in the required order — one test uses <code>==</code>, the other <code>===</code>. Only one operator refuses to convert types before comparing.',
-    starter: '// str = "10" (string), num = 10 (number)\n',
+    starter: "",
     setUp: 'ctx.str = "10";\nctx.num = 10;',
     check: function (ctx, logs) {
       return !!logs && logs[0] && logs[0].value === true && logs[1] && logs[1].value === false;
@@ -307,7 +307,7 @@ var LJS_LEVELS = [
       'Write a function <code>grade(score)</code> that returns "A" for 90+, "B" for 80+, "C" for 70+, and "F" otherwise (use an if/else chain with nested branches). Log <code>grade(85)</code>, <code>grade(91)</code>, and <code>grade(69)</code> in order. Next, a <code>badge</code> variable equals "silver" — use a <code>switch</code> so "gold" logs "rank 1", "silver" logs "rank 2", anything else logs "unranked". Then log the result.',
     hint:
       'Write <code>grade</code> step by step — start with the highest range (90+) and work downwards, returning early. For the second half, <code>badge</code> is already set up for you; a <code>switch</code> lists each rank as its own <code>case</code>, each ending with <code>break</code>.',
-    starter: '// grade() and badge are already set up — finish them\n',
+    starter: "",
     setUp: 'ctx.badge = "silver";',
     check: function (ctx, logs) {
       return !!logs && logs.length >= 4 &&
@@ -328,7 +328,7 @@ var LJS_LEVELS = [
       "Count the steps. Log the numbers 1 through 5 with a <code>for</code> loop (one per line). Then use a <code>while</code> loop to add up 1 + 2 + 3 + 4 + 5 and log the total — it must print 15.",
     hint:
       'Two loops: a <code>for</code> that prints 1 through 5 one per line, then a <code>while</code> that keeps adding into a running total. Log the total only after the loop finishes — it must be 15.',
-    starter: "// 1. for loop -> 1 2 3 4 5\n// 2. while loop -> total 15\n",
+    starter: "",
     check: function (ctx, logs) {
       if (!logs || logs.length < 6) return false;
       for (var i = 0; i < 5; i++) {
@@ -348,7 +348,7 @@ var LJS_LEVELS = [
       'The array <code>clues</code> is already defined as ["key", "map"]. Add "lock" to the end with <code>push</code>. Then use <code>.map(c =&gt; c.toUpperCase())</code> and log the result (should be <code>["KEY","MAP","LOCK"]</code>). Finally <code>filter</code> to keep only strings containing "K" and log that (should be <code>["KEY","LOCK"]</code>).',
     hint:
       '<code>clues</code> is provided as a two-item array. <code>push</code> appends one more item; <code>map</code> runs a transform on every element (uppercase here); <code>filter</code> keeps only elements that pass a test such as <code>includes("K")</code>.',
-    starter: '// clues = ["key", "map"]\n',
+    starter: "",
     setUp: 'ctx.clues = ["key", "map"];',
     check: function (ctx, logs) {
       var arrA = false, arrB = false;
@@ -371,7 +371,7 @@ var LJS_LEVELS = [
       'Write an arrow function <code>describe(animal, sound = "meow")</code> that returns <code>`${animal} says ${sound}`</code>. Log <code>describe("cat")</code> then <code>describe("dog", "woof")</code>. Then write an arrow function <code>big(n)</code> using a ternary that returns "big" when <code>n &gt; 10</code> else "small". Log <code>big(20)</code> then <code>big(5)</code>.',
     hint:
       'An arrow function can give its second parameter a default like <code>sound = &quot;meow&quot;</code>. For <code>big</code>, a ternary picks between <code>&quot;big&quot;</code> and <code>&quot;small&quot;</code> based on one comparison against 10. Log all four results in the required order.',
-    starter: "// four logs, in order:\n// cat says meow / dog says woof / big / small\n",
+    starter: "",
     check: function (ctx, logs) {
       return !!logs && logs.length >= 4 &&
         String(logs[0].value) === "cat says meow" &&
@@ -391,7 +391,7 @@ var LJS_LEVELS = [
       'Build a <code>counter</code> object with a method <code>step</code> that increments <code>this.count</code> and returns it. Call <code>counter.step()</code> and log <code>counter.count</code> (must print 1). Then build <code>boss</code> = { name: "Chief", items: ["a", "b"] } and give it a method <code>list</code> that maps items using an ARROW callback that reads <code>this.name</code> — the arrow keeps the method\'s <code>this</code>. Log <code>boss.list()</code> (must print <code>["Chief: a","Chief: b"]</code>).',
     hint:
       'Give <code>counter</code> a method that bumps and returns <code>this.count</code>. For <code>boss</code>, the <code>list</code> method maps over its own <code>items</code> — put the arrow callback INSIDE the method so it inherits the right <code>this</code>.',
-    starter: "// counter + boss objects, then the two console.logs\n",
+    starter: "",
     check: function (ctx, logs) {
       var arrOk = false, countOk = false;
       logs.forEach(function (l) {
@@ -413,7 +413,7 @@ var LJS_LEVELS = [
       'One package of modern syntax. 1) Set <code>name = "Ada"</code> and <code>solved = 12</code>, then build <code>let agent = { name, solved };</code> (shorthand) and log <code>agent.name</code>. 2) Log <code>{ ...agent, rank: 1 }.rank</code> (spread + new key) — prints 1. 3) Destructure <code>const { name: code, solved: num } = agent;</code>. 4) Write <code>squad(captain, ...rest)</code> returning <code>rest.length</code>; log <code>squad("a","b","c")</code> — prints 2. 5) With <code>let cfg = { mode: undefined }</code>, log <code>cfg.mode ?? "auto"</code> — prints "auto". 6) Copy agent with a <code>for...in</code> loop into <code>copy</code> and log <code>JSON.stringify(copy)</code>.',
     hint:
       'One package of modern syntax — do it in order so the later steps have data to work with. Build <code>agent</code> first; the shorthand collides with existing variables; spread creates copies; <code>??</code> only kicks in when the left side is literally <code>undefined</code>.',
-    starter: "// shorthand, spread, rest, destructuring, ??, for...in\n",
+    starter: "",
     check: function (ctx, logs) {
       var need = ["Ada", "auto", '{"name":"Ada","solved":12}'];
       var needNums = [1, 2];
@@ -435,7 +435,7 @@ var LJS_LEVELS = [
       'The array <code>people</code> holds suspect records with <code>name</code> and <code>age</code>. 1) Count the adults (<code>age &gt;= 40</code>) with <code>filter</code> and log the number — prints 3. 2) <code>find</code> "Grace" and log <code>"Grace is 45"</code>. 3) Sort a COPY (<code>[...people]</code>) by age ascending and log only the names — prints <code>["Ada","Alan","Grace","Linus"]</code>. 4) <code>reduce</code> all ages to a total and log it — prints 174.',
     hint:
       '<code>people</code> is provided. <code>filter</code> can count the adults; <code>find</code> returns the first match; sorting must happen on a COPY (<code>[...people]</code>) so the original stays put; <code>reduce</code> totals every age starting from 0.',
-    starter: "// people is already defined\n",
+    starter: "",
     setUp:
       'ctx.people = ' +
       '[{ name: "Ada", age: 36 }, { name: "Linus", age: 52 }, { name: "Grace", age: 45 }, { name: "Alan", age: 41 }];',
@@ -463,13 +463,12 @@ var LJS_LEVELS = [
     hint:
       'First bug: <code>var secret</code> is hoisted, so the log fires before the assignment — reorder or switch to <code>let</code>/<code>const</code>. Second: <code>makeCounter</code> must return a function that closes over a private counter and returns the incremented value on every call.',
     starter:
-      '// BUG 1: log runs before the var is assigned (hoisting)\n' +
+      '// BUG 1\n' +
       'console.log(secret);\n' +
       'var secret = "classified";\n' +
       '\n' +
-      '// BUG 2: finish makeCounter so next() -> 1, then 2\n' +
+      '// BUG 2\n' +
       'function makeCounter() {\n' +
-      '  // return a function that increments private state\n' +
       '}\n' +
       'let next = makeCounter();\n' +
       'console.log(next());\n' +
@@ -492,7 +491,7 @@ var LJS_LEVELS = [
       'A stubbed <code>document</code> contains <code>#evidence-box</code> (with three <code>.entry</code> children), <code>#output</code>, and <code>#report-form</code>. Attach ONE click listener to the CONTAINER (<code>#evidence-box</code>) — not to each entry — that uses event delegation and sets <code>#output</code>\'s textContent to the clicked entry\'s text. Then attach a \"submit\" listener on <code>#report-form</code> that calls <code>e.preventDefault()</code> and sets <code>#output</code> to \"blocked\".',
     hint:
       'One click listener goes on the CONTAINER and reads <code>e.target</code> — attaching to each child fails the check. The form listener must call <code>e.preventDefault()</code>, then overwrite the output text. The check clicks the first entry and submits the form.',
-    starter: "// delegation on the box, preventDefault on the form\n",
+    starter: "",
     setUp: function (ctx) {
       ctx.document = mkDocument(["output", "evidence-box", "report-form"]);
       var box = ctx.document.getElementById("evidence-box");
@@ -531,7 +530,7 @@ var LJS_LEVELS = [
       'A stubbed <code>window</code> is provided. 1) Log <code>window.navigator.userAgent</code>. 2) Write <code>window.localStorage.setItem("player", JSON.stringify({ name: "Maaz", level: 3 }))</code>; read it back, JSON.parse, and log the name with a <code>?? "unknown"</code> fallback (prints "Maaz"). 3) Log <code>window.sessionStorage.getItem("hint")</code> (prints "look left"). 4) <code>window.history.pushState("page", "", "/case/2")</code> then log <code>window.location.href</code> (now "/case/2") and <code>window.history.len</code>.',
     hint:
       'A stubbed <code>window</code> is provided. Storing is <code>setItem</code>, reading is <code>getItem</code>, and JSON goes through <code>JSON.stringify</code>/<code>JSON.parse</code>. <code>pushState</code> moves both <code>history.len</code> and <code>location.href</code>. <code>?? &quot;unknown&quot;</code> only fires when the left side is nullish.',
-    starter: "// use window.navigator, .localStorage, .sessionStorage, .history, .location\n",
+    starter: "",
     setUp: function (ctx) {
       ctx.window = mkWindow();
       ctx.window.sessionStorage.setItem("hint", "look left");
@@ -565,7 +564,7 @@ var LJS_LEVELS = [
       "An async case with a stubbed <code>fetch</code>. 1) In an <code>async</code> function, <code>await fetch(\"/evidence\")</code>, read <code>res.json()</code>, and log <code>data.suspects.length</code> (prints 2). 2) In another async function, <code>await fetch(\"/broken\")</code> inside a <code>try/catch</code> and log \"recovered\" on error (that URL always rejects). 3) <code>Promise.all([first, second])</code> and log the array joined with \"-\" via <code>.then</code> (prints \"first-second\").",
     hint:
       '<code>fetch("/evidence")</code> always succeeds while <code>/broken</code> always rejects — the second one is your <code>try/catch</code> lesson. <code>Promise.all</code> collects both promises into one array; join it with <code>"-"</code> inside a <code>.then</code>.',
-    starter: "// fetch is stubbed; first & second are Promises\n",
+    starter: "",
     setUp: function (ctx) {
       ctx.fetch = mkFetch({
         suspects: [

@@ -52,6 +52,7 @@ export function useGameProgress({
           solutions: evt.solutions,
           hints: evt.hints,
           totalLevels: evt.totalLevels,
+          version: evt.version,
         }),
       }).catch(() => {});
     };

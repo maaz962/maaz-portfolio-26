@@ -730,15 +730,19 @@
     resetBoard();
     applyCSS(pairs);
 
+    var err = validateInput(pairs);
+    if (err) {
+      showToast(err, true);
+      return;
+    }
+
     if (checkCompletion(pairs)) {
       completeLevel();
       return;
     }
 
     if (pairs.length > 0) {
-      var err = validateInput(pairs);
-      if (err) showToast(err, true);
-      else showToast(getWrongHint(pairs), true);
+      showToast(getWrongHint(pairs), true);
     } else {
       hideToast();
     }

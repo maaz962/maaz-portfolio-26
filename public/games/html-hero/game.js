@@ -257,6 +257,13 @@
     "link", "meta", "source", "track", "wbr",
   ];
 
+  function escHtml(s) {
+    return String(s)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;");
+  }
+
   function parseDoc(html) {
     try {
       return new DOMParser().parseFromString(html || "", "text/html");
@@ -329,6 +336,52 @@
       }
     }
     if (stack.length) return { unclosed: stack[stack.length - 1] };
+    return null;
+  }
+
+  // Structural syntax gate (runs BEFORE the forgiving DOM check). Browsers
+  // auto-correct malformed markup, so without this a submission like
+  // '<h1>hello world /h1>' — missing the '<' on the closing tag — would pass
+  // by rendering as-if valid. Returns a message string, or null when OK.
+  function htmlSyntaxError(html) {
+    var text = html || "";
+    if (!text.trim()) return null;
+    if (text.indexOf("<") === -1) {
+      return "That doesn't look like HTML. Tags live between < and > — try one from the hint.";
+    }
+
+    // A closing tag typed without its '<' (e.g. "/h1>" inside text). The
+    // lookbehind skips properly-written </tags>, so only truly bare closes are
+    // matched; the open-check ensures it's really a tag the author opened.
+    var bareClose = /(?<!<)\/([a-zA-Z][a-zA-Z0-9-]*)\s*[^<>]*>/g;
+    var m;
+    while ((m = bareClose.exec(text)) !== null) {
+      var name = (m[1] || "").toLowerCase();
+      if (VOID_TAGS.indexOf(name) !== -1) continue;
+      var openRe = new RegExp("<\\s*" + name + "\\b", "i");
+      if (openRe.test(text)) {
+        return "Your closing tag is missing '<' — it should be `</" + name + ">` not `/" + name + ">`.";
+      }
+    }
+
+    var voidCloseRe = /<\s*\/\s*(area|base|br|col|embed|hr|img|input|link|meta|source|track|wbr)\s*>/i;
+    var vm = voidCloseRe.exec(text);
+    if (vm) {
+      return "A void tag like <" + vm[1] + "> doesn't need a closing tag — remove the </" + vm[1] + ">.";
+    }
+
+    var issue = tagIssues(text);
+    if (issue) {
+      if (issue.unclosed) {
+        return "'<" + issue.unclosed + ">' isn't closed — every opening tag needs a matching </" + issue.unclosed + ">.";
+      }
+      if (issue.mismatch) {
+        return "Oops! '</" + issue.mismatch + ">' doesn't close the last tag you opened ('<" + issue.expected + ">'). Check your nesting.";
+      }
+      if (issue.stray) {
+        return "You have a closing '</" + issue.stray + ">' tag, but I don't see an opening one. Check your code.";
+      }
+    }
     return null;
   }
 
@@ -412,13 +465,14 @@
   function applyHTML(html) {
     var frame = $("html-preview");
     if (!frame) return;
-    var doc = parseDoc(html);
-    var bodyHtml = doc && doc.body ? doc.body.innerHTML : html || "";
-    var full = /<\s*html[^>]*>/i.test(html || "")
-      ? html
+    var h = html || "";
+    // Feed the raw source into srcdoc so the preview mirrors exactly what was
+    // typed — no re-serialization/auto-correction of the user's characters.
+    var full = /<\s*(html|!doctype)[\s>]/i.test(h)
+      ? h
       : "<!DOCTYPE html><html><head><meta charset=\"utf-8\">" +
         "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">" +
-        "</head><body>" + bodyHtml + "</body></html>";
+        "</head><body>" + h + "</body></html>";
     frame.srcdoc = full;
   }
 
@@ -520,6 +574,11 @@
       nextLevel();
       return;
     }
+    var syntaxErr = htmlSyntaxError(text);
+    if (syntaxErr) {
+      showToast(syntaxErr, true);
+      return;
+    }
     if (checkCompletion(text)) {
       completeLevel();
     } else {
@@ -573,7 +632,7 @@
 
     if (titleEl) titleEl.textContent = level.title;
     if (numEl) numEl.textContent = level.id;
-    if (instrEl) instrEl.innerHTML = "Task: " + level.instruction;
+    if (instrEl) instrEl.innerHTML = "Task: " + escHtml(level.instruction);
     if (hintEl) hintEl.innerHTML = "Hint: " + level.hint;
     if (diffEl) {
       diffEl.textContent = level.difficulty.charAt(0).toUpperCase() + level.difficulty.slice(1);

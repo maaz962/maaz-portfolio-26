@@ -333,6 +333,7 @@ export async function saveGameProgress(
     totalLevels: number;
     solutions?: Record<string, string>;
     hints?: { date: string; used: number };
+    version?: number;
   }
 ): Promise<GameProgress> {
   return withDbLock(async () => {
@@ -392,6 +393,7 @@ export async function saveGameProgress(
         1,
         Number.isInteger(data.totalLevels) && data.totalLevels > 0 ? data.totalLevels : 1
       ),
+      version: Number.isInteger(data.version) && data.version! > 0 ? data.version! : 3,
       updatedAt: new Date().toISOString(),
     };
 

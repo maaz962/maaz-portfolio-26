@@ -94,9 +94,12 @@ async function initDb(): Promise<void> {
         updated_at TEXT NOT NULL
       )
     `;
-    // Migration for older rows created before the solutions/hints columns existed.
+    // Migration for newer columns that older rows won't have. version defaults
+    // to 3 (id-keyed) for fresh rows; legacy index-keyed rows are reconciled by
+    // their key shape + total_levels in the one-time migration script.
     await sql`ALTER TABLE game_progress ADD COLUMN IF NOT EXISTS solutions JSONB NOT NULL DEFAULT '{}'`;
     await sql`ALTER TABLE game_progress ADD COLUMN IF NOT EXISTS hints JSONB NOT NULL DEFAULT '{}'`;
+    await sql`ALTER TABLE game_progress ADD COLUMN IF NOT EXISTS version INT NOT NULL DEFAULT 3`;
     await sql`ALTER TABLE gamification ADD COLUMN IF NOT EXISTS hints JSONB NOT NULL DEFAULT '{}'`;
     // Idempotent seed of the site owner's admin account — mirrors the file-store
     // seed so /admin is reachable on first production deploy too. ON CONFLICT
@@ -166,6 +169,7 @@ function rowToGameProgress(row: any): GameProgress {
       used: Number.isInteger(hints.used) ? hints.used : 0,
     },
     totalLevels: row.total_levels,
+    version: Number.isInteger(row.version) ? row.version : undefined,
     updatedAt: row.updated_at,
   };
 }
@@ -265,6 +269,7 @@ export async function saveGameProgress(
     totalLevels: number;
     solutions?: Record<string, string>;
     hints?: { date: string; used: number };
+    version?: number;
   }
 ): Promise<GameProgress> {
   await initDb();
@@ -315,11 +320,12 @@ export async function saveGameProgress(
     1,
     Number.isInteger(data.totalLevels) && data.totalLevels > 0 ? data.totalLevels : 1
   );
+  const version = Number.isInteger(data.version) && data.version! > 0 ? data.version! : 3;
   const updatedAt = nowISO();
 
   const rows = await sql`
-    INSERT INTO game_progress (user_id, game_slug, current_level, score, completed, solutions, hints, total_levels, updated_at)
-    VALUES (${userId}, ${gameSlug}, ${currentLevel}, ${score}, ${JSON.stringify(cleanCompleted)}, ${JSON.stringify(cleanSolutions)}, ${JSON.stringify(cleanHints)}, ${totalLevels}, ${updatedAt})
+    INSERT INTO game_progress (user_id, game_slug, current_level, score, completed, solutions, hints, total_levels, version, updated_at)
+    VALUES (${userId}, ${gameSlug}, ${currentLevel}, ${score}, ${JSON.stringify(cleanCompleted)}, ${JSON.stringify(cleanSolutions)}, ${JSON.stringify(cleanHints)}, ${totalLevels}, ${version}, ${updatedAt})
     ON CONFLICT (user_id, game_slug)
     DO UPDATE SET
       current_level = EXCLUDED.current_level,
@@ -328,6 +334,7 @@ export async function saveGameProgress(
       solutions = EXCLUDED.solutions,
       hints = EXCLUDED.hints,
       total_levels = EXCLUDED.total_levels,
+      version = EXCLUDED.version,
       updated_at = EXCLUDED.updated_at
     RETURNING *
   `;

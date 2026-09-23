@@ -92,7 +92,7 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json();
-    const { slug, currentLevel, score, completed, totalLevels, solutions, hints } = body;
+    const { slug, currentLevel, score, completed, totalLevels, solutions, hints, version } = body;
 
     if (!slug || !GAME_SLUGS.includes(slug)) {
       return NextResponse.json({ error: "Unknown game" }, { status: 400 });
@@ -122,6 +122,7 @@ export async function POST(req: Request) {
       score: Number(score ?? 0),
       completed: completed && typeof completed === "object" ? completed : {},
       totalLevels: Number(totalLevels ?? 1),
+      version: Number.isInteger(version) ? Number(version) : undefined,
       solutions: Object.keys(cleanSolutions).length ? cleanSolutions : undefined,
       hints: cleanHints,
     });

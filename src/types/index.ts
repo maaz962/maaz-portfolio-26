@@ -178,17 +178,27 @@ export interface Like {
 export interface GameProgress {
   userId: string;
   gameSlug: string;
-  /** Zero-based index of the level to resume on next visit. */
+  /**
+   * Level to resume on next visit. Legacy saves used a 0-based index; v3 saves
+   * use the stable, 1-based level id (see the per-game milestones in
+   * gamification.ts + the level definitions shipped with each game).
+   */
   currentLevel: number;
   score: number;
-  /** Zero-based level indices that have been completed (object so it round-trips like the engines' STATE.completed). */
+  /**
+   * Levels that have been completed, keyed by stable 1-based level id for v3
+   * saves with a milestone rename (e.g. js-detective). Object form so it
+   * round-trips like the engines' STATE.completed.
+   */
   completed: Record<string, boolean>;
-  /** Zero-based level indices → the last passing code the user submitted (restored on revisit). */
+  /** Level keys (same convention as `completed`) → the last passing code the user submitted. */
   solutions?: Record<string, string>;
   /** Hint reveals (no daily limit): client-local date key (YYYY-MM-DD) + how many hints used that day. */
   hints?: { date: string; used: number };
   /** Total number of levels in this game (used by the hub for "x of y levels"). */
   totalLevels: number;
+  /** Progress data version. 3 = id-keyed completed/currentLevel (never blindly trust legacy index keys). */
+  version?: number;
   updatedAt: string;
 }
 

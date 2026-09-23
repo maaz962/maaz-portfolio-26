@@ -137,7 +137,13 @@
   // Progress data version. v2 restructured the level set: four Beginner cases
   // were inserted at the front and the sole "Hard" case was removed, so every
   // 0-based level index below is only meaningful for saves of the same version.
-  var DATA_VERSION = 2;
+  //
+  // v3 keys persisted progress by the STABLE level id (1..LEVELS.length)
+  // instead of a 0-based index, so future add/remove/reorder of cases can
+  // never misalign saved progress. The engine keeps STATE index-keyed
+  // internally for speed; the id <-> index translation happens at the save and
+  // resume boundaries in this file.
+  var DATA_VERSION = 3;
 
   // v1 layout was [easy x4, intermediate x7, hard x1, mostHard x3] (15 levels,
   // indices 0..14). v2 maps an old index to the equivalent one in the new
@@ -152,13 +158,210 @@
     return oldIndex;
   }
 
+  // v1-vs-v2 index mapping, plus the extra case that was dropped when the
+  // 16-level layout shed its final boss (old index 15) before v2 shipped.
+  function v1ToV2Index(oldIndex, totalLevels) {
+    if (totalLevels === 16 && oldIndex === 15) return -1;
+    return migrateLegacyIndex(oldIndex);
+  }
+
+  function indexOfLevelId(id) {
+    for (var i = 0; i < LEVELS.length; i++) {
+      if (LEVELS[i].id === id) return i;
+    }
+    return -1;
+  }
+
+  function levelIdAt(index) {
+    var lv = LEVELS[index];
+    return lv ? lv.id : 1;
+  }
+
+  function sortUniqueNums(arr) {
+    var seen = {}, out = [], i;
+    for (i = 0; i < arr.length; i++) {
+      var n = arr[i];
+      if (!seen[n]) {
+        seen[n] = true;
+        out.push(n);
+      }
+    }
+    out.sort(function (a, b) { return a - b; });
+    return out;
+  }
+
+  // Progressive gating makes some key sets impossible for a clean save:
+  // reaching a tier requires almost all of the previous one. The v2-era client
+  // accidentally re-ran its index remap on every resume (version was never
+  // persisted), which shifts indices up and drops strays, so corrupted sets
+  // violate these invariants while pristine sets always satisfy them.
+  function plausibleIndexSet(idx) {
+    if (idx.length === 0) return true;
+    var max = idx[idx.length - 1];
+    var c0 = 0, c1 = 0, c2 = 0, i, k;
+    for (i = 0; i < idx.length; i++) {
+      k = idx[i];
+      if (k <= 3) c0++;
+      else if (k <= 7) c1++;
+      else if (k <= 14) c2++;
+    }
+    if (max <= 3) return true;
+    if (max <= 7) return c0 >= 3;
+    if (max <= 14) return c0 >= 3 && c1 >= 3;
+    return c0 >= 3 && c1 >= 3 && c2 >= 6;
+  }
+
+  // Inverse of one legacy remap pass on its own output range (v2 indices:
+  // 4..14 came from 0..10, 15..17 came from 12..14). Keys the remap could
+  // never have produced are dropped.
+  function invertLegacyIndex(index) {
+    if (index >= 4 && index <= 14) return index - 4;
+    if (index >= 15 && index <= 17) return index - 3;
+    return -1;
+  }
+
+  /**
+   * Classify a saved `completed` map. `saved.version` is only set by the v3
+   * client, so legacy rows must be disambiguated by shape:
+   *   - totalLevels 1..16 -> "v1-index" (id keying didn't exist yet)
+   *   - version === 3     -> "id" (trust the stable level-id keys)
+   *   - otherwise         -> "id" only if the numbers could be a genuine clean
+   *                          save under tier gating, else "v2-index" (a shifted
+   *                          legacy save that needs re-aligning).
+   */
+  function savedProgressForm(saved) {
+    var c = saved && saved.completed;
+    if (!c || typeof c !== "object" || Object.keys(c).length === 0) return "empty";
+    var keys = Object.keys(c);
+    var hasZero = false, bad = false, i, k;
+    for (i = 0; i < keys.length; i++) {
+      k = Number(keys[i]);
+      if (!Number.isInteger(k)) { bad = true; continue; }
+      if (k === 0) hasZero = true;
+      if (k < 1 || k > LEVELS.length) bad = true;
+    }
+    var tl = Math.floor(Number(saved.totalLevels)) || 0;
+    if (Number(saved.version) === 3) return "id";
+    if (tl >= 1 && tl <= 16) return "v1-index";
+    if (hasZero || bad) return "v2-index";
+    var asId = keys.map(function (key) { return Number(key) - 1; });
+    return plausibleIndexSet(sortUniqueNums(asId)) ? "id" : "v2-index";
+  }
+
+  /**
+   * Normalize a saved progress blob into the v2 index space the rest of
+   * resumeGame consumes: completed/solutions keyed by 0..LEVELS.length-1 and
+   * currentLevel as a v2 index. v3 id keys map straight back to indices; v1/v2
+   * index keys are remapped and accidental repeat remaps are undone (a few
+   * rounds at most — the output always converges to a plausible set).
+   */
+  function normalizeSavedToIndices(saved) {
+    var form = savedProgressForm(saved);
+    var c = saved.completed || {};
+    var entries = {}; // v2 index -> { done, sol }
+    var keys = Object.keys(c);
+    var tl = Math.floor(Number(saved.totalLevels)) || 0;
+    var i, k, v2;
+    for (i = 0; i < keys.length; i++) {
+      if (!c[keys[i]]) continue;
+      k = Number(keys[i]);
+      if (!Number.isInteger(k)) continue;
+      if (form === "id") {
+        v2 = indexOfLevelId(k);
+      } else if (form === "v1-index") {
+        v2 = v1ToV2Index(k, tl);
+      } else {
+        v2 = k;
+      }
+      if (v2 < 0 || v2 >= LEVELS.length) continue;
+      var e = entries[v2] || { done: false, sol: undefined };
+      e.done = true;
+      if (saved.solutions && typeof saved.solutions === "object" && typeof saved.solutions[keys[i]] === "string") {
+        e.sol = saved.solutions[keys[i]];
+      }
+      entries[v2] = e;
+    }
+
+    // Only v2 index saves can be corrupted: the v2-era client re-ran its index
+    // remap on every resume because version was never persisted. v1 rows were
+    // never touched by that client and id rows are already stable, so they are
+    // never chain-repaired here.
+    if (form === "v2-index") {
+      var idx = Object.keys(entries).map(Number);
+      var rounds = 0;
+      while (rounds < 6 && !plausibleIndexSet(sortUniqueNums(idx))) {
+        var next = {};
+        for (i = 0; i < idx.length; i++) {
+          var inv = invertLegacyIndex(idx[i]);
+          if (inv >= 0) next[inv] = entries[idx[i]];
+        }
+        entries = next;
+        idx = Object.keys(entries).map(Number);
+        rounds++;
+      }
+    }
+
+    var completed = {}, solutions = {};
+    for (var v2k in entries) {
+      var num = Number(v2k);
+      if (num >= 0 && num < LEVELS.length) {
+        completed[num] = true;
+        if (entries[v2k].sol) solutions[num] = entries[v2k].sol;
+      }
+    }
+
+    var clRaw = Math.floor(Number(saved.currentLevel));
+    var clNew;
+    if (!Number.isInteger(clRaw)) {
+      clNew = -1;
+    } else if (form === "v1-index") {
+      clNew = v1ToV2Index(clRaw, tl);
+    } else if (form === "v2-index") {
+      clNew = clRaw;
+    } else {
+      clNew = indexOfLevelId(clRaw); // id form
+    }
+
+    var hasCompletions = Object.keys(completed).length > 0;
+    if (!hasCompletions) {
+      clNew = 0;
+    } else if (clNew < 0 || clNew >= LEVELS.length || !completed[clNew]) {
+      var ks = Object.keys(completed).map(Number).sort(function (a, b) { return b - a; });
+      clNew = ks[0] || 0;
+    }
+
+    return {
+      currentLevel: clNew,
+      completed: completed,
+      solutions: solutions,
+      hints: saved.hints,
+      totalLevels: saved.totalLevels,
+    };
+  }
+
+  function idKeyedCompleted() {
+    var out = {}, i;
+    for (i = 0; i < LEVELS.length; i++) {
+      if (STATE.completed[i]) out[LEVELS[i].id] = true;
+    }
+    return out;
+  }
+
+  function idKeyedSolutions() {
+    var out = {}, i;
+    for (i = 0; i < LEVELS.length; i++) {
+      if (STATE.solutions[i]) out[LEVELS[i].id] = STATE.solutions[i];
+    }
+    return out;
+  }
+
   function emitProgress() {
     if (typeof window !== "undefined" && typeof window.__onJsDetectiveProgress === "function") {
       window.__onJsDetectiveProgress({
-        currentLevel: STATE.currentLevel,
+        currentLevel: levelIdAt(STATE.currentLevel),
         score: STATE.score,
-        completed: STATE.completed,
-        solutions: STATE.solutions,
+        completed: idKeyedCompleted(),
+        solutions: idKeyedSolutions(),
         hints: { date: STATE.hintsDate, used: STATE.hintsUsed },
         totalLevels: LEVELS.length,
         version: DATA_VERSION,
@@ -172,10 +375,10 @@
       window.dispatchEvent(
         new CustomEvent("jsd-state", {
           detail: {
-            currentLevel: STATE.currentLevel,
+            currentLevel: levelIdAt(STATE.currentLevel),
             score: STATE.score,
-            completed: STATE.completed,
-            solutions: STATE.solutions,
+            completed: idKeyedCompleted(),
+            solutions: idKeyedSolutions(),
             hints: { date: STATE.hintsDate, used: STATE.hintsUsed },
             totalLevels: LEVELS.length,
             version: DATA_VERSION,
@@ -189,41 +392,13 @@
     if (!saved) return;
     ensureLevels(function () {
       if (LEVELS.length === 0) return;
-      // Migrate a pre-v2 save: re-map completed/solutions/currentLevel from the
-      // old 15-level indices to the new 18-level ones, archiving (dropping) the
-      // removed Hard case. No orphaned references, nothing crashes, and the
-      // score is rebuilt from the re-mapped set below using current points.
-      if (Number(saved.version) !== DATA_VERSION && saved.completed && typeof saved.completed === "object") {
-        var legacy = {
-          currentLevel: saved.currentLevel,
-          completed: {},
-          solutions: {},
-          hints: saved.hints,
-        };
-        var hasCompletions = false;
-        for (var lk in saved.completed) {
-          if (!saved.completed[lk]) continue;
-          var mi = migrateLegacyIndex(Number(lk));
-          if (mi >= 0 && mi < LEVELS.length) {
-            legacy.completed[mi] = true;
-            if (saved.solutions && typeof saved.solutions === "object") {
-              legacy.solutions[mi] = saved.solutions[lk];
-            }
-            hasCompletions = true;
-          }
-        }
-        var clOld = Math.floor(Number(saved.currentLevel));
-        var clNew = Number.isInteger(clOld) ? migrateLegacyIndex(clOld) : -1;
-        if (!hasCompletions) {
-          legacy.currentLevel = 0; // old fresh save -> new Beginner tier
-        } else if (clNew < 0 || clNew >= LEVELS.length || !legacy.completed[clNew]) {
-          var keys = Object.keys(legacy.completed).map(Number).sort(function (a, b) { return b - a; });
-          legacy.currentLevel = keys[0] || 0;
-        } else {
-          legacy.currentLevel = clNew;
-        }
-        saved = legacy;
-      }
+      // Reconcile any saved representation into the current index space:
+      // v3 saves are keyed by stable level ids, v1/v2 saves by legacy
+      // 0-based indices (multiple layouts existed, and the v2-era client
+      // re-ran its remap on every resume because version was never
+      // persisted). The score is always rebuilt from the reconciled
+      // completed set using current per-level points below.
+      saved = normalizeSavedToIndices(saved);
       if (typeof saved.currentLevel === "number") {
         var cl = Math.floor(saved.currentLevel);
         if (cl >= 0 && cl < LEVELS.length) STATE.currentLevel = cl;
@@ -1240,9 +1415,9 @@
     window.__getJsDetectiveState = function () {
       tryLoadLevels();
       return {
-        currentLevel: STATE.currentLevel,
+        currentLevel: levelIdAt(STATE.currentLevel),
         score: STATE.score,
-        completed: STATE.completed,
+        completed: idKeyedCompleted(),
         totalLevels: LEVELS.length,
         version: DATA_VERSION,
       };

@@ -35,8 +35,10 @@ interface JsLevelMeta {
 }
 
 interface JsGameState {
+  /** Stable 1-based id of the currently open case (not a positional index). */
   currentLevel: number;
   score: number;
+  /** Stable 1-based case id -> completed (id-keyed so a reorder can't misalign). */
   completed: Record<number, boolean>;
   totalLevels: number;
 }
@@ -78,7 +80,7 @@ function tierDoneFor(
   completed: Record<number, boolean>,
   tierKey: string
 ): number {
-  return tierLevelsFor(levels, tierKey).filter((l) => completed[l.id - 1]).length;
+  return tierLevelsFor(levels, tierKey).filter((l) => completed[l.id]).length;
 }
 
 function tierOpenFor(
@@ -265,7 +267,7 @@ export default function JsDetectivePage() {
                     All Cases
                   </span>
                   <span className="jsd-ls-count">
-                    {levels.filter((l) => gameState.completed[l.id - 1]).length}/{gameState.totalLevels}
+                    {levels.filter((l) => gameState.completed[l.id]).length}/{gameState.totalLevels}
                   </span>
                   <ChevronDown
                     className={"jsd-ls-chevron" + (showLevelSelect ? " open" : "")}
@@ -294,8 +296,8 @@ export default function JsDetectivePage() {
                           </div>
                           <div className="jsd-level-grid">
                             {ls.map((level) => {
-                              const doneLevel = !!gameState.completed[level.id - 1];
-                              const current = gameState.currentLevel === level.id - 1;
+                              const doneLevel = !!gameState.completed[level.id];
+                              const current = gameState.currentLevel === level.id;
                               const locked = !doneLevel && !tierOpenFor(levels, gameState.completed, level.tier);
                               return (
                                 <button
