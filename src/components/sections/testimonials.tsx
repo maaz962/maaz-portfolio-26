@@ -1,6 +1,7 @@
 "use client";
 
 import { Award, BookOpen, Code2, GraduationCap, Quote, Users } from "lucide-react";
+import { Section } from "@/components/ui/section";
 import { Container } from "@/components/ui/container";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { FadeIn } from "@/components/animations/fade-in";
@@ -8,9 +9,9 @@ import { StaggerFadeIn, StaggerItem } from "@/components/animations/stagger-fade
 
 export function Testimonials() {
   return (
-    <section
+    <Section
       id="testimonials"
-      className="scroll-mt-20 border-b border-border py-24 bg-background-secondary/20"
+      className="bg-background-secondary/20"
     >
       <Container>
         <FadeIn>
@@ -129,6 +130,6 @@ export function Testimonials() {
           </FadeIn>
         </div>
       </Container>
-    </section>
+    </Section>
   );
 }

@@ -21,8 +21,18 @@ export const aboutContent = {
   aside: {
     title: "Beyond code",
     items: [
-      "Freelancer taking on web and mobile projects",
-      "Taught a Basic Web Development course through the UAF Freelancing Club",
+      {
+        icon: "briefcase",
+        label: "Freelance developer",
+        detail:
+          "Taking on web and mobile projects for clients alongside my studies.",
+      },
+      {
+        icon: "graduation",
+        label: "Web dev instructor",
+        detail:
+          "Taught a Basic Web Development course through the UAF Freelancing Club.",
+      },
     ],
   },
   learning: {

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Check, Copy } from "lucide-react";
+import { Briefcase, Check, Copy, GraduationCap } from "lucide-react";
 import { aboutContent } from "@/data/about";
 import { profile } from "@/data/profile";
 import { Section } from "@/components/ui/section";
@@ -11,6 +11,11 @@ import { TerminalWindow } from "@/components/ui/terminal-window";
 import { Card } from "@/components/ui/card";
 import { Chip } from "@/components/ui/chip";
 import { FadeIn } from "@/components/animations/fade-in";
+
+const beyondIcons = {
+  briefcase: Briefcase,
+  graduation: GraduationCap,
+} as const;
 
 const IDENTITY_JSON = `{
   "name": "${profile.name}",
@@ -128,6 +133,19 @@ export function About() {
                   ))}
                 </ul>
               </div>
+
+              <div>
+                <p className="text-xs uppercase tracking-widest text-primary">
+                  Areas &amp; tools
+                </p>
+                <ul className="mt-4 flex flex-wrap gap-2">
+                  {aboutContent.focusAreas.map((area) => (
+                    <li key={area}>
+                      <Chip>{area}</Chip>
+                    </li>
+                  ))}
+                </ul>
+              </div>
             </div>
           </FadeIn>
 
@@ -156,27 +174,29 @@ export function About() {
                 </pre>
               </TerminalWindow>
 
-              <div>
-                <p className="text-xs uppercase tracking-widest text-primary">
-                  Main areas
-                </p>
-                <ul className="mt-4 flex flex-wrap gap-2">
-                  {aboutContent.focusAreas.map((area) => (
-                    <li key={area}>
-                      <Chip>{area}</Chip>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
-              <Card>
+              <Card className="p-5">
                 <h3 className="text-sm font-medium text-foreground">
                   {aboutContent.aside.title}
                 </h3>
-                <ul className="mt-3 space-y-2 text-[15px] leading-relaxed text-muted">
-                  {aboutContent.aside.items.map((item) => (
-                    <li key={item}>{item}</li>
-                  ))}
+                <ul className="mt-4 space-y-3">
+                  {aboutContent.aside.items.map((item) => {
+                    const Icon = beyondIcons[item.icon];
+                    return (
+                      <li key={item.label} className="flex items-start gap-3">
+                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                          <Icon className="h-4 w-4" strokeWidth={1.75} />
+                        </span>
+                        <div>
+                          <p className="text-[15px] font-semibold text-foreground">
+                            {item.label}
+                          </p>
+                          <p className="mt-0.5 text-[13px] leading-relaxed text-muted">
+                            {item.detail}
+                          </p>
+                        </div>
+                      </li>
+                    );
+                  })}
                 </ul>
               </Card>
             </div>

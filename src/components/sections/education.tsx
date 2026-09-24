@@ -2,6 +2,7 @@
 
 import { GraduationCap } from "lucide-react";
 import { education } from "@/data/education";
+import { Section } from "@/components/ui/section";
 import { Container } from "@/components/ui/container";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { Chip } from "@/components/ui/chip";
@@ -14,10 +15,10 @@ import { cn } from "@/lib/utils";
 
 export function Education() {
   return (
-    <section
+    <Section
       id="education"
       aria-labelledby="education-heading"
-      className="scroll-mt-20 border-b border-border bg-background-secondary/30 py-24"
+      className="bg-background-secondary/30"
     >
       <Container>
         <FadeIn>
@@ -105,6 +106,6 @@ export function Education() {
           ))}
         </StaggerFadeIn>
       </Container>
-    </section>
+    </Section>
   );
 }
