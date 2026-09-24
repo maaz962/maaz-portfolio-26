@@ -574,7 +574,7 @@ export async function consumeDailyHint(
 export async function getLeaderboard(limit = 10): Promise<LeaderboardEntry[]> {
   const db = await readDbFile();
   const scored = db.users
-    .filter((u) => !u.isAdmin && !u.hiddenFromLeaderboard && !HIDDEN_USERNAMES.has(u.username))
+    .filter((u) => !u.isAdmin && !HIDDEN_USERNAMES.has(u.username))
     .map((u) => {
       const gp = (db.gameProgress ?? []).filter((p) => p.userId === u.id);
       const totalXp = gp.reduce((sum, p) => sum + (p.score || 0), 0);
@@ -588,8 +588,12 @@ export async function getLeaderboard(limit = 10): Promise<LeaderboardEntry[]> {
         totalXp,
         gamesPlayed: new Set(gp.map((p) => p.gameSlug)).size,
         currentStreak: stored?.currentStreak ?? 0,
+        // QA/test accounts only drop off when they have nothing to show
+        // for it; anyone who earned 100+ XP stays on the board.
+        hidden: u.hiddenFromLeaderboard && totalXp < 100,
       };
     })
+    .filter((s) => !s.hidden)
     .sort(
       (a, b) =>
         b.totalXp - a.totalXp || a.createdAt.localeCompare(b.createdAt)
@@ -612,15 +616,18 @@ export async function getUserRank(userId: string): Promise<number | null> {
   if (!target || target.isAdmin) return null;
 
   const ranked = db.users
-    .filter((u) => !u.isAdmin && !u.hiddenFromLeaderboard && !HIDDEN_USERNAMES.has(u.username))
+    .filter((u) => !u.isAdmin && !HIDDEN_USERNAMES.has(u.username))
     .map((u) => {
       const gp = (db.gameProgress ?? []).filter((p) => p.userId === u.id);
+      const xp = gp.reduce((sum, p) => sum + (p.score || 0), 0);
       return {
         id: u.id,
-        xp: gp.reduce((sum, p) => sum + (p.score || 0), 0),
+        xp,
         createdAt: u.createdAt,
+        hidden: u.hiddenFromLeaderboard && xp < 100,
       };
     })
+    .filter((r) => !r.hidden)
     .sort((a, b) => b.xp - a.xp || a.createdAt.localeCompare(b.createdAt));
 
   const idx = ranked.findIndex((r) => r.id === userId);

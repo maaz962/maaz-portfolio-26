@@ -479,9 +479,12 @@ export async function getLeaderboard(limit = 10): Promise<LeaderboardEntry[]> {
     LEFT JOIN game_progress gp ON gp.user_id = u.id
     LEFT JOIN gamification g ON g.user_id = u.id
     WHERE u.is_admin = false
-      AND COALESCE(u.hidden_from_leaderboard, false) = false
       AND LOWER(u.username) NOT IN (${HIDDEN_USERNAMES.map((n) => n.toLowerCase())})
     GROUP BY u.id, u.created_at, g.current_streak
+    HAVING NOT (
+      COALESCE(u.hidden_from_leaderboard, false)
+      AND COALESCE(SUM(gp.score), 0) < 100
+    )
     ORDER BY total_xp DESC, u.created_at ASC
     LIMIT ${limit}
   `;
@@ -504,9 +507,12 @@ export async function getUserRank(userId: string): Promise<number | null> {
     FROM users u
     LEFT JOIN game_progress gp ON gp.user_id = u.id
     WHERE u.is_admin = false
-      AND COALESCE(u.hidden_from_leaderboard, false) = false
       AND LOWER(u.username) NOT IN (${HIDDEN_USERNAMES.map((n) => n.toLowerCase())})
     GROUP BY u.id, u.created_at
+    HAVING NOT (
+      COALESCE(u.hidden_from_leaderboard, false)
+      AND COALESCE(SUM(gp.score), 0) < 100
+    )
   `;
   const ranked = rows
     .sort(

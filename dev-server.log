@@ -1,0 +1,14 @@
+
+> maaz-arif-portfolio@0.1.0 dev
+> next dev
+
+  ▲ Next.js 14.2.35
+  - Local:        http://localhost:3000
+  - Environments: .env.local
+
+ ✓ Starting...
+ ✓ Ready in 4.2s
+ ○ Compiling /api/games/leaderboard ...
+ ✓ Compiled /api/games/leaderboard in 3.2s (77 modules)
+ GET /api/games/leaderboard 200 in 4170ms
+[?25h
