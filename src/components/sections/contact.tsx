@@ -223,7 +223,7 @@ export function Contact() {
                     href={`mailto:${profile.email}`}
                     className="group flex min-w-0 flex-1 items-center gap-3.5 text-sm text-muted transition-colors hover:text-foreground"
                   >
-                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-border bg-card text-muted transition-colors group-hover:border-primary/40 group-hover:text-primary">
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-border bg-card text-muted transition-colors group-hover:border-primary/40 group-hover:text-primary">
                       <Mail className="h-[18px] w-[18px]" strokeWidth={1.75} />
                     </span>
                     <span className="min-w-0">
@@ -252,7 +252,7 @@ export function Contact() {
                 </div>
 
                 <div className="flex items-center gap-3.5 text-sm text-muted">
-                  <span className="flex h-9 w-9 items-center justify-center rounded-xl border border-border bg-card text-muted">
+                  <span className="flex h-9 w-9 items-center justify-center rounded-full border border-border bg-card text-muted">
                     <MapPin className="h-[18px] w-[18px]" strokeWidth={1.75} />
                   </span>
                   <div>
@@ -336,7 +336,7 @@ export function Contact() {
                   <div className="grid gap-5 sm:grid-cols-2">
                     {/* Name */}
                     <div className="space-y-1.5">
-                      <label htmlFor="name" className="text-xs font-semibold uppercase tracking-wider text-foreground/80">
+                      <label htmlFor="name" className="text-eyebrow">
                         Name <span className="text-primary">*</span>
                       </label>
                       <input
@@ -360,7 +360,7 @@ export function Contact() {
 
                     {/* Email */}
                     <div className="space-y-1.5">
-                      <label htmlFor="email" className="text-xs font-semibold uppercase tracking-wider text-foreground/80">
+                      <label htmlFor="email" className="text-eyebrow">
                         Email <span className="text-primary">*</span>
                       </label>
                       <input
@@ -385,7 +385,7 @@ export function Contact() {
 
                   {/* Subject */}
                   <div className="space-y-1.5">
-                    <label htmlFor="subject" className="text-xs font-semibold uppercase tracking-wider text-foreground/80">
+                    <label htmlFor="subject" className="text-eyebrow">
                       Subject <span className="text-primary">*</span>
                     </label>
                     <input
@@ -410,7 +410,7 @@ export function Contact() {
 
                   {/* Message */}
                   <div className="space-y-1.5">
-                    <label htmlFor="message" className="text-xs font-semibold uppercase tracking-wider text-foreground/80">
+                    <label htmlFor="message" className="text-eyebrow">
                       Message <span className="text-primary">*</span>
                     </label>
                     <textarea

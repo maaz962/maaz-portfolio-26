@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useAuth } from "@/lib/auth-context";
+import { buttonStyles } from "@/components/ui/button";
 
 export interface AuthModalProps {
   open: boolean;
@@ -210,7 +211,12 @@ export function AuthModal({ open, onClose, onAuthed, initialMode = "login" }: Au
               <button
                 type="submit"
                 disabled={submitting}
-                className="mt-2 w-full rounded-xl bg-primary py-2.5 text-xs font-semibold text-primary-foreground transition-all hover:brightness-110 shadow-glow disabled:opacity-60"
+                className={buttonStyles({
+                  size: "md",
+                  variant: "primary",
+                  className:
+                    "mt-2 w-full disabled:opacity-60",
+                })}
               >
                 {submitting
                   ? "Please wait…"

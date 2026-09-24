@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import { Gamepad2, Key, ShieldCheck, Trophy, Flame, Star } from "lucide-react";
+import { buttonStyles } from "@/components/ui/button";
 
 interface AuthGateProps {
   loading?: boolean;
@@ -22,7 +23,7 @@ export function AuthGate({ loading, onSignIn, onRegister }: AuthGateProps) {
           <Gamepad2 className="h-7 w-7" />
         </div>
 
-        <h2 className="mt-4 font-display text-lg font-bold text-foreground">
+        <h2 className="mt-4 font-display text-lg font-semibold text-foreground">
           {loading ? "Checking your profile…" : "Sign in to play"}
         </h2>
         <p className="mt-1.5 text-xs leading-relaxed text-muted">
@@ -36,17 +37,25 @@ export function AuthGate({ loading, onSignIn, onRegister }: AuthGateProps) {
             <button
               type="button"
               onClick={onRegister}
-              className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-2.5 text-xs font-semibold text-primary-foreground transition-all hover:brightness-110"
+              className={buttonStyles({
+                size: "md",
+                variant: "primary",
+                className: "w-full",
+              })}
             >
-              <Key className="h-3.5 w-3.5" />
+              <Key className="h-4 w-4" strokeWidth={1.75} />
               Create Account
             </button>
             <button
               type="button"
               onClick={onSignIn}
-              className="flex w-full items-center justify-center gap-2 rounded-xl border border-border bg-background-secondary py-2.5 text-xs font-semibold text-foreground transition-all hover:border-primary/40"
+              className={buttonStyles({
+                size: "md",
+                variant: "outline",
+                className: "w-full",
+              })}
             >
-              <ShieldCheck className="h-3.5 w-3.5" />
+              <ShieldCheck className="h-4 w-4" strokeWidth={1.75} />
               I already have an account
             </button>
           </div>

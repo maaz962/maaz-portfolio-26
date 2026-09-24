@@ -55,7 +55,7 @@ export function GameShell({
         <header className="game-shell-header">
           <div className={`game-shell-icon ${iconClass}`}>{icon}</div>
           <div className="min-w-0 flex-1">
-            <h1 className="font-display text-xl font-bold tracking-tight text-foreground sm:text-2xl">
+            <h1 className="font-display text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
               {title}
             </h1>
             <p className="mt-0.5 text-xs text-muted">{tagline}</p>

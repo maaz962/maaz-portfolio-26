@@ -18,6 +18,8 @@ import {
 import { motion } from "framer-motion";
 import { GlassNavbar } from "@/components/layout/glass-navbar";
 import { cn } from "@/lib/utils";
+import { buttonStyles } from "@/components/ui/button";
+import { Chip } from "@/components/ui/chip";
 import { games, type GameMeta } from "@/data/games";
 import { AuthModal } from "@/components/games/auth-modal";
 import { LeaderboardPanel } from "@/components/games/leaderboard-panel";
@@ -272,19 +274,20 @@ function GameCard({
 
       <div className="flex flex-1 flex-col p-5">
         <div className="flex items-start justify-between gap-3">
-          <h3 className="font-display text-lg font-bold text-foreground">
+          <h3 className="font-display text-lg font-semibold text-foreground">
             {game.title}
           </h3>
-          <span
+          <Chip
+            variant="primary"
             title={
               game.difficulty.includes("\u2192")
                 ? "Multiple difficulty tiers inside one game \u2014 easy to advanced challenges"
                 : undefined
             }
-            className="shrink-0 rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-semibold text-primary"
+            className="shrink-0 font-semibold"
           >
             {game.difficulty}
-          </span>
+          </Chip>
         </div>
 
         <p className="mt-2 text-xs leading-relaxed text-muted line-clamp-3 min-h-[3.75rem]">
@@ -293,17 +296,12 @@ function GameCard({
 
         <div className="mt-3 flex flex-wrap gap-1.5">
           {game.topics.slice(0, 4).map((topic) => (
-            <span
-              key={topic}
-              className="rounded-md border border-border bg-background-secondary px-2 py-0.5 text-xs font-medium text-muted"
-            >
+            <Chip key={topic} className="font-semibold">
               {topic}
-            </span>
+            </Chip>
           ))}
           {game.topics.length > 4 && (
-            <span className="rounded-md border border-border bg-background-secondary px-2 py-0.5 text-xs font-medium text-muted">
-              +{game.topics.length - 4}
-            </span>
+            <Chip className="font-semibold">+{game.topics.length - 4}</Chip>
           )}
         </div>
 
@@ -369,14 +367,22 @@ function GameCard({
           ) : authed ? (
             <Link
               href={`/games/${game.slug}`}
-              className="flex w-full justify-center rounded-full bg-primary px-5 py-2 text-xs font-semibold text-primary-foreground transition-all hover:brightness-110 sm:w-auto"
+              className={buttonStyles({
+                size: "sm",
+                variant: "primary",
+                className: "w-full sm:w-auto",
+              })}
             >
               {btnLabel}
             </Link>
           ) : (
             <button
               onClick={onPlay}
-              className="flex w-full justify-center rounded-full bg-primary px-5 py-2 text-xs font-semibold text-primary-foreground transition-all hover:brightness-110 sm:w-auto"
+              className={buttonStyles({
+                size: "sm",
+                variant: "primary",
+                className: "w-full sm:w-auto",
+              })}
             >
               {btnLabel}
             </button>
@@ -455,7 +461,7 @@ export default function GamesPage() {
                 <Gamepad2 className="h-5 w-5" />
               </div>
               <div>
-                <h1 className="font-display text-2xl font-bold text-foreground">
+                <h1 className="font-display text-2xl font-semibold text-foreground">
                   Learn Web Dev by Playing
                 </h1>
                 <p className="text-xs text-muted">
@@ -465,14 +471,17 @@ export default function GamesPage() {
               </div>
             </div>
 
-            {!gamesAuthed && !authLoading && (
+{!gamesAuthed && !authLoading && (
               <button
                 onClick={() => {
                   setShowAuthModal(true);
                 }}
-                className="flex items-center gap-1.5 rounded-full bg-gradient-to-r from-primary to-violet-600 px-4 py-2 text-xs font-semibold text-white shadow-lg shadow-primary/25 transition-all hover:brightness-110"
+                className={buttonStyles({
+                  size: "sm",
+                  className: "bg-gradient-to-r from-primary to-violet-600",
+                })}
               >
-                <UserPlus className="h-3.5 w-3.5" />
+                <UserPlus className="h-4 w-4" strokeWidth={1.75} />
                 Sign In / Sign Up
               </button>
             )}
@@ -531,9 +540,13 @@ export default function GamesPage() {
               <button
                 onClick={handleLogout}
                 title="Sign out"
-                className="flex items-center gap-1.5 rounded-full border border-border bg-background-secondary px-3.5 py-1.5 text-xs font-semibold text-muted transition-colors hover:border-red-400/40 hover:text-red-500"
+                className={buttonStyles({
+                  variant: "outline",
+                  size: "sm",
+                  className: "hover:border-red-400/40 hover:text-red-500",
+                })}
               >
-                <LogOut className="h-3.5 w-3.5" />
+                <LogOut className="h-4 w-4" strokeWidth={1.75} />
                 Logout
               </button>
             </div>

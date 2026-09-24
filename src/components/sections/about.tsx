@@ -8,7 +8,6 @@ import { Section } from "@/components/ui/section";
 import { Container } from "@/components/ui/container";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { TerminalWindow } from "@/components/ui/terminal-window";
-import { Card } from "@/components/ui/card";
 import { Chip } from "@/components/ui/chip";
 import { FadeIn } from "@/components/animations/fade-in";
 
@@ -135,9 +134,7 @@ export function About() {
               </div>
 
               <div>
-                <p className="text-xs uppercase tracking-widest text-primary">
-                  Areas &amp; tools
-                </p>
+                <p className="text-eyebrow">Areas &amp; tools</p>
                 <ul className="mt-4 flex flex-wrap gap-2">
                   {aboutContent.focusAreas.map((area) => (
                     <li key={area}>
@@ -174,7 +171,7 @@ export function About() {
                 </pre>
               </TerminalWindow>
 
-              <Card className="p-5">
+              <div className="rounded-2xl border border-border bg-card p-5 shadow-card transition-colors">
                 <h3 className="text-sm font-medium text-foreground">
                   {aboutContent.aside.title}
                 </h3>
@@ -198,7 +195,7 @@ export function About() {
                     );
                   })}
                 </ul>
-              </Card>
+              </div>
             </div>
           </FadeIn>
         </div>

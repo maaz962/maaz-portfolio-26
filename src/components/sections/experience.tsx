@@ -102,9 +102,7 @@ export function Experience() {
                   </span>
 
                   <div className="md:pt-1">
-                    <p className="text-xs uppercase tracking-widest text-primary">
-                      {entry.period}
-                    </p>
+                    <p className="text-eyebrow">{entry.period}</p>
                     {entry.featured ? (
                       <Chip
                         variant="primary"
