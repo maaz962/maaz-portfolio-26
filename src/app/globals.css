@@ -212,3 +212,118 @@ h4 {
     0 4px 32px -4px hsl(0 0% 0% / 0.4),
     inset 0 1px 0 hsl(0 0% 100% / 0.05);
 }
+
+/* ==========================================================================
+   GAME SHELL (shared /games/[slug] layout)
+   ========================================================================== */
+
+.game-shell-header {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+
+.game-shell-icon {
+  display: flex;
+  height: 2.5rem;
+  width: 2.5rem;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.75rem;
+  font-size: 1.25rem;
+}
+
+.game-shell-progress {
+  width: clamp(9rem, 24vw, 16rem);
+  margin-left: auto;
+}
+
+.game-shell-progress-track {
+  height: 0.375rem;
+  overflow: hidden;
+  border-radius: 9999px;
+  background-color: hsl(var(--background-secondary));
+}
+
+.game-shell-progress-bar {
+  height: 100%;
+  border-radius: 9999px;
+  background-image: linear-gradient(to right, hsl(var(--primary)), hsl(var(--secondary)));
+}
+
+/* 40/60 two-column grid; collapses to a single column below 900px */
+.game-shell-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1.25rem;
+  align-items: start;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+@media (min-width: 900px) {
+  .game-shell-grid {
+    grid-template-columns: 2fr minmax(0, 3fr);
+  }
+}
+
+.game-shell-sidebar,
+.game-shell-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+/* Shared level progress dots: below the output panel, wrapable, big taps */
+.game-shell-dots {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.game-shell-dots > * {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  min-height: 32px;
+}
+
+@media (max-width: 900px) {
+  .game-shell-dots > * {
+    min-width: 40px;
+    min-height: 40px;
+  }
+}
+
+/* ==========================================================================
+   GAME EDITOR CHROME (shared)
+   ========================================================================== */
+
+/* Height cap: editors grow to at most 340px and scroll internally */
+.game-shell-editor-body {
+  max-height: 340px;
+}
+
+.game-shell-editor-body textarea,
+.game-shell-editor-body .cm-editor {
+  max-height: 340px;
+}
+
+/* Active-line tint. The LineNumbers component sets --current-line-top and
+   --line-height-px; used by the engine-driven textarea editors. */
+textarea.game-shell-currentline {
+  background-image: linear-gradient(
+    hsl(var(--primary) / 0.07),
+    hsl(var(--primary) / 0.07)
+  );
+  background-repeat: no-repeat;
+  background-position: 0 var(--current-line-top, 0px);
+  background-size: 100% var(--line-height-px, 22px);
+}

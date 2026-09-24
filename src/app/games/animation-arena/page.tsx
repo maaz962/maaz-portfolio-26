@@ -1,10 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
-import Script from "next/script";
 import {
-  ArrowLeft,
   Check,
   ChevronDown,
   FolderOpen,
@@ -13,7 +10,9 @@ import {
   Sparkles,
   Trash2,
 } from "lucide-react";
-import { GlassNavbar } from "@/components/layout/glass-navbar";
+import { GameShell } from "@/components/games/game-shell";
+import { LineNumbers } from "@/components/games/line-numbers";
+import { handleEditorKeyDown } from "@/components/games/editor-shortcuts";
 import { AuthGate } from "@/components/games/auth-gate";
 import { AuthModal } from "@/components/games/auth-modal";
 import { useGameProgress } from "@/hooks/use-game-progress";
@@ -264,32 +263,16 @@ export default function AnimationArenaPage() {
   }, [gamesAuthed]);
 
   return (
-    <div className="relative min-h-screen bg-background">
-      <GlassNavbar activeSection="games" />
-
-      <main id="main-content" className="main-content mx-auto w-full max-w-content-wide px-[var(--content-pad-inline)] pb-24">
-        <Link
-          href="/games"
-          className="mb-6 inline-flex items-center gap-1.5 text-xs text-muted transition-colors hover:text-foreground"
-        >
-          <ArrowLeft className="h-3 w-3" />
-          All Games
-        </Link>
-
-        <div className="mb-6 flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-500/10 text-purple-400">
-            <span className="text-xl">🤖</span>
-          </div>
-          <div>
-            <h1 className="font-display text-xl font-bold text-foreground">
-              Animation Arena
-            </h1>
-            <p className="text-xs text-muted">
-              Bring robots to life with CSS transitions, transforms &amp; keyframes
-            </p>
-          </div>
-        </div>
-
+    <>
+    <GameShell
+      title="Animation Arena"
+      tagline="Bring robots to life with CSS transitions, transforms &amp; keyframes"
+      icon={<span className="text-xl">🤖</span>}
+      iconClass="bg-purple-500/10 text-purple-400"
+      scriptSrc={["/games/animation-arena/game.js"]}
+      doneCount={levels.filter((l) => gameState.completed[l.id - 1]).length}
+      totalLevels={gameState.totalLevels || FALLBACK_TOTAL_LEVELS}
+    >
         {/* GAME SECTION */}
         {!authLoading && !gamesAuthed ? (
           <AuthGate
@@ -304,9 +287,9 @@ export default function AnimationArenaPage() {
             }}
           />
         ) : (
-          <div className="aaa-game-wrapper">
+          <div className="game-shell-grid">
             {/* LEFT SIDEBAR */}
-            <div className="aaa-sidebar">
+            <div className="game-shell-sidebar">
               {/* Level Select Drawer */}
               <div className="aaa-level-select">
                 <button
@@ -466,21 +449,20 @@ export default function AnimationArenaPage() {
                     </span>
                   </div>
                 </div>
-                <div className="aaa-editor-body">
-                  <div id="aaa-line-numbers" className="aaa-line-numbers">
-                    1<br />2<br />3<br />4<br />5<br />6
-                  </div>
+                <div className="aaa-editor-body game-shell-editor-body">
+                  <LineNumbers forId="css-editor" className="aaa-line-numbers" />
                   <div className="aaa-code-area">
                     <div className="aaa-editor-prefix" aria-hidden="true">
                       <code>#board {"{"}</code>
                     </div>
                     <textarea
                       id="css-editor"
-                      className="aaa-editor-textarea"
+                      className="aaa-editor-textarea game-shell-currentline"
                       placeholder="Write your CSS here..."
                       autoFocus
                       autoCapitalize="none"
                       spellCheck={false}
+                      onKeyDown={handleEditorKeyDown}
                     />
                   </div>
                 </div>
@@ -527,14 +509,14 @@ export default function AnimationArenaPage() {
             </div>
 
             {/* RIGHT GAME AREA */}
-            <div className="aaa-game-area">
+            <div className="game-shell-panel">
               <div className="aaa-board-container">
                 <div className="aaa-board-header">
                   <div className="aaa-board-topline">
                     <span className="aaa-board-title">Board</span>
                     <div className="aaa-score">
                       <Sparkles className="h-3 w-3 text-primary" />
-                      <span id="score-display">Score: 0</span>
+                      <span id="score-display">Score: 0 XP</span>
                     </div>
                   </div>
                 </div>
@@ -564,7 +546,7 @@ export default function AnimationArenaPage() {
                   </button>
                 </div>
               </div>
-              <div id="progress-dots" className="aaa-progress" />
+              <div id="progress-dots" className="game-shell-dots" />
               <div className="aaa-hint-bar">
                 <Sparkles className="h-3 w-3 shrink-0 text-primary" />
                 <span>
@@ -576,15 +558,13 @@ export default function AnimationArenaPage() {
             </div>
           </div>
         )}
-      </main>
+    </GameShell>
 
-      <Script src="/games/animation-arena/game.js" strategy="afterInteractive" />
-
-      <AuthModal
-        open={showAuthModal}
-        initialMode={authRequest}
-        onClose={() => setShowAuthModal(false)}
-      />
-    </div>
+    <AuthModal
+      open={showAuthModal}
+      initialMode={authRequest}
+      onClose={() => setShowAuthModal(false)}
+    />
+    </>
   );
 }

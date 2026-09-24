@@ -261,7 +261,7 @@
     if (typeof saved.score === "number") STATE.score = saved.score;
     if (saved.completed && typeof saved.completed === "object") STATE.completed = saved.completed;
     var s = $("score-display");
-    if (s) s.textContent = "Score: " + STATE.score;
+    if (s) s.textContent = "Score: " + STATE.score + " XP";
     renderLevel();
     publishState();
   }
@@ -580,7 +580,7 @@
     STATE.score += pointsForLevel(LEVELS[STATE.currentLevel]);
 
     var s = $("score-display");
-    if (s) s.textContent = "Score: " + STATE.score;
+    if (s) s.textContent = "Score: " + STATE.score + " XP";
 
     var nb = $("next-btn");
     if (nb) { nb.disabled = false; nb.classList.add("ready"); }
@@ -731,7 +731,7 @@
 
     if (titleEl) titleEl.textContent = level.title;
     if (numEl) numEl.textContent = level.id;
-    if (instrEl) instrEl.innerHTML = "Task: " + escHtml(level.instruction);
+    if (instrEl) instrEl.innerHTML = escHtml(level.instruction);
     if (hintEl) hintEl.innerHTML = "Hint: " + level.hint;
     if (diffEl) {
       diffEl.textContent = level.difficulty.charAt(0).toUpperCase() + level.difficulty.slice(1);
@@ -770,7 +770,7 @@
 
     if (t) t.textContent = "You Did It!";
     if (n) n.textContent = "\uD83C\uDF1F";
-    if (i) i.textContent = "Task: You wrote HTML for real. You're officially an HTML Master!";
+    if (i) i.textContent = "You wrote HTML for real. You're officially an HTML Master!";
     if (h) h.innerHTML = "Hint: You can now build any kind of webpage. Share your score with friends!";
     if (d) { d.textContent = "Master"; d.className = "hh-difficulty advanced"; }
 
@@ -782,7 +782,7 @@
         "<style>body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;font-family:system-ui,-apple-system,sans-serif;background:linear-gradient(135deg,#312e81,#4c1d95);color:#fff;text-align:center;padding:24px;box-sizing:border-box}" +
         ".t{font-size:4rem;margin-bottom:10px}.a{font-size:2rem}.b{font-weight:800;font-size:1.4rem;margin:10px 0}.c{opacity:.8;font-size:.9rem;max-width:340px;line-height:1.6}</style></head>" +
         "<body><div><div class='t'>" + stars + "</div><div class='a'>\uD83C\uDF89\uD83E\uDDD9\u200D\u2642\uFE0F\uD83C\uDF89</div>" +
-        "<div class='b'>HTML Master!</div><div class='c'>You finished all " + LEVELS.length + " levels. Score: " + STATE.score + " | Levels: " + done + "/" + LEVELS.length + "</div></div></body></html>";
+        "<div class='b'>HTML Master!</div><div class='c'>You finished all " + LEVELS.length + " levels. Score: " + STATE.score + " XP | Levels: " + done + "/" + LEVELS.length + "</div></div></body></html>";
     }
 
     hideOverlay();
@@ -815,7 +815,7 @@
       STATE.completed[STATE.currentLevel] = false;
       STATE.score = Math.max(0, STATE.score - pointsForLevel(level));
       var s = $("score-display");
-      if (s) s.textContent = "Score: " + STATE.score;
+      if (s) s.textContent = "Score: " + STATE.score + " XP";
       var nb = $("next-btn");
       if (nb) nb.classList.remove("ready");
       renderProgress();
@@ -860,15 +860,82 @@
     STATE.completed = {};
 
     var s = $("score-display");
-    if (s) s.textContent = "Score: 0";
+    if (s) s.textContent = "Score: 0 XP";
 
     renderLevel();
   }
 
+  var EDIT_INDENT = "  ";
+  var EDIT_PAIRS = { "(": ")", "[": "]", "{": "}", '"': '"', "'": "'", "`": "`" };
+  var EDIT_CLOSERS = { ")": 1, "]": 1, "}": 1, '"': 1, "'": 1, "`": 1 };
+
+  function indentSelection(ta, forward) {
+    var start = ta.selectionStart != null ? ta.selectionStart : ta.value.length;
+    var end = ta.selectionEnd != null ? ta.selectionEnd : ta.value.length;
+    if (forward) {
+      ta.value = ta.value.slice(0, start) + EDIT_INDENT + ta.value.slice(end);
+      try { ta.setSelectionRange(start + EDIT_INDENT.length, end + EDIT_INDENT.length); } catch (err) {}
+    } else {
+      var chunks = ta.value.slice(start, end).split("\n");
+      var removed = 0;
+      var out = chunks.map(function (c, i) {
+        if (i > 0 && c.slice(0, EDIT_INDENT.length) === EDIT_INDENT) {
+          removed += EDIT_INDENT.length;
+          return c.slice(EDIT_INDENT.length);
+        }
+        return c;
+      });
+      ta.value = ta.value.slice(0, start) + out.join("\n") + ta.value.slice(end);
+      try { ta.setSelectionRange(Math.max(start - EDIT_INDENT.length, 0), end - removed); } catch (err) {}
+    }
+  }
+
+  function autoCloseBracket(e, ta) {
+    var key = e.key;
+    if (!key || key.length !== 1) return false;
+    var start = ta.selectionStart != null ? ta.selectionStart : ta.value.length;
+    var end = ta.selectionEnd != null ? ta.selectionEnd : ta.value.length;
+    var pair = EDIT_PAIRS[key];
+    if (pair) {
+      e.preventDefault();
+      if (start !== end) {
+        var sel = ta.value.slice(start, end);
+        ta.value = ta.value.slice(0, start) + key + sel + pair + ta.value.slice(end);
+        try { ta.setSelectionRange(start + 1, end + 1); } catch (err) {}
+      } else {
+        ta.value = ta.value.slice(0, start) + key + pair + ta.value.slice(start);
+        try { ta.setSelectionRange(start + 1, start + 1); } catch (err) {}
+      }
+      return true;
+    }
+    if (EDIT_CLOSERS[key] && start === end && ta.value[start] === key) {
+      e.preventDefault();
+      try { ta.setSelectionRange(start + 1, start + 1); } catch (err) {}
+      return true;
+    }
+    return false;
+  }
+
   function handleKey(e) {
+    var ta = $("html-editor");
+    if (!ta) return;
     if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
       e.preventDefault();
-      checkAnswer();
+      if (e.shiftKey) {
+        checkAnswer();
+      } else {
+        handleRun();
+      }
+      return;
+    }
+    if (e.key === "Tab" && !e.ctrlKey && !e.metaKey && !e.altKey) {
+      e.preventDefault();
+      indentSelection(ta, !e.shiftKey);
+      if (typeof handleInput === "function") handleInput();
+      return;
+    }
+    if (!e.ctrlKey && !e.metaKey && !e.altKey) {
+      if (autoCloseBracket(e, ta) && typeof handleInput === "function") handleInput();
     }
   }
 

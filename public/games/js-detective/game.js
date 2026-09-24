@@ -441,7 +441,7 @@
         STATE.currentLevel--;
       }
       var s = $("score-display");
-      if (s) s.textContent = "Score: " + STATE.score;
+      if (s) s.textContent = "Score: " + STATE.score + " XP";
       renderLevel();
       publishState();
     });
@@ -994,7 +994,7 @@
     STATE.score += pointsForLevel(LEVELS[STATE.currentLevel]);
 
     var s = $("score-display");
-    if (s) s.textContent = "Score: " + STATE.score;
+    if (s) s.textContent = "Score: " + STATE.score + " XP";
 
     var nb = $("next-btn");
     if (nb) { nb.disabled = false; nb.classList.add("ready"); }
@@ -1315,7 +1315,7 @@
       consoleEl.innerHTML = "";
       var banner = document.createElement("div");
       banner.className = "jsd-console-line success";
-      banner.textContent = stars + " JS DETECTIVE MASTER! Score: " + STATE.score + " | Cases: " + done + "/" + LEVELS.length;
+      banner.textContent = stars + " JS DETECTIVE MASTER! Score: " + STATE.score + " XP | Levels: " + done + "/" + LEVELS.length;
       consoleEl.appendChild(banner);
     }
 
@@ -1375,7 +1375,7 @@
       STATE.completed[STATE.currentLevel] = false;
       STATE.score = Math.max(0, STATE.score - pointsForLevel(level));
       var s = $("score-display");
-      if (s) s.textContent = "Score: " + STATE.score;
+      if (s) s.textContent = "Score: " + STATE.score + " XP";
       var nb = $("next-btn");
       if (nb) nb.classList.remove("ready");
       var cb = $("check-btn");
@@ -1387,24 +1387,77 @@
     }
   }
 
+  var EDIT_INDENT = "  ";
+  var EDIT_PAIRS = { "(": ")", "[": "]", "{": "}", '"': '"', "'": "'", "`": "`" };
+  var EDIT_CLOSERS = { ")": 1, "]": 1, "}": 1, '"': 1, "'": 1, "`": 1 };
+
+  function indentSelection(ta, forward) {
+    var start = ta.selectionStart != null ? ta.selectionStart : ta.value.length;
+    var end = ta.selectionEnd != null ? ta.selectionEnd : ta.value.length;
+    if (forward) {
+      ta.value = ta.value.slice(0, start) + EDIT_INDENT + ta.value.slice(end);
+      try { ta.setSelectionRange(start + EDIT_INDENT.length, end + EDIT_INDENT.length); } catch (err) {}
+    } else {
+      var chunks = ta.value.slice(start, end).split("\n");
+      var removed = 0;
+      var out = chunks.map(function (c, i) {
+        if (i > 0 && c.slice(0, EDIT_INDENT.length) === EDIT_INDENT) {
+          removed += EDIT_INDENT.length;
+          return c.slice(EDIT_INDENT.length);
+        }
+        return c;
+      });
+      ta.value = ta.value.slice(0, start) + out.join("\n") + ta.value.slice(end);
+      try { ta.setSelectionRange(Math.max(start - EDIT_INDENT.length, 0), end - removed); } catch (err) {}
+    }
+  }
+
+  function autoCloseBracket(e, ta) {
+    var key = e.key;
+    if (!key || key.length !== 1) return false;
+    var start = ta.selectionStart != null ? ta.selectionStart : ta.value.length;
+    var end = ta.selectionEnd != null ? ta.selectionEnd : ta.value.length;
+    var pair = EDIT_PAIRS[key];
+    if (pair) {
+      e.preventDefault();
+      if (start !== end) {
+        var sel = ta.value.slice(start, end);
+        ta.value = ta.value.slice(0, start) + key + sel + pair + ta.value.slice(end);
+        try { ta.setSelectionRange(start + 1, end + 1); } catch (err) {}
+      } else {
+        ta.value = ta.value.slice(0, start) + key + pair + ta.value.slice(start);
+        try { ta.setSelectionRange(start + 1, start + 1); } catch (err) {}
+      }
+      return true;
+    }
+    if (EDIT_CLOSERS[key] && start === end && ta.value[start] === key) {
+      e.preventDefault();
+      try { ta.setSelectionRange(start + 1, start + 1); } catch (err) {}
+      return true;
+    }
+    return false;
+  }
+
   function handleKey(e) {
+    var ta = $("js-editor");
+    if (!ta) return;
     if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
       e.preventDefault();
-      checkAnswer();
+      if (e.shiftKey) {
+        checkAnswer();
+      } else {
+        handleRun();
+      }
       return;
     }
-    var ta = $("js-editor");
-    if (e.key === "Tab" && ta && !e.ctrlKey && !e.metaKey && !e.altKey) {
+    if (e.key === "Tab" && !e.ctrlKey && !e.metaKey && !e.altKey) {
       e.preventDefault();
-      var selStart = ta.selectionStart != null ? ta.selectionStart : ta.value.length;
-      var selEnd = ta.selectionEnd != null ? ta.selectionEnd : ta.value.length;
-      var before = ta.value.slice(0, selStart);
-      var after = ta.value.slice(selEnd);
-      ta.value = before + "  " + after;
-      try {
-        ta.selectionStart = ta.selectionEnd = before.length + 2;
-      } catch (err) { /* non-editable stub environments */ }
+      indentSelection(ta, !e.shiftKey);
       handleInput();
+      return;
+    }
+    if (!e.ctrlKey && !e.metaKey && !e.altKey) {
+      if (autoCloseBracket(e, ta)) handleInput();
     }
   }
 
@@ -1441,7 +1494,7 @@
     STATE.hintsUsed = 0;
 
     var s = $("score-display");
-    if (s) s.textContent = "Score: 0";
+    if (s) s.textContent = "Score: 0 XP";
 
     ensureLevels(function () {
       if (LEVELS.length === 0) {

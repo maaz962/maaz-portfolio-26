@@ -1,13 +1,10 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import Link from "next/link";
-import Script from "next/script";
 import CodeMirror from "@uiw/react-codemirror";
 import { php } from "@codemirror/lang-php";
 import { oneDark } from "@codemirror/theme-one-dark";
 import {
-  ArrowLeft,
   Check,
   ChevronDown,
   FolderOpen,
@@ -19,7 +16,7 @@ import {
   Trash2,
   X,
 } from "lucide-react";
-import { GlassNavbar } from "@/components/layout/glass-navbar";
+import { GameShell } from "@/components/games/game-shell";
 import { AuthGate } from "@/components/games/auth-gate";
 import { AuthModal } from "@/components/games/auth-modal";
 import { useGameProgress } from "@/hooks/use-game-progress";
@@ -430,30 +427,16 @@ export default function PhpPlaygroundPage() {
   const showSolvedNote = Boolean(current && gameState.completed[currentIdx]);
 
   return (
-    <div className="relative min-h-screen bg-background">
-      <GlassNavbar activeSection="games" />
-
-      <main id="main-content" className="main-content mx-auto w-full max-w-content-wide px-[var(--content-pad-inline)] pb-24">
-        <Link
-          href="/games"
-          className="mb-6 inline-flex items-center gap-1.5 text-xs text-muted transition-colors hover:text-foreground"
-        >
-          <ArrowLeft className="h-3 w-3" />
-          All Games
-        </Link>
-
-        <div className="mb-6 flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/10 text-amber-500">
-            <span className="text-xl">🐘</span>
-          </div>
-          <div>
-            <h1 className="font-display text-xl font-bold text-foreground">PHP Playground</h1>
-            <p className="text-xs text-muted">
-              Solve PHP challenges — variables, functions, arrays &amp; the higher-order bosses
-            </p>
-          </div>
-        </div>
-
+    <>
+    <GameShell
+      title="PHP Playground"
+      tagline="Solve PHP challenges — variables, functions, arrays &amp; the higher-order bosses"
+      icon={<span className="text-xl">🐘</span>}
+      iconClass="bg-amber-500/10 text-amber-500"
+      scriptSrc={["/games/php-playground/levels.js", "/games/php-playground/game.js"]}
+      doneCount={levels.filter((l) => gameState.completed[l.id - 1]).length}
+      totalLevels={gameState.totalLevels || FALLBACK_TOTAL_LEVELS}
+    >
         {/* GAME SECTION */}
         {!authLoading && !gamesAuthed ? (
           <AuthGate
@@ -468,9 +451,9 @@ export default function PhpPlaygroundPage() {
             }}
           />
         ) : (
-          <div className="php-game-wrapper">
+          <div className="game-shell-grid">
             {/* LEFT SIDEBAR */}
-            <div className="php-sidebar">
+            <div className="game-shell-sidebar">
               {/* Level Select Drawer */}
               <div className="php-level-select">
                 <button
@@ -481,7 +464,7 @@ export default function PhpPlaygroundPage() {
                 >
                   <span className="php-ls-label">
                     <FolderOpen className="h-3 w-3" />
-                    All Cases
+                    All Levels
                   </span>
                   <span className="php-ls-count">
                     {levels.filter((l) => gameState.completed[l.id - 1]).length}/{gameState.totalLevels}
@@ -626,8 +609,19 @@ export default function PhpPlaygroundPage() {
                       </button>
                     </div>
                   </div>
-                  <div className="php-editor-body">
-                    <div className="php-editor-wrap">
+                  <div className="php-editor-body game-shell-editor-body">
+                    <div
+                      className="php-editor-wrap"
+                      onKeyDown={(e) => {
+                        if (!(e.ctrlKey || e.metaKey) || e.key !== "Enter") return;
+                        e.preventDefault();
+                        if (e.shiftKey) {
+                          if (!running) check();
+                        } else if (!running) {
+                          run();
+                        }
+                      }}
+                    >
                       <CodeMirror
                         value={code}
                         height="320px"
@@ -696,7 +690,7 @@ export default function PhpPlaygroundPage() {
             </div>
 
             {/* RIGHT GAME AREA */}
-            <div className="php-game-area">
+            <div className="game-shell-panel">
               {bootStatus === "booting" && (
                 <div className="php-boot-strip">
                   <Terminal className="h-3 w-3 shrink-0 animate-spin" />
@@ -770,7 +764,7 @@ export default function PhpPlaygroundPage() {
                             <span className="php-star earned">⭐</span>
                             <span className="php-star earned">⭐</span>
                           </div>
-                          <div className="php-complete-text">Case Solved!</div>
+                          <div className="php-complete-text">Level Complete!</div>
                           <div className="php-complete-sub">Output matches exactly. Nice work.</div>
                           <div className="php-complete-msg">
                             +{current?.points ?? 0} XP · Saved to your profile
@@ -780,7 +774,7 @@ export default function PhpPlaygroundPage() {
                             className="php-complete-btn"
                             onClick={() => goLevel(currentIdx + 1)}
                           >
-                            Next Case →
+                            Next Level →
                           </button>
                         </>
                       )}
@@ -788,7 +782,7 @@ export default function PhpPlaygroundPage() {
                   )}
               </div>
 
-              <div className="php-progress">
+              <div className="game-shell-dots">
                 {levels.map((l, i) => {
                   const doneLevel = !!gameState.completed[l.id - 1];
                   const isCurrent = currentIdx === i;
@@ -824,16 +818,13 @@ export default function PhpPlaygroundPage() {
             </div>
           </div>
         )}
-      </main>
+    </GameShell>
 
-      <Script src="/games/php-playground/levels.js" strategy="afterInteractive" />
-      <Script src="/games/php-playground/game.js" strategy="afterInteractive" />
-
-      <AuthModal
-        open={showAuthModal}
-        initialMode={authRequest}
-        onClose={() => setShowAuthModal(false)}
-      />
-    </div>
+    <AuthModal
+      open={showAuthModal}
+      initialMode={authRequest}
+      onClose={() => setShowAuthModal(false)}
+    />
+    </>
   );
 }

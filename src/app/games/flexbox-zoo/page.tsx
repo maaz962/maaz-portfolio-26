@@ -1,10 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
-import Script from "next/script";
 import {
-  ArrowLeft,
   Check,
   ChevronDown,
   FolderOpen,
@@ -13,7 +10,9 @@ import {
   Sparkles,
   Trash2,
 } from "lucide-react";
-import { GlassNavbar } from "@/components/layout/glass-navbar";
+import { GameShell } from "@/components/games/game-shell";
+import { LineNumbers } from "@/components/games/line-numbers";
+import { handleEditorKeyDown } from "@/components/games/editor-shortcuts";
 import { AuthGate } from "@/components/games/auth-gate";
 import { AuthModal } from "@/components/games/auth-modal";
 import { useGameProgress } from "@/hooks/use-game-progress";
@@ -120,33 +119,17 @@ export default function FlexboxZooPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [gamesAuthed]);
 
-  return (
-    <div className="relative min-h-screen bg-background">
-      <GlassNavbar activeSection="games" />
-
-      <main id="main-content" className="main-content mx-auto w-full max-w-content-wide px-[var(--content-pad-inline)] pb-24">
-        <Link
-          href="/games"
-          className="mb-6 inline-flex items-center gap-1.5 text-xs text-muted transition-colors hover:text-foreground"
-        >
-          <ArrowLeft className="h-3 w-3" />
-          All Games
-        </Link>
-
-        <div className="mb-6 flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-green-500/10 text-green-500">
-            <span className="text-xl">🦁</span>
-          </div>
-          <div>
-            <h1 className="font-display text-xl font-bold text-foreground">
-              Flexbox Zoo
-            </h1>
-            <p className="text-xs text-muted">
-              Master CSS Flexbox by helping animals find their enclosures
-            </p>
-          </div>
-        </div>
-
+return (
+    <>
+    <GameShell
+      title="Flexbox Zoo"
+      tagline="Master CSS Flexbox by helping animals find their enclosures"
+      icon={<span className="text-xl">🦁</span>}
+      iconClass="bg-green-500/10 text-green-500"
+      scriptSrc={["/games/flexbox-zoo/game.js"]}
+      doneCount={levels.filter((l) => gameState.completed[l.id - 1]).length}
+      totalLevels={gameState.totalLevels || FALLBACK_TOTAL_LEVELS}
+    >
         {/* GAME SECTION — html / css / js structure */}
         {!authLoading && !gamesAuthed ? (
           <AuthGate
@@ -161,9 +144,9 @@ export default function FlexboxZooPage() {
             }}
           />
         ) : (
-        <div className="zoo-game-wrapper">
+        <div className="game-shell-grid">
           {/* LEFT SIDEBAR — html structure */}
-          <div className="zoo-sidebar">
+          <div className="game-shell-sidebar">
             {/* All Levels Drawer */}
             <div className="zoo-level-select">
               <button
@@ -322,10 +305,8 @@ export default function FlexboxZooPage() {
                   </button>
                 </div>
               </div>
-              <div className="zoo-editor-body">
-                <div id="zoo-line-numbers" className="zoo-line-numbers">
-                  1<br />2<br />3<br />4<br />5<br />6
-                </div>
+              <div className="zoo-editor-body game-shell-editor-body">
+                <LineNumbers forId="css-editor" className="zoo-line-numbers" />
                 <div className="zoo-code-area">
                   <div className="zoo-code-prefix">
                     <span className="zoo-css-selector">#board</span>{" "}
@@ -333,11 +314,12 @@ export default function FlexboxZooPage() {
                   </div>
                   <textarea
                     id="css-editor"
-                    className="zoo-editor-textarea"
+                    className="zoo-editor-textarea game-shell-currentline"
                     placeholder="Write your flexbox code here..."
                     autoFocus
                     autoCapitalize="none"
                     spellCheck={false}
+                    onKeyDown={handleEditorKeyDown}
                   />
                   <div id="zoo-editor-hint" className="zoo-editor-hint">
                     Type the CSS property here...
@@ -388,7 +370,7 @@ export default function FlexboxZooPage() {
           </div>
 
           {/* RIGHT GAME AREA — js renders here */}
-          <div className="zoo-game-area">
+          <div className="game-shell-panel">
             <div className="zoo-board-container">
               <div className="zoo-board-header">
                 <div className="zoo-board-tabs">
@@ -396,7 +378,7 @@ export default function FlexboxZooPage() {
                 </div>
                 <div className="zoo-score">
                   <span id="score-display" className="zoo-score-value">
-                    Score: 0
+                    Score: 0 XP
                   </span>
                 </div>
               </div>
@@ -423,21 +405,18 @@ export default function FlexboxZooPage() {
                   Next Level →
                 </button>
               </div>
-              <div id="zoo-progress" className="zoo-progress" />
+              <div id="zoo-progress" className="game-shell-dots" />
             </div>
           </div>
-        </div>
+</div>
         )}
+    </GameShell>
 
-      </main>
-
-      <Script src="/games/flexbox-zoo/game.js" strategy="afterInteractive" />
-
-      <AuthModal
-        open={showAuthModal}
-        initialMode={authRequest}
-        onClose={() => setShowAuthModal(false)}
-      />
-    </div>
+    <AuthModal
+      open={showAuthModal}
+      initialMode={authRequest}
+      onClose={() => setShowAuthModal(false)}
+    />
+    </>
   );
 }

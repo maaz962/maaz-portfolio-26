@@ -240,6 +240,31 @@
   color: hsl(var(--muted) / 0.6);
 }
 
+.hh-line-numbers {
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 2.5rem;
+  overflow: hidden;
+  box-sizing: border-box;
+  padding: 0.85rem 0.4rem 1.5rem;
+  text-align: right;
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  line-height: 1.65;
+  color: hsl(var(--muted) / 0.45);
+  background: rgba(0, 0, 0, 0.16);
+  border-right: 1px solid rgba(255, 255, 255, 0.06);
+  user-select: none;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.hh-editor-textarea {
+  padding-left: 3rem;
+}
+
 /* ---------- Result Panel ---------- */
 
 .hh-result {

@@ -1,10 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
-import Script from "next/script";
 import {
-  ArrowLeft,
   Check,
   ChevronDown,
   FolderOpen,
@@ -13,7 +10,9 @@ import {
   Sparkles,
   Trash2,
 } from "lucide-react";
-import { GlassNavbar } from "@/components/layout/glass-navbar";
+import { GameShell } from "@/components/games/game-shell";
+import { LineNumbers } from "@/components/games/line-numbers";
+import { handleEditorKeyDown } from "@/components/games/editor-shortcuts";
 import { AuthGate } from "@/components/games/auth-gate";
 import { AuthModal } from "@/components/games/auth-modal";
 import { useGameProgress } from "@/hooks/use-game-progress";
@@ -121,32 +120,16 @@ export default function GridGardenPage() {
   }, [gamesAuthed]);
 
   return (
-    <div className="relative min-h-screen bg-background">
-      <GlassNavbar activeSection="games" />
-
-      <main id="main-content" className="main-content mx-auto w-full max-w-content-wide px-[var(--content-pad-inline)] pb-24">
-        <Link
-          href="/games"
-          className="mb-6 inline-flex items-center gap-1.5 text-xs text-muted transition-colors hover:text-foreground"
-        >
-          <ArrowLeft className="h-3 w-3" />
-          All Games
-        </Link>
-
-        <div className="mb-6 flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-500">
-            <span className="text-xl">🌱</span>
-          </div>
-          <div>
-            <h1 className="font-display text-xl font-bold text-foreground">
-              Grid Garden
-            </h1>
-            <p className="text-xs text-muted">
-              Build layouts and master CSS Grid by arranging garden plots
-            </p>
-          </div>
-        </div>
-
+    <>
+    <GameShell
+      title="Grid Garden"
+      tagline="Build layouts and master CSS Grid by arranging garden plots"
+      icon={<span className="text-xl">🌱</span>}
+      iconClass="bg-emerald-500/10 text-emerald-500"
+      scriptSrc={["/games/grid-garden/game.js"]}
+      doneCount={levels.filter((l) => gameState.completed[l.id - 1]).length}
+      totalLevels={gameState.totalLevels || FALLBACK_TOTAL_LEVELS}
+    >
         {/* GAME SECTION */}
         {!authLoading && !gamesAuthed ? (
           <AuthGate
@@ -161,9 +144,9 @@ export default function GridGardenPage() {
             }}
           />
         ) : (
-        <div className="grid-game-wrapper">
+        <div className="game-shell-grid">
           {/* LEFT SIDEBAR */}
-          <div className="grid-sidebar">
+          <div className="game-shell-sidebar">
             {/* All Levels Drawer */}
             <div className="grid-level-select">
               <button
@@ -320,10 +303,8 @@ export default function GridGardenPage() {
                   </button>
                 </div>
               </div>
-              <div className="grid-editor-body">
-                <div className="grid-line-numbers">
-                  1<br />2<br />3<br />4<br />5<br />6
-                </div>
+              <div className="grid-editor-body game-shell-editor-body">
+                <LineNumbers forId="css-editor" className="grid-line-numbers" />
                 <div className="grid-code-area">
                   <div className="grid-code-prefix">
                     <span className="grid-css-selector">#container</span>{" "}
@@ -331,11 +312,12 @@ export default function GridGardenPage() {
                   </div>
                   <textarea
                     id="css-editor"
-                    className="grid-editor-textarea"
+                    className="grid-editor-textarea game-shell-currentline"
                     placeholder="Write your grid code here..."
                     autoFocus
                     autoCapitalize="none"
                     spellCheck={false}
+                    onKeyDown={handleEditorKeyDown}
                   />
                   <div id="grid-editor-hint" className="grid-editor-hint">
                     Type the CSS property here...
@@ -368,7 +350,7 @@ export default function GridGardenPage() {
           </div>
 
           {/* RIGHT GAME AREA */}
-          <div className="grid-game-area">
+          <div className="game-shell-panel">
             {/* Preview Panel for Level 15 */}
             <div id="grid-preview" className="grid-preview-panel" style={{ display: "none" }}>
               <div className="grid-preview-header">
@@ -389,7 +371,7 @@ export default function GridGardenPage() {
                 </div>
                 <div className="grid-score">
                   <span id="score-display" className="grid-score-value">
-                    Score: 0
+                    Score: 0 XP
                   </span>
                 </div>
               </div>
@@ -407,20 +389,18 @@ export default function GridGardenPage() {
                   Next Level →
                 </button>
               </div>
-              <div id="grid-progress" className="grid-progress" />
+              <div id="grid-progress" className="game-shell-dots" />
             </div>
           </div>
-        </div>
+</div>
         )}
-      </main>
+    </GameShell>
 
-      <Script src="/games/grid-garden/game.js" strategy="afterInteractive" />
-
-      <AuthModal
-        open={showAuthModal}
-        initialMode={authRequest}
-        onClose={() => setShowAuthModal(false)}
-      />
-    </div>
+    <AuthModal
+      open={showAuthModal}
+      initialMode={authRequest}
+      onClose={() => setShowAuthModal(false)}
+    />
+    </>
   );
 }

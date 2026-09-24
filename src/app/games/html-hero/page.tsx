@@ -1,10 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
-import Script from "next/script";
 import {
-  ArrowLeft,
   Check,
   ChevronDown,
   FolderOpen,
@@ -13,7 +10,8 @@ import {
   Terminal,
   Trash2,
 } from "lucide-react";
-import { GlassNavbar } from "@/components/layout/glass-navbar";
+import { GameShell } from "@/components/games/game-shell";
+import { LineNumbers } from "@/components/games/line-numbers";
 import { AuthGate } from "@/components/games/auth-gate";
 import { AuthModal } from "@/components/games/auth-modal";
 import { useGameProgress } from "@/hooks/use-game-progress";
@@ -121,32 +119,16 @@ export default function HtmlHeroPage() {
   }, [gamesAuthed]);
 
   return (
-    <div className="relative min-h-screen bg-background">
-      <GlassNavbar activeSection="games" />
-
-      <main id="main-content" className="main-content mx-auto w-full max-w-content-wide px-[var(--content-pad-inline)] pb-24">
-        <Link
-          href="/games"
-          className="mb-6 inline-flex items-center gap-1.5 text-xs text-muted transition-colors hover:text-foreground"
-        >
-          <ArrowLeft className="h-3 w-3" />
-          All Games
-        </Link>
-
-        <div className="mb-6 flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-500/10 text-indigo-500">
-            <span className="text-xl">🦸</span>
-          </div>
-          <div>
-            <h1 className="font-display text-xl font-bold text-foreground">
-              HTML Hero
-            </h1>
-            <p className="text-xs text-muted">
-              Write real HTML tags, level by level, and become an HTML Master
-            </p>
-          </div>
-        </div>
-
+    <>
+    <GameShell
+      title="HTML Hero"
+      tagline="Write real HTML tags, level by level, and become an HTML Master"
+      icon={<span className="text-xl">🦸</span>}
+      iconClass="bg-indigo-500/10 text-indigo-500"
+      scriptSrc={["/games/html-hero/game.js"]}
+      doneCount={levels.filter((l) => gameState.completed[l.id - 1]).length}
+      totalLevels={gameState.totalLevels || TOTAL_LEVELS}
+    >
         {/* GAME SECTION */}
         {!authLoading && !gamesAuthed ? (
           <AuthGate
@@ -161,9 +143,9 @@ export default function HtmlHeroPage() {
             }}
           />
         ) : (
-        <div className="hh-game">
+        <div className="game-shell-grid">
           {/* LEFT COLUMN */}
-          <div className="hh-sidebar">
+          <div className="game-shell-sidebar">
             {/* All Levels Drawer */}
             <div className="hh-level-select">
               <button
@@ -270,7 +252,7 @@ export default function HtmlHeroPage() {
                 Hello, World!
               </h2>
               <p id="level-instruction" className="hh-instruction mt-1">
-                Task: write an h1 tag.
+                Write an h1 tag.
               </p>
               <div id="level-hint" className="hh-hint">
                 <Sparkles className="icon h-3 w-3" />
@@ -299,10 +281,11 @@ export default function HtmlHeroPage() {
                   </button>
                 </div>
               </div>
-              <div className="hh-editor-body">
+              <div className="hh-editor-body game-shell-editor-body">
+                <LineNumbers forId="html-editor" className="hh-line-numbers" />
                 <textarea
                   id="html-editor"
-                  className="hh-editor-textarea"
+                  className="hh-editor-textarea game-shell-currentline"
                   placeholder="Write your HTML here..."
                   autoFocus
                   autoCapitalize="none"
@@ -333,7 +316,7 @@ export default function HtmlHeroPage() {
           </div>
 
           {/* RIGHT COLUMN */}
-          <div className="hh-panel">
+          <div className="game-shell-panel">
             <div className="hh-preview-panel" style={{ position: "relative" }}>
               <div className="hh-preview-header">
                 <div className="hh-preview-tabs">
@@ -343,7 +326,7 @@ export default function HtmlHeroPage() {
                   </button>
                 </div>
                 <div className="hh-score">
-                  <span id="score-display">Score: 0</span>
+                  <span id="score-display">Score: 0 XP</span>
                 </div>
               </div>
 
@@ -363,7 +346,7 @@ export default function HtmlHeroPage() {
                 </span>
               </div>
 
-              <div id="progress-dots" className="hh-progress" />
+              <div id="progress-dots" className="game-shell-dots" />
 
               <div id="overlay" className="hh-complete-overlay" style={{ display: "none" }}>
                 <div className="hh-stars">
@@ -382,15 +365,13 @@ export default function HtmlHeroPage() {
           </div>
         </div>
         )}
-      </main>
+    </GameShell>
 
-      <Script src="/games/html-hero/game.js" strategy="afterInteractive" />
-
-      <AuthModal
-        open={showAuthModal}
-        initialMode={authRequest}
-        onClose={() => setShowAuthModal(false)}
-      />
-    </div>
+    <AuthModal
+      open={showAuthModal}
+      initialMode={authRequest}
+      onClose={() => setShowAuthModal(false)}
+    />
+    </>
   );
 }

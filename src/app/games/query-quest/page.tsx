@@ -1,13 +1,10 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import Link from "next/link";
-import Script from "next/script";
 import CodeMirror from "@uiw/react-codemirror";
 import { sql } from "@codemirror/lang-sql";
 import { oneDark } from "@codemirror/theme-one-dark";
 import {
-  ArrowLeft,
   Check,
   ChevronDown,
   FolderOpen,
@@ -19,7 +16,7 @@ import {
   Trash2,
   X,
 } from "lucide-react";
-import { GlassNavbar } from "@/components/layout/glass-navbar";
+import { GameShell } from "@/components/games/game-shell";
 import { AuthGate } from "@/components/games/auth-gate";
 import { AuthModal } from "@/components/games/auth-modal";
 import { useGameProgress } from "@/hooks/use-game-progress";
@@ -419,30 +416,16 @@ export default function QueryQuestPage() {
   const showSolvedNote = Boolean(current && gameState.completed[currentIdx]);
 
   return (
-    <div className="relative min-h-screen bg-background">
-      <GlassNavbar activeSection="games" />
-
-      <main id="main-content" className="main-content mx-auto w-full max-w-content-wide px-[var(--content-pad-inline)] pb-24">
-        <Link
-          href="/games"
-          className="mb-6 inline-flex items-center gap-1.5 text-xs text-muted transition-colors hover:text-foreground"
-        >
-          <ArrowLeft className="h-3 w-3" />
-          All Games
-        </Link>
-
-        <div className="mb-6 flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-500">
-            <span className="text-xl">🗃️</span>
-          </div>
-          <div>
-            <h1 className="font-display text-xl font-bold text-foreground">Query Quest</h1>
-            <p className="text-xs text-muted">
-              Solve SQL challenges — SELECT, JOIN, aggregates &amp; the data-writing bosses
-            </p>
-          </div>
-        </div>
-
+    <>
+    <GameShell
+      title="Query Quest"
+      tagline="Solve SQL challenges — SELECT, JOIN, aggregates &amp; the data-writing bosses"
+      icon={<span className="text-xl">🗃️</span>}
+      iconClass="bg-emerald-500/10 text-emerald-500"
+      scriptSrc={["/games/query-quest/levels.js", "/games/query-quest/game.js"]}
+      doneCount={levels.filter((l) => gameState.completed[l.id - 1]).length}
+      totalLevels={gameState.totalLevels || FALLBACK_TOTAL_LEVELS}
+    >
         {/* GAME SECTION */}
         {!authLoading && !gamesAuthed ? (
           <AuthGate
@@ -457,9 +440,9 @@ export default function QueryQuestPage() {
             }}
           />
         ) : (
-          <div className="qq-game-wrapper">
+          <div className="game-shell-grid">
             {/* LEFT SIDEBAR */}
-            <div className="qq-sidebar">
+            <div className="game-shell-sidebar">
               {/* Level Select Drawer */}
               <div className="qq-level-select">
                 <button
@@ -470,7 +453,7 @@ export default function QueryQuestPage() {
                 >
                   <span className="qq-ls-label">
                     <FolderOpen className="h-3 w-3" />
-                    All Cases
+                    All Levels
                   </span>
                   <span className="qq-ls-count">
                     {levels.filter((l) => gameState.completed[l.id - 1]).length}/{gameState.totalLevels}
@@ -615,8 +598,19 @@ export default function QueryQuestPage() {
                       </button>
                     </div>
                   </div>
-                  <div className="qq-editor-body">
-                    <div className="qq-editor-wrap">
+                  <div className="qq-editor-body game-shell-editor-body">
+                    <div
+                      className="qq-editor-wrap"
+                      onKeyDown={(e) => {
+                        if (!(e.ctrlKey || e.metaKey) || e.key !== "Enter") return;
+                        e.preventDefault();
+                        if (e.shiftKey) {
+                          if (!running) check();
+                        } else if (!running) {
+                          run();
+                        }
+                      }}
+                    >
                       <CodeMirror
                         value={code}
                         height="320px"
@@ -685,7 +679,7 @@ export default function QueryQuestPage() {
             </div>
 
             {/* RIGHT GAME AREA */}
-            <div className="qq-game-area">
+            <div className="game-shell-panel">
               {bootStatus === "booting" && (
                 <div className="qq-boot-strip">
                   <Terminal className="h-3 w-3 shrink-0 animate-spin" />
@@ -777,7 +771,7 @@ export default function QueryQuestPage() {
                           <span className="qq-star earned">⭐</span>
                           <span className="qq-star earned">⭐</span>
                         </div>
-                        <div className="qq-complete-text">Case Solved!</div>
+                        <div className="qq-complete-text">Level Complete!</div>
                         <div className="qq-complete-sub">Result matches exactly. Nice work.</div>
                         <div className="qq-complete-msg">
                           +{current?.points ?? 0} XP · Saved to your profile
@@ -787,7 +781,7 @@ export default function QueryQuestPage() {
                           className="qq-complete-btn"
                           onClick={() => goLevel(currentIdx + 1)}
                         >
-                          Next Case →
+                          Next Level →
                         </button>
                       </>
                     )}
@@ -795,7 +789,7 @@ export default function QueryQuestPage() {
                 )}
               </div>
 
-              <div className="qq-progress">
+              <div className="game-shell-dots">
                 {levels.map((l, i) => {
                   const doneLevel = !!gameState.completed[l.id - 1];
                   const isCurrent = currentIdx === i;
@@ -831,16 +825,13 @@ export default function QueryQuestPage() {
             </div>
           </div>
         )}
-      </main>
+    </GameShell>
 
-      <Script src="/games/query-quest/levels.js" strategy="afterInteractive" />
-      <Script src="/games/query-quest/game.js" strategy="afterInteractive" />
-
-      <AuthModal
-        open={showAuthModal}
-        initialMode={authRequest}
-        onClose={() => setShowAuthModal(false)}
-      />
-    </div>
+    <AuthModal
+      open={showAuthModal}
+      initialMode={authRequest}
+      onClose={() => setShowAuthModal(false)}
+    />
+    </>
   );
 }

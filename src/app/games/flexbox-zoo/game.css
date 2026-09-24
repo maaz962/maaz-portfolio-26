@@ -301,6 +301,8 @@
   padding-left: 0.625rem;
   border-right: 1px solid hsl(0 0% 100% / 0.06);
   background: #282c34;
+  overflow: hidden;
+  white-space: nowrap;
 }
 
 .dark .zoo-line-numbers {

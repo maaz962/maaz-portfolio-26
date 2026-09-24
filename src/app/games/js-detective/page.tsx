@@ -1,10 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
-import Script from "next/script";
 import {
-  ArrowLeft,
   Check,
   ChevronDown,
   FolderOpen,
@@ -14,7 +11,7 @@ import {
   Terminal,
   Trash2,
 } from "lucide-react";
-import { GlassNavbar } from "@/components/layout/glass-navbar";
+import { GameShell } from "@/components/games/game-shell";
 import { AuthGate } from "@/components/games/auth-gate";
 import { AuthModal } from "@/components/games/auth-modal";
 import { useGameProgress } from "@/hooks/use-game-progress";
@@ -204,32 +201,16 @@ export default function JsDetectivePage() {
   }, [gamesAuthed]);
 
   return (
-    <div className="relative min-h-screen bg-background">
-      <GlassNavbar activeSection="games" />
-
-      <main id="main-content" className="main-content mx-auto w-full max-w-content-wide px-[var(--content-pad-inline)] pb-24">
-        <Link
-          href="/games"
-          className="mb-6 inline-flex items-center gap-1.5 text-xs text-muted transition-colors hover:text-foreground"
-        >
-          <ArrowLeft className="h-3 w-3" />
-          All Games
-        </Link>
-
-        <div className="mb-6 flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/10 text-amber-500">
-            <span className="text-xl">🕵️</span>
-          </div>
-          <div>
-            <h1 className="font-display text-xl font-bold text-foreground">
-              JS Detective
-            </h1>
-            <p className="text-xs text-muted">
-              Solve JavaScript mysteries — variables, loops, arrays &amp; more
-            </p>
-          </div>
-        </div>
-
+    <>
+    <GameShell
+      title="JS Detective"
+      tagline="Solve JavaScript mysteries — variables, loops, arrays &amp; more"
+      icon={<span className="text-xl">🕵️</span>}
+      iconClass="bg-amber-500/10 text-amber-500"
+      scriptSrc={["/games/js-detective/levels.js", "/games/js-detective/game.js"]}
+      doneCount={levels.filter((l) => gameState.completed[l.id]).length}
+      totalLevels={gameState.totalLevels || FALLBACK_TOTAL_LEVELS}
+    >
         {/* GAME SECTION */}
         {!authLoading && !gamesAuthed ? (
           <AuthGate
@@ -244,9 +225,9 @@ export default function JsDetectivePage() {
             }}
           />
         ) : (
-          <div className="jsd-game-wrapper">
+          <div className="game-shell-grid">
             {/* LEFT SIDEBAR */}
-            <div className="jsd-sidebar">
+            <div className="game-shell-sidebar">
               {/* Level Select Drawer */}
               <div className="jsd-level-select">
                 <button
@@ -257,7 +238,7 @@ export default function JsDetectivePage() {
                 >
                   <span className="jsd-ls-label">
                     <FolderOpen className="h-3 w-3" />
-                    All Cases
+                    All Levels
                   </span>
                   <span className="jsd-ls-count">
                     {levels.filter((l) => gameState.completed[l.id]).length}/{gameState.totalLevels}
@@ -349,7 +330,7 @@ export default function JsDetectivePage() {
                 <div className="jsd-level-header">
                   <span className="jsd-level-badge">
                     <Gamepad2 className="h-3 w-3" />
-                    Case <span id="level-number">1</span>
+                    Level <span id="level-number">1</span>
                     <span className="text-muted">/</span>
                     <span id="level-total">{gameState.totalLevels}</span>
                   </span>
@@ -400,7 +381,7 @@ export default function JsDetectivePage() {
                     </button>
                   </div>
                 </div>
-                <div className="jsd-editor-body">
+                <div className="jsd-editor-body game-shell-editor-body">
                   <div id="jsd-line-numbers" className="jsd-line-numbers">
                     1<br />2<br />3<br />4<br />5<br />6<br />7<br />8
                   </div>
@@ -412,7 +393,7 @@ export default function JsDetectivePage() {
                     ></pre>
                     <textarea
                       id="js-editor"
-                      className="jsd-editor-textarea"
+                      className="jsd-editor-textarea game-shell-currentline"
                       placeholder="Write your JavaScript here..."
                       autoFocus
                       autoCapitalize="none"
@@ -465,7 +446,7 @@ export default function JsDetectivePage() {
             </div>
 
             {/* RIGHT GAME AREA */}
-            <div className="jsd-game-area">
+            <div className="game-shell-panel">
               <div className="jsd-console-container">
                 <div className="jsd-console-header">
                   <div className="jsd-console-tabs">
@@ -473,7 +454,7 @@ export default function JsDetectivePage() {
                   </div>
                   <div className="jsd-score">
                     <span id="score-display" className="jsd-score-value">
-                      Score: 0
+                      Score: 0 XP
                     </span>
                   </div>
                 </div>
@@ -488,7 +469,7 @@ export default function JsDetectivePage() {
                     <span className="jsd-star earned">⭐</span>
                     <span className="jsd-star earned">⭐</span>
                   </div>
-                  <div className="jsd-complete-text">Case Solved!</div>
+                  <div className="jsd-complete-text">Level Complete!</div>
                   <div className="jsd-complete-sub">
                     Great work, detective!
                   </div>
@@ -497,11 +478,11 @@ export default function JsDetectivePage() {
                     type="button"
                     className="jsd-complete-btn overlay-btn"
                   >
-                    Next Case →
+                    Next Level →
                   </button>
                 </div>
               </div>
-              <div id="progress-dots" className="jsd-progress" />
+              <div id="progress-dots" className="game-shell-dots" />
               <div className="jsd-hint-bar">
                 <Sparkles className="h-3 w-3 shrink-0 text-primary" />
                 <span>
@@ -512,16 +493,13 @@ export default function JsDetectivePage() {
             </div>
           </div>
         )}
-      </main>
+    </GameShell>
 
-      <Script src="/games/js-detective/levels.js" strategy="afterInteractive" />
-      <Script src="/games/js-detective/game.js" strategy="afterInteractive" />
-
-      <AuthModal
-        open={showAuthModal}
-        initialMode={authRequest}
-        onClose={() => setShowAuthModal(false)}
-      />
-    </div>
+    <AuthModal
+      open={showAuthModal}
+      initialMode={authRequest}
+      onClose={() => setShowAuthModal(false)}
+    />
+    </>
   );
 }

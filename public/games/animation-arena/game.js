@@ -381,7 +381,7 @@
       STATE.currentLevel--;
     }
     var s = $("score-display");
-    if (s) s.textContent = "Score: " + STATE.score;
+    if (s) s.textContent = "Score: " + STATE.score + " XP";
     renderLevel();
     publishState();
   }
@@ -725,7 +725,7 @@
     STATE.score += pointsForLevel(level);
 
     var s = $("score-display");
-    if (s) s.textContent = "Score: " + STATE.score;
+    if (s) s.textContent = "Score: " + STATE.score + " XP";
 
     var nb = $("next-btn");
     if (nb) { nb.disabled = false; nb.style.opacity = "1"; }
@@ -1103,7 +1103,7 @@
         '<div style="font-size:4rem;margin-bottom:0.5rem">' + stars + '</div>' +
         '<div style="font-size:2rem;margin-bottom:0.5rem">\uD83C\uDFC6\u2728\uD83C\uDFC6</div>' +
         '<div style="font-size:1.2rem;font-weight:700;font-family:var(--font-display)">Animation Champion!</div>' +
-        '<div style="font-size:0.85rem;color:hsl(var(--muted));margin-top:0.25rem">Score: ' + STATE.score + ' | Levels: ' + done + '/' + LEVELS.length + '</div>' +
+        '<div style="font-size:0.85rem;color:hsl(var(--muted));margin-top:0.25rem">Score: ' + STATE.score + ' XP | Levels: ' + done + '/' + LEVELS.length + '</div>' +
         '</div>';
       board.style.display = "flex";
       board.style.alignItems = "center";
@@ -1155,7 +1155,7 @@
     STATE.solutions = {};
 
     var s = $("score-display");
-    if (s) s.textContent = "Score: 0";
+    if (s) s.textContent = "Score: 0 XP";
 
     renderLevel();
   }
