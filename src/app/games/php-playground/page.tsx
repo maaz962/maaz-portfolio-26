@@ -22,7 +22,6 @@ import {
 import { GlassNavbar } from "@/components/layout/glass-navbar";
 import { AuthGate } from "@/components/games/auth-gate";
 import { AuthModal } from "@/components/games/auth-modal";
-import { GameSocial } from "@/components/games/game-social";
 import { useGameProgress } from "@/hooks/use-game-progress";
 import { useAuth } from "@/lib/auth-context";
 import "./game.css";
@@ -427,11 +426,6 @@ export default function PhpPlaygroundPage() {
     setConsoleLines([]);
   };
 
-  const openAuthModal = () => {
-    setAuthRequest("login");
-    setShowAuthModal(true);
-  };
-
   const hintRevealDisabled = Boolean(current && gameState.completed[currentIdx]) || hintsLeft === 0;
   const showSolvedNote = Boolean(current && gameState.completed[currentIdx]);
 
@@ -830,18 +824,6 @@ export default function PhpPlaygroundPage() {
             </div>
           </div>
         )}
-
-        {/* LIKE + COMMENTS */}
-        <GameSocial
-          slug={GAME_SLUG}
-          title="PHP Playground"
-          emoji="🐘"
-          accentText="text-amber-500"
-          accentBg="bg-amber-500/10"
-          currentUser={currentUser}
-          canInteract={gamesAuthed}
-          onAuthRequired={openAuthModal}
-        />
       </main>
 
       <Script src="/games/php-playground/levels.js" strategy="afterInteractive" />

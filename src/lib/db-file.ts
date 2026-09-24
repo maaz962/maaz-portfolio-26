@@ -42,7 +42,20 @@ interface UserWithPassword extends User {
 
 const DB_FILE_PATH = path.join(process.cwd(), "src", "data", "blog-db.json");
 
-const MAX_COMMENT_LENGTH = 2000;
+// Usernames that must never appear on the public leaderboard, regardless of
+// the DB state (defense-in-depth on top of the hiddenFromLeaderboard flag).
+const HIDDEN_USERNAMES = new Set([
+  "test4",
+  "test5",
+  "dua",
+  "dua_zainab",
+  "zainab",
+  "rania",
+  "rania_afzal",
+  "Rania Afzal",
+  "Dua",
+  "@dua_zainab",
+]);
 
 // Thread-safe-ish sequential lock queue to prevent race conditions on write
 let writePromise: Promise<void> = Promise.resolve();
@@ -86,7 +99,7 @@ async function saveDbFile(data: DatabaseSchema): Promise<void> {
 
 // Full read-modify-write operations are serialized through this queue so that
 // concurrent requests (e.g. a like POST racing a register) never clobber each
-// other's changes — each task re-reads the freshest file while holding the lock.
+// other's changes â€” each task re-reads the freshest file while holding the lock.
 let dbTaskQueue: Promise<unknown> = Promise.resolve();
 
 async function withDbLock<T>(task: () => Promise<T>): Promise<T> {
@@ -237,7 +250,7 @@ export async function registerUser(
     if (usernameExists) throw new Error("Username already taken");
 
     const id = `user-${crypto.randomUUID()}`;
-    // Privileges are only granted via the seeded admin account — never
+    // Privileges are only granted via the seeded admin account â€” never
     // automatically based on email/username, which would be an escalation hole.
     const isAdmin = false;
     const avatarUrl = `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(formattedUsername)}`;
@@ -409,7 +422,7 @@ export async function saveGameProgress(
     }
 
     // Every play session bumps the user's streak / XP (same write lock, so no
-    // nested locking needed here — recompute mutates the already-locked db).
+    // nested locking needed here â€” recompute mutates the already-locked db).
     recomputeGamificationLocked(db, userId);
 
     await saveDbFile(db);
@@ -422,7 +435,7 @@ export async function saveGameProgress(
 /**
  * Recomputes a user's gamification row from their game-progress rows and
  * advances the daily streak. Must only be called while holding the DB write
- * lock (it mutates `db` in place) — i.e. from saveGameProgress' locked task.
+ * lock (it mutates `db` in place) â€” i.e. from saveGameProgress' locked task.
  */
 function recomputeGamificationLocked(
   db: DatabaseSchema,
@@ -441,12 +454,12 @@ function recomputeGamificationLocked(
   const lastPlayedAt = existing?.lastPlayedAt ?? null;
 
   if (lastPlayedAt === today) {
-    // Already counted a play today — streak unchanged.
+    // Already counted a play today â€” streak unchanged.
   } else if (lastPlayedAt === yesterday) {
     currentStreak += 1;
     longestStreak = Math.max(longestStreak, currentStreak);
   } else {
-    // Missed a day (or first play ever) — streak restarts at 1.
+    // Missed a day (or first play ever) â€” streak restarts at 1.
     currentStreak = 1;
     longestStreak = Math.max(longestStreak, currentStreak);
   }
@@ -459,7 +472,7 @@ function recomputeGamificationLocked(
     longestStreak,
     lastPlayedAt: today,
     // The shared daily hint budget lives on the gamification row (one pool
-    // across all games) — preserve whatever was already spent today.
+    // across all games) â€” preserve whatever was already spent today.
     hints: existing?.hints,
     updatedAt: new Date().toISOString(),
   };
@@ -557,11 +570,11 @@ export async function consumeDailyHint(
   });
 }
 
-/** Top players by total XP (admins excluded — they're the site owners). */
+/** Top players by total XP (admins excluded â€” they're the site owners). */
 export async function getLeaderboard(limit = 10): Promise<LeaderboardEntry[]> {
   const db = await readDbFile();
   const scored = db.users
-    .filter((u) => !u.isAdmin)
+    .filter((u) => !u.isAdmin && !u.hiddenFromLeaderboard && !HIDDEN_USERNAMES.has(u.username))
     .map((u) => {
       const gp = (db.gameProgress ?? []).filter((p) => p.userId === u.id);
       const totalXp = gp.reduce((sum, p) => sum + (p.score || 0), 0);
@@ -599,7 +612,7 @@ export async function getUserRank(userId: string): Promise<number | null> {
   if (!target || target.isAdmin) return null;
 
   const ranked = db.users
-    .filter((u) => !u.isAdmin)
+    .filter((u) => !u.isAdmin && !u.hiddenFromLeaderboard && !HIDDEN_USERNAMES.has(u.username))
     .map((u) => {
       const gp = (db.gameProgress ?? []).filter((p) => p.userId === u.id);
       return {
@@ -612,200 +625,6 @@ export async function getUserRank(userId: string): Promise<number | null> {
 
   const idx = ranked.findIndex((r) => r.id === userId);
   return idx > -1 ? idx + 1 : null;
-}
-
-// --- BLOG INTERACTIONS ---
-
-export async function getBlogEngagement(blogSlug: string, userId?: string) {
-  const db = await readDbFile();
-  const likes = db.likes.filter((l) => l.blogSlug === blogSlug);
-  const comments = db.comments.filter((c) => c.blogSlug === blogSlug && !c.isDeleted);
-
-  const userLiked = userId ? likes.some((l) => l.userId === userId) : false;
-
-  // Most recent unique likers (max 5), so the UI can render an avatar strip.
-  const recentLikers = Array.from(
-    new Map(
-      likes
-        .slice()
-        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-        .map((l) => {
-          const u = db.users.find((u) => u.id === l.userId);
-          return [
-            l.userId,
-            u
-              ? { id: u.id, name: u.name, username: u.username, avatarUrl: u.avatarUrl }
-              : { id: l.userId, name: "User", username: "user", avatarUrl: "" },
-          ];
-        })
-    ).values()
-  ).slice(0, 5);
-
-  return {
-    likesCount: likes.length,
-    commentsCount: comments.length,
-    userLiked,
-    recentLikers,
-  };
-}
-
-export async function getComments(blogSlug: string, userId?: string): Promise<Comment[]> {
-  const db = await readDbFile();
-  return db.comments
-    .filter((c) => c.blogSlug === blogSlug && !c.isDeleted)
-    .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
-    .map((c) => ({ ...c, ...commentLikeStats(c, db.likes, userId) }));
-}
-
-function commentLikeStats(comment: Comment, allLikes: Like[], userId?: string) {
-  const likes = allLikes.filter((l) => l.commentId === comment.id);
-  return {
-    likesCount: likes.length,
-    userLiked: userId ? likes.some((l) => l.userId === userId) : false,
-  };
-}
-
-export async function toggleCommentLike(
-  commentId: string,
-  userId: string
-): Promise<{ likesCount: number; userLiked: boolean }> {
-  return withDbLock(async () => {
-    const db = await readDbFile();
-
-    const comment = db.comments.find((c) => c.id === commentId);
-    if (!comment) throw new Error("Comment not found");
-
-    const existingIndex = db.likes.findIndex(
-      (l) => l.commentId === commentId && l.userId === userId
-    );
-
-    if (existingIndex > -1) {
-      db.likes.splice(existingIndex, 1);
-    } else {
-      db.likes.push({
-        id: `like-${crypto.randomUUID()}`,
-        commentId,
-        userId,
-        createdAt: new Date().toISOString(),
-      });
-    }
-
-    await saveDbFile(db);
-    return commentLikeStats(comment, db.likes, userId);
-  });
-}
-
-export async function toggleLike(blogSlug: string, userId: string): Promise<boolean> {
-  return withDbLock(async () => {
-    const db = await readDbFile();
-
-    const existingLikeIndex = db.likes.findIndex(
-      (l) => l.blogSlug === blogSlug && l.userId === userId
-    );
-
-    let liked = false;
-    if (existingLikeIndex > -1) {
-      db.likes.splice(existingLikeIndex, 1);
-    } else {
-      db.likes.push({
-        id: `like-${crypto.randomUUID()}`,
-        blogSlug,
-        userId,
-        createdAt: new Date().toISOString(),
-      });
-      liked = true;
-    }
-
-    await saveDbFile(db);
-    return liked;
-  });
-}
-
-export async function addComment(
-  blogSlug: string,
-  userId: string,
-  content: string,
-  parentId?: string
-): Promise<Comment> {
-  return withDbLock(async () => {
-    const db = await readDbFile();
-
-    const user = db.users.find((u) => u.id === userId);
-    if (!user) throw new Error("User not found");
-
-    const trimmedContent = content.trim();
-    if (trimmedContent === "") throw new Error("Comment cannot be empty");
-    if (trimmedContent.length > MAX_COMMENT_LENGTH) {
-      throw new Error(`Comment cannot exceed ${MAX_COMMENT_LENGTH} characters`);
-    }
-
-    const newComment: Comment = {
-      id: `comment-${crypto.randomUUID()}`,
-      blogSlug,
-      userId,
-      userName: user.name,
-      userAvatar: user.avatarUrl,
-      content: trimmedContent,
-      parentId: parentId || undefined,
-      isDeleted: false,
-      createdAt: new Date().toISOString(),
-    };
-
-    db.comments.push(newComment);
-    await saveDbFile(db);
-    return newComment;
-  });
-}
-
-export async function editComment(
-  commentId: string,
-  userId: string,
-  content: string
-): Promise<Comment> {
-  return withDbLock(async () => {
-    const db = await readDbFile();
-    const comment = db.comments.find((c) => c.id === commentId);
-
-    if (!comment) throw new Error("Comment not found");
-    if (comment.userId !== userId) throw new Error("Unauthorized editing");
-
-    const trimmedContent = content.trim();
-    if (trimmedContent === "") throw new Error("Comment cannot be empty");
-    if (trimmedContent.length > MAX_COMMENT_LENGTH) {
-      throw new Error(`Comment cannot exceed ${MAX_COMMENT_LENGTH} characters`);
-    }
-
-    comment.content = trimmedContent;
-    comment.updatedAt = new Date().toISOString();
-
-    await saveDbFile(db);
-    return comment;
-  });
-}
-
-export async function deleteComment(
-  commentId: string,
-  userId: string,
-  isAdmin: boolean
-): Promise<Comment> {
-  return withDbLock(async () => {
-    const db = await readDbFile();
-    const comment = db.comments.find((c) => c.id === commentId);
-
-    if (!comment) throw new Error("Comment not found");
-
-    // Only owner or admin can delete
-    if (comment.userId !== userId && !isAdmin) {
-      throw new Error("Unauthorized deletion");
-    }
-
-    comment.isDeleted = true;
-    comment.content = "[Comment deleted by user]";
-    comment.updatedAt = new Date().toISOString();
-
-    await saveDbFile(db);
-    return comment;
-  });
 }
 
 // Re-export hashes for any external consumers (kept for API parity).

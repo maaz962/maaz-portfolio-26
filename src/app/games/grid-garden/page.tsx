@@ -16,7 +16,6 @@ import {
 import { GlassNavbar } from "@/components/layout/glass-navbar";
 import { AuthGate } from "@/components/games/auth-gate";
 import { AuthModal } from "@/components/games/auth-modal";
-import { GameSocial } from "@/components/games/game-social";
 import { useGameProgress } from "@/hooks/use-game-progress";
 import { useAuth } from "@/lib/auth-context";
 import "./game.css";
@@ -120,13 +119,6 @@ export default function GridGardenPage() {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [gamesAuthed]);
-
-  const openAuthModal = () => {
-    setAuthRequest("login");
-    setShowAuthModal(true);
-  };
-
-  const canInteract = Boolean(currentUser) && gamesAuthed;
 
   return (
     <div className="relative min-h-screen bg-background">
@@ -420,18 +412,6 @@ export default function GridGardenPage() {
           </div>
         </div>
         )}
-
-        {/* LIKE + COMMENTS */}
-        <GameSocial
-          slug={GAME_SLUG}
-          title="Grid Garden"
-          emoji="🌱"
-          accentText="text-emerald-500"
-          accentBg="bg-emerald-500/10"
-          currentUser={currentUser}
-          canInteract={canInteract}
-          onAuthRequired={openAuthModal}
-        />
       </main>
 
       <Script src="/games/grid-garden/game.js" strategy="afterInteractive" />

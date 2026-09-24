@@ -16,7 +16,6 @@ import {
 import { GlassNavbar } from "@/components/layout/glass-navbar";
 import { AuthGate } from "@/components/games/auth-gate";
 import { AuthModal } from "@/components/games/auth-modal";
-import { GameSocial } from "@/components/games/game-social";
 import { useGameProgress } from "@/hooks/use-game-progress";
 import { useAuth } from "@/lib/auth-context";
 import "./game.css";
@@ -120,13 +119,6 @@ export default function HtmlHeroPage() {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [gamesAuthed]);
-
-  const openAuthModal = () => {
-    setAuthRequest("login");
-    setShowAuthModal(true);
-  };
-
-  const canInteract = Boolean(currentUser) && gamesAuthed;
 
   return (
     <div className="relative min-h-screen bg-background">
@@ -390,18 +382,6 @@ export default function HtmlHeroPage() {
           </div>
         </div>
         )}
-
-        {/* LIKE + COMMENTS */}
-        <GameSocial
-          slug={GAME_SLUG}
-          title="HTML Hero"
-          emoji="🦸"
-          accentText="text-indigo-500"
-          accentBg="bg-indigo-500/10"
-          currentUser={currentUser}
-          canInteract={canInteract}
-          onAuthRequired={openAuthModal}
-        />
       </main>
 
       <Script src="/games/html-hero/game.js" strategy="afterInteractive" />

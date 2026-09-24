@@ -129,14 +129,6 @@ export interface BlogSettings {
   hiddenSlugs: string[];
 }
 
-/** A blog post enriched with moderation flags + engagement counts for the admin dashboard. */
-export interface AdminBlogPost extends BlogPost {
-  featured: boolean;
-  hidden: boolean;
-  likesCount: number;
-  commentsCount: number;
-}
-
 export interface User {
   id: string;
   name: string;
@@ -145,6 +137,8 @@ export interface User {
   isAdmin: boolean;
   avatarUrl: string;
   createdAt: string;
+  /** Hide QA/test accounts from the public leaderboard & ranks. */
+  hiddenFromLeaderboard?: boolean;
 }
 
 export interface Comment {
@@ -158,10 +152,6 @@ export interface Comment {
   isDeleted: boolean;
   createdAt: string;
   updatedAt?: string;
-  /** Computed for API responses: how many users liked this comment. */
-  likesCount?: number;
-  /** Computed for API responses: whether the current user liked this comment. */
-  userLiked?: boolean;
 }
 
 export interface Like {
@@ -200,14 +190,6 @@ export interface GameProgress {
   /** Progress data version. 3 = id-keyed completed/currentLevel (never blindly trust legacy index keys). */
   version?: number;
   updatedAt: string;
-}
-
-export interface BlogEngagement {
-  likesCount: number;
-  commentsCount: number;
-  userLiked: boolean;
-  /** Most recent likers (with avatar) so games can show an "Instagram-style" strip. */
-  recentLikers?: { id: string; name: string; username: string; avatarUrl: string }[];
 }
 
 /** Persistent per-user gamification stats (derived from game progress). */

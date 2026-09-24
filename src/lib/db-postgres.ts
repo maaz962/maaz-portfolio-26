@@ -2,7 +2,6 @@ import { neon } from "@neondatabase/serverless";
 import crypto from "crypto";
 import type {
   User,
-  Comment,
   GameProgress,
   Gamification,
   LeaderboardEntry,
@@ -14,7 +13,7 @@ import { dateKeyFromDaysAgo, levelForXp, scoreForCompleted, DAILY_HINT_LIMIT } f
 /**
  * Postgres-backed persistent data layer. Used when process.env.DATABASE_URL is
  * set (i.e. on Vercel). Unlike the file-based store, this survives deploys and
- * cold starts — game progress, likes, comments and users are never reset.
+ * cold starts â€” game progress, likes, comments and users are never reset.
  */
 
 // Neon's tagged template returns a wide union type that is awkward to map over;
@@ -23,6 +22,21 @@ type DbTag = (strings: TemplateStringsArray, ...values: any[]) => Promise<any[]>
 
 const conn = getPgConnectionString();
 const sql = (conn ? neon(conn) : null) as unknown as DbTag;
+
+// Usernames that must never appear on the public leaderboard regardless of
+// the stored flag (defense-in-depth for accounts created outside this app).
+const HIDDEN_USERNAMES = [
+  "test4",
+  "test5",
+  "dua",
+  "dua_zainab",
+  "zainab",
+  "rania",
+  "rania_afzal",
+  "Rania Afzal",
+  "Dua",
+  "@dua_zainab",
+];
 
 let initPromise: Promise<void> | null = null;
 
@@ -36,6 +50,7 @@ async function initDb(): Promise<void> {
         username TEXT NOT NULL UNIQUE,
         email TEXT NOT NULL UNIQUE,
         is_admin BOOLEAN NOT NULL DEFAULT false,
+        hidden_from_leaderboard BOOLEAN NOT NULL DEFAULT false,
         avatar_url TEXT NOT NULL DEFAULT '',
         created_at TEXT NOT NULL,
         password_hash TEXT NOT NULL
@@ -101,7 +116,7 @@ async function initDb(): Promise<void> {
     await sql`ALTER TABLE game_progress ADD COLUMN IF NOT EXISTS hints JSONB NOT NULL DEFAULT '{}'`;
     await sql`ALTER TABLE game_progress ADD COLUMN IF NOT EXISTS version INT NOT NULL DEFAULT 3`;
     await sql`ALTER TABLE gamification ADD COLUMN IF NOT EXISTS hints JSONB NOT NULL DEFAULT '{}'`;
-    // Idempotent seed of the site owner's admin account — mirrors the file-store
+    // Idempotent seed of the site owner's admin account â€” mirrors the file-store
     // seed so /admin is reachable on first production deploy too. ON CONFLICT
     // makes it safe on every cold start / redeploy.
     await sql`
@@ -135,23 +150,7 @@ function rowToUser(row: any): User {
     isAdmin: row.is_admin,
     avatarUrl: row.avatar_url,
     createdAt: row.created_at,
-  };
-}
-
-function rowToComment(row: any, likesCount = 0, userLiked = false): Comment {
-  return {
-    id: row.id,
-    blogSlug: row.blog_slug,
-    userId: row.user_id,
-    userName: row.user_name,
-    userAvatar: row.user_avatar,
-    content: row.content,
-    parentId: row.parent_id ?? undefined,
-    isDeleted: row.is_deleted,
-    createdAt: row.created_at,
-    updatedAt: row.updated_at ?? undefined,
-    likesCount,
-    userLiked,
+    hiddenFromLeaderboard: row.hidden_from_leaderboard ?? false,
   };
 }
 
@@ -340,7 +339,7 @@ export async function saveGameProgress(
   `;
 
   // Keep gamification (XP / streak / shared hint budget) in sync with the
-  // fresh progress write — carry the user's spent hints through untouched so a
+  // fresh progress write â€” carry the user's spent hints through untouched so a
   // save never resets the shared daily hint pool.
   const [sumRow] = await sql`
     SELECT COALESCE(SUM(score), 0)::int AS total_xp,
@@ -468,7 +467,7 @@ export async function consumeDailyHint(
   return { ok: true, used: nextUsed, left: DAILY_HINT_LIMIT - nextUsed };
 }
 
-/** Top players by total XP (admins excluded — they're the site owners). */
+/** Top players by total XP (admins excluded â€” they're the site owners). */
 export async function getLeaderboard(limit = 10): Promise<LeaderboardEntry[]> {
   await initDb();
   const rows = await sql`
@@ -480,6 +479,8 @@ export async function getLeaderboard(limit = 10): Promise<LeaderboardEntry[]> {
     LEFT JOIN game_progress gp ON gp.user_id = u.id
     LEFT JOIN gamification g ON g.user_id = u.id
     WHERE u.is_admin = false
+      AND COALESCE(u.hidden_from_leaderboard, false) = false
+      AND LOWER(u.username) NOT IN (${HIDDEN_USERNAMES.map((n) => n.toLowerCase())})
     GROUP BY u.id, u.created_at, g.current_streak
     ORDER BY total_xp DESC, u.created_at ASC
     LIMIT ${limit}
@@ -503,6 +504,8 @@ export async function getUserRank(userId: string): Promise<number | null> {
     FROM users u
     LEFT JOIN game_progress gp ON gp.user_id = u.id
     WHERE u.is_admin = false
+      AND COALESCE(u.hidden_from_leaderboard, false) = false
+      AND LOWER(u.username) NOT IN (${HIDDEN_USERNAMES.map((n) => n.toLowerCase())})
     GROUP BY u.id, u.created_at
   `;
   const ranked = rows
@@ -513,185 +516,3 @@ export async function getUserRank(userId: string): Promise<number | null> {
   const idx = ranked.indexOf(userId);
   return idx > -1 ? idx + 1 : null;
 }
-
-// --- LIKES & COMMENTS ---
-
-export async function getBlogEngagement(blogSlug: string, userId?: string) {
-  await initDb();
-
-  const likeRows = await sql`
-    SELECT l.*, u.name, u.username, u.avatar_url
-    FROM post_likes l
-    LEFT JOIN users u ON u.id = l.user_id
-    WHERE l.blog_slug = ${blogSlug}
-  `;
-
-  const likesCount = likeRows.length;
-
-  const commentsRow = await sql`
-    SELECT COUNT(*)::int AS count FROM comments
-    WHERE blog_slug = ${blogSlug} AND is_deleted = false
-  `;
-  const commentsCount = commentsRow[0]?.count ?? 0;
-
-  let userLiked = false;
-  if (userId) {
-    const mine = await sql`
-      SELECT 1 FROM post_likes WHERE blog_slug = ${blogSlug} AND user_id = ${userId} LIMIT 1
-    `;
-    userLiked = mine.length > 0;
-  }
-
-  const recentLikers = likeRows
-    .sort((a, b) => (a.created_at < b.created_at ? 1 : -1))
-    .slice(0, 5)
-    .map((r) => ({
-      id: r.user_id,
-      name: r.name || "User",
-      username: r.username || "user",
-      avatarUrl: r.avatar_url || "",
-    }));
-
-  return { likesCount, commentsCount, userLiked, recentLikers };
-}
-
-async function commentLikeStats(commentId: string, userId?: string) {
-  const countRow = await sql`
-    SELECT COUNT(*)::int AS count FROM comment_likes WHERE comment_id = ${commentId}
-  `;
-  const likesCount = countRow[0]?.count ?? 0;
-  let userLiked = false;
-  if (userId) {
-    const mine = await sql`
-      SELECT 1 FROM comment_likes WHERE comment_id = ${commentId} AND user_id = ${userId} LIMIT 1
-    `;
-    userLiked = mine.length > 0;
-  }
-  return { likesCount, userLiked };
-}
-
-export async function getComments(blogSlug: string, userId?: string): Promise<Comment[]> {
-  await initDb();
-  const rows = await sql`
-    SELECT * FROM comments
-    WHERE blog_slug = ${blogSlug} AND is_deleted = false
-    ORDER BY created_at ASC
-  `;
-  const result: Comment[] = [];
-  for (const row of rows) {
-    const stats = await commentLikeStats(row.id, userId);
-    result.push(rowToComment(row, stats.likesCount, stats.userLiked));
-  }
-  return result;
-}
-
-export async function toggleCommentLike(
-  commentId: string,
-  userId: string
-): Promise<{ likesCount: number; userLiked: boolean }> {
-  await initDb();
-
-  const existing = await sql`
-    SELECT 1 FROM comment_likes WHERE comment_id = ${commentId} AND user_id = ${userId} LIMIT 1
-  `;
-
-  if (existing.length > 0) {
-    await sql`
-      DELETE FROM comment_likes WHERE comment_id = ${commentId} AND user_id = ${userId}
-    `;
-  } else {
-    await sql`
-      INSERT INTO comment_likes (id, comment_id, user_id, created_at)
-      VALUES (${crypto.randomUUID()}, ${commentId}, ${userId}, ${nowISO()})
-    `;
-  }
-
-  return commentLikeStats(commentId, userId);
-}
-
-export async function toggleLike(blogSlug: string, userId: string): Promise<boolean> {
-  await initDb();
-
-  const existing = await sql`
-    SELECT 1 FROM post_likes WHERE blog_slug = ${blogSlug} AND user_id = ${userId} LIMIT 1
-  `;
-
-  let liked = false;
-  if (existing.length > 0) {
-    await sql`DELETE FROM post_likes WHERE blog_slug = ${blogSlug} AND user_id = ${userId}`;
-  } else {
-    await sql`
-      INSERT INTO post_likes (id, blog_slug, user_id, created_at)
-      VALUES (${crypto.randomUUID()}, ${blogSlug}, ${userId}, ${nowISO()})
-    `;
-    liked = true;
-  }
-
-  return liked;
-}
-
-export async function addComment(
-  blogSlug: string,
-  userId: string,
-  content: string,
-  parentId?: string
-): Promise<Comment> {
-  await initDb();
-
-  const userRow = await sql`SELECT * FROM users WHERE id = ${userId} LIMIT 1`;
-  if (!userRow[0]) throw new Error("User not found");
-
-  const trimmedContent = content.trim();
-  if (trimmedContent === "") throw new Error("Comment cannot be empty");
-
-  const id = `comment-${crypto.randomUUID()}`;
-  const rows = await sql`
-    INSERT INTO comments (id, blog_slug, user_id, user_name, user_avatar, content, parent_id, is_deleted, created_at)
-    VALUES (${id}, ${blogSlug}, ${userId}, ${userRow[0].name}, ${userRow[0].avatar_url}, ${trimmedContent}, ${parentId || null}, false, ${nowISO()})
-    RETURNING *
-  `;
-
-  return rowToComment(rows[0], 0, false);
-}
-
-export async function editComment(
-  commentId: string,
-  userId: string,
-  content: string
-): Promise<Comment> {
-  await initDb();
-
-  const trimmedContent = content.trim();
-  if (trimmedContent === "") throw new Error("Comment cannot be empty");
-
-  const rows = await sql`
-    UPDATE comments
-    SET content = ${trimmedContent}, updated_at = ${nowISO()}
-    WHERE id = ${commentId} AND user_id = ${userId}
-    RETURNING *
-  `;
-
-  if (!rows[0]) throw new Error("Unauthorized editing or comment not found");
-  return rowToComment(rows[0], 0, false);
-}
-
-export async function deleteComment(
-  commentId: string,
-  userId: string,
-  isAdmin: boolean
-): Promise<Comment> {
-  await initDb();
-
-  const rows = await sql`
-    UPDATE comments
-    SET is_deleted = true, content = '[Comment deleted by user]', updated_at = ${nowISO()}
-    WHERE id = ${commentId} AND (user_id = ${userId} OR ${isAdmin})
-    RETURNING *
-  `;
-
-  if (!rows[0]) throw new Error("Unauthorized deletion or comment not found");
-  return rowToComment(rows[0], 0, false);
-}
-
-// Re-export hashes for any external consumers (kept for API parity).
-export { hashPassword, verifyPassword };

@@ -30,13 +30,5 @@ export const consumeDailyHint = impl.consumeDailyHint;
 export const getLeaderboard = impl.getLeaderboard;
 export const getUserRank = impl.getUserRank;
 
-export const getBlogEngagement = impl.getBlogEngagement;
-export const getComments = impl.getComments;
-export const toggleCommentLike = impl.toggleCommentLike;
-export const toggleLike = impl.toggleLike;
-export const addComment = impl.addComment;
-export const editComment = impl.editComment;
-export const deleteComment = impl.deleteComment;
-
 // Password helpers are backend-agnostic; re-export from the shared module.
 export { hashPassword, verifyPassword } from "./password";

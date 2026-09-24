@@ -22,7 +22,6 @@ import {
 import { GlassNavbar } from "@/components/layout/glass-navbar";
 import { AuthGate } from "@/components/games/auth-gate";
 import { AuthModal } from "@/components/games/auth-modal";
-import { GameSocial } from "@/components/games/game-social";
 import { useGameProgress } from "@/hooks/use-game-progress";
 import { useAuth } from "@/lib/auth-context";
 import "./game.css";
@@ -414,11 +413,6 @@ export default function QueryQuestPage() {
     setSolved(false);
     setResult(null);
     setQueryOut(null);
-  };
-
-  const openAuthModal = () => {
-    setAuthRequest("login");
-    setShowAuthModal(true);
   };
 
   const hintRevealDisabled = Boolean(current && gameState.completed[currentIdx]) || hintsLeft === 0;
@@ -837,18 +831,6 @@ export default function QueryQuestPage() {
             </div>
           </div>
         )}
-
-        {/* LIKE + COMMENTS */}
-        <GameSocial
-          slug={GAME_SLUG}
-          title="Query Quest"
-          emoji="🗃️"
-          accentText="text-emerald-500"
-          accentBg="bg-emerald-500/10"
-          currentUser={currentUser}
-          canInteract={gamesAuthed}
-          onAuthRequired={openAuthModal}
-        />
       </main>
 
       <Script src="/games/query-quest/levels.js" strategy="afterInteractive" />
