@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Inter, JetBrains_Mono, Space_Grotesk } from "next/font/google";
+import { MotionConfig } from "framer-motion";
 import { ThemeProvider } from "@/components/layout/theme-provider";
 import { Footer } from "@/components/layout/footer";
 import { AIAssistant } from "@/components/ui/ai-assistant";
@@ -132,10 +133,12 @@ export default function RootLayout({
       <body className="flex min-h-screen flex-col font-sans">
         <ThemeProvider>
           <AuthProvider>
-            <div className="flex flex-1 flex-col">{children}</div>
-            <Footer />
-            <AIAssistant />
-            <AnalyticsGate />
+            <MotionConfig reducedMotion="user">
+              <div className="flex flex-1 flex-col">{children}</div>
+              <Footer />
+              <AIAssistant />
+              <AnalyticsGate />
+            </MotionConfig>
           </AuthProvider>
         </ThemeProvider>
       </body>
