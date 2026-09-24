@@ -21,7 +21,7 @@ export const games: GameMeta[] = [
       "Become an HTML Master! Write real tags for headings, lists, tables, forms and full pages across easy to advanced challenges.",
     difficulty: "Beginner \u2192 Advanced",
     topics: ["HTML", "Tags", "Semantics", "Forms"],
-    animal: "\uD83E\uDDD8",
+    animal: "</>",
     color: "from-indigo-500/20 to-violet-500/20",
     borderColor: "border-indigo-500/30",
     accentColor: "text-indigo-600 dark:text-indigo-500",
