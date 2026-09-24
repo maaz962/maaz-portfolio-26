@@ -134,6 +134,70 @@
   color: hsl(142 70% 45%);
 }
 
+/* ---------- Collapsible schema ---------- */
+
+.qq-schema {
+  margin-top: 0.625rem;
+  border: 1px solid hsl(var(--border));
+  border-radius: 0.75rem;
+  background: hsl(var(--card));
+  overflow: hidden;
+}
+
+.qq-schema-summary {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: hsl(var(--foreground));
+  cursor: pointer;
+  user-select: none;
+}
+
+.qq-schema-summary::-webkit-details-marker {
+  display: none;
+}
+
+.qq-schema-caret {
+  margin-left: auto;
+  color: hsl(var(--muted));
+  transition: transform 0.15s ease;
+}
+
+.qq-schema[open] .qq-schema-caret {
+  transform: rotate(180deg);
+}
+
+.qq-schema-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  padding: 0.25rem 0.75rem 0.75rem;
+  border-top: 1px solid hsl(var(--border));
+}
+
+.qq-schema-table {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  font-size: 0.7rem;
+}
+
+.qq-schema-name {
+  font-weight: 700;
+  color: hsl(var(--primary));
+  font-family: var(--font-mono);
+}
+
+.qq-schema-cols {
+  color: hsl(var(--muted));
+  font-size: 0.68rem;
+  line-height: 1.5;
+  word-break: break-word;
+}
+
 /* ---------- Code Editor ---------- */
 
 .qq-editor {

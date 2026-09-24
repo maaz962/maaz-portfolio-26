@@ -405,8 +405,8 @@ export default function JsDetectivePage() {
                     </div>
                   </div>
                 </div>
-                <div id="jsd-result" className="jsd-result" hidden />
-                <div id="toast" className="jsd-status-toast" />
+                <div id="jsd-result" className="jsd-result" role="status" hidden />
+                <div id="toast" className="jsd-status-toast" aria-live="polite" role="status" />
                 <div className="jsd-editor-actions">
                   <button
                     id="run-btn"

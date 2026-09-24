@@ -7,6 +7,7 @@ import { oneDark } from "@codemirror/theme-one-dark";
 import {
   Check,
   ChevronDown,
+  Database,
   FolderOpen,
   Gamepad2,
   Lightbulb,
@@ -25,6 +26,15 @@ import "./game.css";
 
 const GAME_SLUG = "query-quest";
 const FALLBACK_TOTAL_LEVELS = 16;
+
+const QQ_SCHEMA: { table: string; columns: string[] }[] = [
+  { table: "users", columns: ["id", "name", "email", "city", "age"] },
+  { table: "products", columns: ["id", "name", "category", "price"] },
+  {
+    table: "orders",
+    columns: ["id", "user_id", "product_id", "quantity", "status", "created_at"],
+  },
+];
 
 interface QueryQuestLevelMeta {
   id: number;
@@ -573,6 +583,22 @@ export default function QueryQuestPage() {
                   {showSolvedNote && (
                     <div className="qq-solved-note">Solved! Answers are saved — you can return to this level anytime.</div>
                   )}
+
+                  <details className="qq-schema">
+                    <summary className="qq-schema-summary">
+                      <Database className="h-3.5 w-3.5" />
+                      Database schema
+                      <ChevronDown className="qq-schema-caret h-3.5 w-3.5" aria-hidden="true" />
+                    </summary>
+                    <div className="qq-schema-body">
+                      {QQ_SCHEMA.map((t) => (
+                        <div key={t.table} className="qq-schema-table">
+                          <span className="qq-schema-name">{t.table}</span>
+                          <code className="qq-schema-cols">{t.columns.join(", ")}</code>
+                        </div>
+                      ))}
+                    </div>
+                  </details>
                 </div>
               )}
 
@@ -625,7 +651,10 @@ export default function QueryQuestPage() {
                   </div>
 
                   {result && (
-                    <div className={"qq-result " + (result.ok ? "pass" : "fail")}>
+                    <div
+                      className={"qq-result " + (result.ok ? "pass" : "fail")}
+                      role="status"
+                    >
                       <span className="qq-result-icon">
                         {result.ok ? <Check className="h-4 w-4" /> : <X className="h-4 w-4" />}
                       </span>
@@ -643,6 +672,7 @@ export default function QueryQuestPage() {
                       className="qq-run-btn"
                       onClick={run}
                       disabled={running}
+                      title={running ? "Please wait — running…" : undefined}
                     >
                       <Terminal className="h-3 w-3" />
                       {running ? "Running…" : "Run Query"}
@@ -653,6 +683,7 @@ export default function QueryQuestPage() {
                         className="qq-nav-btn prev"
                         disabled={currentIdx === 0}
                         onClick={() => goLevel(currentIdx - 1)}
+                        title={currentIdx === 0 ? "You're on the first level" : undefined}
                       >
                         ← Prev
                       </button>
@@ -661,6 +692,7 @@ export default function QueryQuestPage() {
                         className="qq-check-btn"
                         onClick={check}
                         disabled={running}
+                        title={running ? "Please wait — running…" : undefined}
                       >
                         Check
                       </button>
@@ -669,6 +701,13 @@ export default function QueryQuestPage() {
                         className="qq-nav-btn next"
                         disabled={!gameState.completed[currentIdx] || isLastLevel}
                         onClick={() => goLevel(currentIdx + 1)}
+                        title={
+                          !gameState.completed[currentIdx] || isLastLevel
+                            ? !gameState.completed[currentIdx]
+                              ? "Complete this level to unlock the next"
+                              : "You're on the last level"
+                            : undefined
+                        }
                       >
                         Next →
                       </button>

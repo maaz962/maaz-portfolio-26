@@ -469,10 +469,11 @@ export default function AnimationArenaPage() {
                 <div id="aaa-editor-hint" className="aaa-editor-hint">
                   Type a CSS property like <code>transition: ...</code>
                 </div>
-                <div id="toast" className="aaa-status-toast" />
+                <div id="toast" className="aaa-status-toast" aria-live="polite" role="status" />
                 <div
                   id="aaa-result"
                   className="aaa-result"
+                  role="status"
                   style={{ display: "none" }}
                 />
                 <div className="aaa-editor-actions">

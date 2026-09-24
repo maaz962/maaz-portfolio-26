@@ -324,10 +324,11 @@ export default function GridGardenPage() {
                   </div>
                 </div>
               </div>
-              <div id="toast" className="grid-status-toast" />
+              <div id="toast" className="grid-status-toast" aria-live="polite" role="status" />
               <div
                 id="grid-result"
                 className="grid-result"
+                role="status"
                 style={{ display: "none" }}
               />
               <div className="grid-editor-actions">

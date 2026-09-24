@@ -326,10 +326,11 @@ return (
                   </div>
                 </div>
               </div>
-              <div id="toast" className="zoo-status-toast" />
+              <div id="toast" className="zoo-status-toast" aria-live="polite" role="status" />
               <div
                 id="zoo-result"
                 className="zoo-result"
+                role="status"
                 style={{ display: "none" }}
               />
               <div className="zoo-editor-actions">

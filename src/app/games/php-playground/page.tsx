@@ -636,7 +636,10 @@ export default function PhpPlaygroundPage() {
                   </div>
 
                   {result && (
-                    <div className={"php-result " + (result.ok ? "pass" : "fail")}>
+                    <div
+                      className={"php-result " + (result.ok ? "pass" : "fail")}
+                      role="status"
+                    >
                       <span className="php-result-icon">
                         {result.ok ? <Check className="h-4 w-4" /> : <X className="h-4 w-4" />}
                       </span>
@@ -654,6 +657,7 @@ export default function PhpPlaygroundPage() {
                       className="php-run-btn"
                       onClick={run}
                       disabled={running}
+                      title={running ? "Please wait — running…" : undefined}
                     >
                       <Terminal className="h-3 w-3" />
                       {running ? "Running…" : "Run PHP"}
@@ -664,6 +668,7 @@ export default function PhpPlaygroundPage() {
                         className="php-nav-btn prev"
                         disabled={currentIdx === 0}
                         onClick={() => goLevel(currentIdx - 1)}
+                        title={currentIdx === 0 ? "You're on the first level" : undefined}
                       >
                         ← Prev
                       </button>
@@ -672,6 +677,7 @@ export default function PhpPlaygroundPage() {
                         className="php-check-btn"
                         onClick={check}
                         disabled={running}
+                        title={running ? "Please wait — running…" : undefined}
                       >
                         Check
                       </button>
@@ -680,6 +686,13 @@ export default function PhpPlaygroundPage() {
                         className="php-nav-btn next"
                         disabled={!gameState.completed[currentIdx] || isLastLevel}
                         onClick={() => goLevel(currentIdx + 1)}
+                        title={
+                          !gameState.completed[currentIdx] || isLastLevel
+                            ? !gameState.completed[currentIdx]
+                              ? "Complete this level to unlock the next"
+                              : "You're on the last level"
+                            : undefined
+                        }
                       >
                         Next →
                       </button>

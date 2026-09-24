@@ -293,8 +293,8 @@ export default function HtmlHeroPage() {
                   spellCheck={false}
                 />
               </div>
-              <div id="hh-result" className="hh-result" hidden />
-              <div id="toast" className="hh-status-toast" />
+              <div id="hh-result" className="hh-result" role="status" hidden />
+              <div id="toast" className="hh-status-toast" aria-live="polite" role="status" />
               <div className="hh-editor-actions">
                 <button id="run-btn" type="button" className="hh-btn hh-run-btn">
                   <Terminal className="h-3 w-3" />
