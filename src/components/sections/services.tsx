@@ -2,24 +2,33 @@
 
 import { ArrowRight } from "lucide-react";
 import { services } from "@/data/services";
+import { Section } from "@/components/ui/section";
 import { Container } from "@/components/ui/container";
 import { SectionHeading } from "@/components/ui/section-heading";
+import { Chip } from "@/components/ui/chip";
 import { buttonStyles } from "@/components/ui/button";
 import { FadeIn } from "@/components/animations/fade-in";
 import { StaggerFadeIn, StaggerItem } from "@/components/animations/stagger-fade-in";
-import { useSectionNavigation } from "@/components/layout/section-navigation-context";
-import { cn } from "@/lib/utils";
+import {
+  setPendingContactSubject,
+  useSectionNavigation,
+} from "@/components/layout/section-navigation-context";
 
 export function Services() {
   const navigate = useSectionNavigation();
-  const goToContact = (e: React.MouseEvent<HTMLAnchorElement>) => {
+  const goToContact = (
+    e: React.MouseEvent<HTMLAnchorElement>,
+    subject?: string
+  ) => {
     e.preventDefault();
+    if (subject) setPendingContactSubject(subject);
     navigate("contact");
   };
   return (
-    <section
+    <Section
       id="services"
-      className="scroll-mt-20 border-b border-border bg-noise relative overflow-hidden py-24"
+      aria-label="Services"
+      className="bg-noise relative overflow-hidden"
     >
       {/* Background Orbs */}
       <div
@@ -40,75 +49,44 @@ export function Services() {
           />
         </FadeIn>
 
-        {/* Dynamic Grid Layout */}
         <StaggerFadeIn className="mt-14 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {services.map((service) => {
             const Icon = service.icon;
-            const isFeatured = service.featured;
 
             return (
-              <StaggerItem
-                key={service.slug}
-                className={cn(
-                  "h-full",
-                  isFeatured ? "md:col-span-2" : "md:col-span-1"
-                )}
-              >
-                <article
-                  className={cn(
-                    "group relative flex h-full flex-col justify-between overflow-hidden rounded-2xl border border-border bg-card p-6 md:p-8 shadow-card transition-all duration-300 hover:border-primary/35 hover:shadow-glow",
-                    isFeatured && "border-primary/20 bg-gradient-to-br from-card to-background-secondary/30"
-                  )}
-                >
+              <StaggerItem key={service.slug} className="h-full">
+                <article className="group relative flex h-full flex-col justify-between overflow-hidden rounded-2xl border border-border bg-card p-6 md:p-8 shadow-card transition-all duration-300 hover:border-primary/35 hover:shadow-glow">
                   <div>
-                    {/* Icon */}
-                    <span
-                      className={cn(
-                        "flex h-12 w-12 items-center justify-center rounded-xl border border-border bg-background-secondary text-muted transition-colors group-hover:border-primary/40 group-hover:text-primary",
-                        isFeatured && "border-primary/30 bg-primary/5 text-primary"
-                      )}
-                    >
+                    <span className="flex h-12 w-12 items-center justify-center rounded-xl border border-border bg-background-secondary text-muted transition-colors group-hover:border-primary/40 group-hover:text-primary">
                       <Icon className="h-5 w-5" strokeWidth={1.75} />
                     </span>
 
-                    {/* Title */}
-                    <h3
-                      className={cn(
-                        "mt-5 text-xl font-semibold text-foreground transition-colors group-hover:text-primary",
-                        isFeatured && "text-xl md:text-2xl"
-                      )}
-                    >
+                    <h3 className="mt-5 text-xl font-semibold text-foreground transition-colors group-hover:text-primary">
                       {service.title}
                     </h3>
 
-                    {/* Description */}
-                    <p className="mt-3 text-sm leading-relaxed text-muted">
+                    <p className="mt-3 text-[15px] leading-relaxed text-muted">
                       {service.description}
                     </p>
                   </div>
 
                   <div>
-                    {/* Technologies */}
                     <ul className="mt-6 flex flex-wrap gap-1.5" aria-label="Technologies used">
                       {service.technologies.map((tech) => (
-                        <li
-                          key={tech}
-                          className="text-mono rounded-full border border-border bg-background-secondary px-2.5 py-0.5 text-[0.65rem] text-foreground/85"
-                        >
-                          {tech}
+                        <li key={tech}>
+                          <Chip>{tech}</Chip>
                         </li>
                       ))}
                     </ul>
 
-                    {/* CTA */}
-                    <div className="mt-6">
+                    <div className="mt-4">
                       <a
                         href="#contact"
-                        onClick={goToContact}
-                        className="inline-flex items-center gap-1.5 text-xs font-medium text-primary hover:underline hover:text-primary/80"
+                        onClick={(e) => goToContact(e, service.title)}
+                        className="inline-flex min-h-11 items-center gap-1.5 text-sm font-medium text-primary hover:underline hover:text-primary/80 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary rounded"
                       >
                         Inquire about this
-                        <ArrowRight className="h-3 w-3 transition-transform group-hover:translate-x-1" strokeWidth={2} />
+                        <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" strokeWidth={2} />
                       </a>
                     </div>
                   </div>
@@ -136,7 +114,7 @@ export function Services() {
               <div className="mt-8">
                 <a
                   href="#contact"
-                  onClick={goToContact}
+                  onClick={(e) => goToContact(e)}
                   className={buttonStyles({ size: "lg" })}
                 >
                   Let&apos;s Work Together
@@ -147,6 +125,6 @@ export function Services() {
           </div>
         </FadeIn>
       </Container>
-    </section>
+    </Section>
   );
 }

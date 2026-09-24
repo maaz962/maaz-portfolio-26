@@ -14,7 +14,9 @@ import {
 } from "@/data/projects";
 import { Container } from "@/components/ui/container";
 import { SectionHeading } from "@/components/ui/section-heading";
+import { Section } from "@/components/ui/section";
 import { ProjectCard } from "@/components/ui/project-card";
+import { Chip } from "@/components/ui/chip";
 import { buttonStyles } from "@/components/ui/button";
 import { FadeIn } from "@/components/animations/fade-in";
 import { games } from "@/data/games";
@@ -57,9 +59,10 @@ export function Projects() {
   );
 
   return (
-    <section
+    <Section
       id="projects"
-      className="scroll-mt-20 border-b border-border bg-noise relative overflow-hidden py-24"
+      aria-label="Projects"
+      className="bg-noise relative overflow-hidden"
     >
       <div
         aria-hidden
@@ -78,7 +81,6 @@ export function Projects() {
         <FadeIn delay={0.05}>
           <div
             className="mt-10 flex flex-wrap gap-2"
-            role="tablist"
             aria-label="Filter projects by technology"
           >
             <FilterTab
@@ -115,7 +117,6 @@ export function Projects() {
           <AnimatePresence mode="wait">
             <motion.div
               key={activeFilter}
-              role="tabpanel"
               aria-live="polite"
               variants={listVariants}
               initial="hidden"
@@ -137,7 +138,7 @@ export function Projects() {
               ) : (
                 <motion.p
                   variants={cardVariants}
-                  className="col-span-full rounded-2xl border border-dashed border-border px-6 py-10 text-center text-sm text-muted"
+                  className="col-span-full rounded-2xl border border-dashed border-border px-6 py-10 text-center text-[15px] text-muted"
                 >
                   No projects match this filter yet.
                 </motion.p>
@@ -150,7 +151,7 @@ export function Projects() {
           <GamesTeaserCard />
         </FadeIn>
       </Container>
-    </section>
+    </Section>
   );
 }
 
@@ -186,24 +187,21 @@ function GamesTeaserCard() {
       </div>
 
       <div className="flex flex-1 flex-col p-6 sm:p-0">
-        <span className="text-mono self-start rounded-full border border-primary/25 bg-primary/10 px-2.5 py-0.5 text-[0.65rem] uppercase tracking-wide text-primary">
+        <Chip variant="primary" className="self-start uppercase tracking-wide">
           Games
-        </span>
+        </Chip>
         <h3 className="mt-4 text-xl text-foreground">
           Learn Web Dev by Playing
         </h3>
-        <p className="mt-3 flex-1 text-sm leading-relaxed text-muted">
+        <p className="mt-3 flex-1 text-[15px] leading-relaxed text-muted">
           Interactive games teaching HTML, CSS, JavaScript, PHP &amp; SQL —
           built from scratch. Solve coding puzzles, earn XP, and level up while
           exploring web development hands-on.
         </p>
         <ul className="mt-5 flex flex-wrap gap-2" aria-label="Technologies used">
           {["HTML", "CSS", "JavaScript", "PHP", "SQL"].map((tech) => (
-            <li
-              key={tech}
-              className="text-mono rounded-full border border-border bg-background-secondary px-2.5 py-1 text-[0.65rem] text-foreground/85"
-            >
-              {tech}
+            <li key={tech}>
+              <Chip>{tech}</Chip>
             </li>
           ))}
         </ul>
@@ -234,11 +232,10 @@ function FilterTab({
   return (
     <button
       type="button"
-      role="tab"
-      aria-selected={active}
+      aria-pressed={active}
       onClick={onClick}
       className={cn(
-        "text-mono rounded-full border px-4 py-2 text-xs transition-all duration-200 focus-visible:outline-none",
+        "rounded-full border px-4 py-2 text-xs transition-all duration-200 focus-visible:outline-none",
         active
           ? "border-primary bg-primary text-primary-foreground shadow-glow"
           : "border-border bg-card text-muted hover:border-primary/40 hover:text-foreground"

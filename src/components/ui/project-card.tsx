@@ -2,6 +2,7 @@ import { ExternalLink, Github } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Project } from "@/types";
 import { buttonStyles } from "@/components/ui/button";
+import { Chip } from "@/components/ui/chip";
 import { ProjectVisual } from "@/components/ui/project-visual";
 
 interface ProjectCardProps {
@@ -39,13 +40,13 @@ export function ProjectCard({
 
       <div className={cn("flex flex-1 flex-col p-6", featured && "lg:p-8")}>
         <div className="flex flex-wrap items-center gap-2">
-          <span className="text-mono rounded-full border border-primary/25 bg-primary/10 px-2.5 py-0.5 text-[0.65rem] uppercase tracking-wide text-primary">
+          <Chip variant="primary" className="uppercase tracking-wide">
             {project.category}
-          </span>
+          </Chip>
           {featured ? (
-            <span className="text-mono rounded-full border border-accent/30 bg-accent/10 px-2.5 py-0.5 text-[0.65rem] uppercase tracking-wide text-accent">
+            <Chip variant="accent" className="uppercase tracking-wide">
               Featured
-            </span>
+            </Chip>
           ) : null}
         </div>
 
@@ -58,17 +59,14 @@ export function ProjectCard({
           {project.title}
         </h3>
 
-        <p className="mt-3 flex-1 text-sm leading-relaxed text-muted">
+        <p className="mt-3 flex-1 text-[15px] leading-relaxed text-muted">
           {project.description}
         </p>
 
         <ul className="mt-5 flex flex-wrap gap-2" aria-label="Technologies used">
           {project.technologies.map((tech) => (
-            <li
-              key={tech}
-              className="text-mono rounded-full border border-border bg-background-secondary px-2.5 py-1 text-[0.65rem] text-foreground/85"
-            >
-              {tech}
+            <li key={tech}>
+              <Chip>{tech}</Chip>
             </li>
           ))}
         </ul>

@@ -4,6 +4,7 @@ import { GraduationCap } from "lucide-react";
 import { education } from "@/data/education";
 import { Container } from "@/components/ui/container";
 import { SectionHeading } from "@/components/ui/section-heading";
+import { Chip } from "@/components/ui/chip";
 import { FadeIn } from "@/components/animations/fade-in";
 import {
   StaggerFadeIn,
@@ -91,14 +92,12 @@ export function Education() {
                       </div>
                     </div>
                     {entry.current ? (
-                      <span className="text-mono rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs text-primary">
-                        In progress
-                      </span>
+                      <Chip variant="primary">In progress</Chip>
                     ) : null}
                   </div>
                 </div>
 
-                <p className="text-mono self-start pt-2 text-sm text-muted md:pt-6 md:text-right">
+                <p className="self-start pt-2 text-sm text-muted md:pt-6 md:text-right">
                   {entry.startDate} – {entry.endDate}
                 </p>
               </article>

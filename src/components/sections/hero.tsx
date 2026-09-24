@@ -28,7 +28,7 @@ export function Hero() {
       <Container className="relative grid gap-12 py-20 md:grid-cols-[1.15fr_0.85fr] md:items-center md:py-28">
         <FadeIn>
           {/* Micro status indicator — small, quiet, no glow abuse. */}
-          <div className="text-mono inline-flex items-center gap-2 rounded-full border border-border bg-background-secondary px-3 py-1 text-xs text-muted">
+          <div className="inline-flex items-center gap-2 rounded-full border border-border bg-background-secondary px-3 py-1 text-xs text-muted">
             <span className="relative flex h-1.5 w-1.5">
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400/60" />
               <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-400" />
@@ -36,11 +36,11 @@ export function Hero() {
             {profile.status}
           </div>
 
-          <h1 className="mt-5 text-4xl text-foreground sm:text-5xl md:text-6xl">
+          <h1 className="mt-5 text-[clamp(2.25rem,5vw,3.75rem)] text-foreground">
             {profile.name}
           </h1>
 
-          <p className="text-mono mt-3 text-sm text-primary sm:text-base">
+          <p className="mt-3 text-sm text-primary sm:text-base">
             {profile.focusAreas.join(" • ")}
           </p>
 

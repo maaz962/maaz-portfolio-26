@@ -28,9 +28,9 @@ export function SectionHeading({
       )}
     >
       <p className="text-eyebrow">{eyebrow}</p>
-      <h2 className="mt-3 text-3xl text-foreground md:text-4xl">{title}</h2>
+      <h2 className="mt-3 text-[clamp(2.25rem,3.5vw,2.5rem)] text-foreground">{title}</h2>
       {description ? (
-        <p className="mt-4 text-balance text-muted">{description}</p>
+        <p className="mt-4 text-balance leading-relaxed text-muted">{description}</p>
       ) : null}
     </div>
   );

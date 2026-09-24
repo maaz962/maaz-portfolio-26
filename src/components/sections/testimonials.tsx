@@ -119,7 +119,7 @@ export function Testimonials() {
                     <h5 className="text-xs font-semibold text-foreground">
                       Client & Collaborator Reviews
                     </h5>
-                    <p className="text-[0.65rem] text-muted tracking-wider uppercase">
+                    <p className="text-xs text-muted tracking-wider uppercase">
                       Pending Collection
                     </p>
                   </div>

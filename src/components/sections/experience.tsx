@@ -1,8 +1,12 @@
 "use client";
 
+import { useState } from "react";
+import { ChevronDown } from "lucide-react";
 import { experience } from "@/data/experience";
+import { Section } from "@/components/ui/section";
 import { Container } from "@/components/ui/container";
 import { SectionHeading } from "@/components/ui/section-heading";
+import { Chip } from "@/components/ui/chip";
 import { FadeIn } from "@/components/animations/fade-in";
 import {
   StaggerFadeIn,
@@ -10,12 +14,52 @@ import {
 } from "@/components/animations/stagger-fade-in";
 import { cn } from "@/lib/utils";
 
+function HighlightList({ items, itemId }: { items: string[]; itemId: string }) {
+  const [showAll, setShowAll] = useState(false);
+  const collapsible = items.length > 4;
+  const visible = collapsible && !showAll ? items.slice(0, 4) : items;
+
+  return (
+    <>
+      <ul
+        id={itemId}
+        className="mt-5 space-y-2.5 border-t border-border pt-5"
+      >
+        {visible.map((item) => (
+          <li key={item} className="flex gap-2.5 text-[15px] text-muted">
+            <span
+              className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-primary"
+              aria-hidden
+            />
+            {item}
+          </li>
+        ))}
+      </ul>
+      {collapsible ? (
+        <button
+          type="button"
+          aria-expanded={showAll}
+          aria-controls={itemId}
+          onClick={() => setShowAll((value) => !value)}
+          className="mt-4 inline-flex items-center gap-1.5 rounded-full border border-border px-4 py-2 text-xs font-medium text-foreground/80 transition-colors hover:border-primary/40 hover:text-primary focus-visible:outline-none"
+        >
+          {showAll ? "Show less" : "Show all"}
+          <ChevronDown
+            className={cn(
+              "h-3.5 w-3.5 transition-transform",
+              showAll && "rotate-180"
+            )}
+            strokeWidth={2}
+          />
+        </button>
+      ) : null}
+    </>
+  );
+}
+
 export function Experience() {
   return (
-    <section
-      id="experience"
-      className="scroll-mt-20 border-b border-border py-24"
-    >
+    <Section id="experience" aria-label="Experience">
       <Container>
         <FadeIn>
           <SectionHeading
@@ -28,7 +72,7 @@ export function Experience() {
         <StaggerFadeIn className="relative mt-14">
           <div
             aria-hidden
-            className="absolute bottom-6 left-[1.125rem] top-2 w-px bg-gradient-to-b from-primary/50 via-border to-border md:left-6"
+            className="absolute bottom-2 left-[1.125rem] top-2 w-px bg-border md:left-6"
           />
 
           <div className="space-y-0">
@@ -58,13 +102,16 @@ export function Experience() {
                   </span>
 
                   <div className="md:pt-1">
-                    <p className="text-mono text-xs uppercase tracking-widest text-primary">
+                    <p className="text-xs uppercase tracking-widest text-primary">
                       {entry.period}
                     </p>
                     {entry.featured ? (
-                      <span className="text-mono mt-2 inline-block rounded-full border border-primary/30 bg-primary/10 px-2.5 py-0.5 text-[0.65rem] uppercase tracking-wide text-primary">
+                      <Chip
+                        variant="primary"
+                        className="mt-2 uppercase tracking-wide"
+                      >
                         Current
-                      </span>
+                      </Chip>
                     ) : null}
                   </div>
 
@@ -82,33 +129,23 @@ export function Experience() {
                         {entry.organization}
                       </p>
                       {entry.affiliation ? (
-                        <p className="mt-1 text-sm text-muted">
+                        <p className="mt-1 text-[15px] text-muted">
                           {entry.affiliation}
                         </p>
                       ) : null}
                     </header>
 
                     {entry.summary ? (
-                      <p className="mt-4 text-sm leading-relaxed text-muted">
+                      <p className="mt-4 text-[15px] leading-relaxed text-muted">
                         {entry.summary}
                       </p>
                     ) : null}
 
                     {entry.highlights && entry.highlights.length > 0 ? (
-                      <ul className="mt-5 space-y-2.5 border-t border-border pt-5">
-                        {entry.highlights.map((item) => (
-                          <li
-                            key={item}
-                            className="flex gap-2.5 text-sm text-muted"
-                          >
-                            <span
-                              className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-primary"
-                              aria-hidden
-                            />
-                            {item}
-                          </li>
-                        ))}
-                      </ul>
+                      <HighlightList
+                        items={entry.highlights}
+                        itemId={`experience-highlights-${index}`}
+                      />
                     ) : null}
                   </div>
                 </article>
@@ -117,6 +154,6 @@ export function Experience() {
           </div>
         </StaggerFadeIn>
       </Container>
-    </section>
+    </Section>
   );
 }

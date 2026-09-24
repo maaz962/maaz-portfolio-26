@@ -37,6 +37,8 @@
   --nav-h: 3.75rem; /* navbar height (60px) */
   --nav-reserve: calc(var(--nav-top) + var(--nav-h) + 1.5rem); /* ≈96px cleared above content */
   --content-pad-inline: clamp(1rem, 4vw, 2rem); /* shared container side padding */
+  --section-pad-block: clamp(4.5rem, 10vw, 7.5rem); /* 72px → 120px */
+  --input-border: 216 14% 72%; /* clearly visible input outlines on light */
 }
 
 .dark {
@@ -45,6 +47,7 @@
   --foreground: 210 40% 98%; /* #F8FAFC */
   --muted: 215 20.2% 65.1%; /* #94A3B8 */
   --border: 240 15% 15.7%; /* #22222E */
+  --input-border: 240 14% 25%; /* brighter than --border so fields read as inputs */
   --card: 240 20.9% 8.4%;
 
   --primary: 262.1 83.3% 57.8%; /* #7C3AED */

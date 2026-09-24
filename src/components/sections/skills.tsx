@@ -1,30 +1,46 @@
 "use client";
 
-import type { SkillCategory } from "@/types";
+import type { SkillCategory, SkillProficiency } from "@/types";
 import {
   proficiencyLabels,
   skillCategoryMeta,
   skillCategoryOrder,
   skills,
 } from "@/data/skills";
+import { Section } from "@/components/ui/section";
 import { Container } from "@/components/ui/container";
 import { SectionHeading } from "@/components/ui/section-heading";
+import { Chip } from "@/components/ui/chip";
 import { FadeIn } from "@/components/animations/fade-in";
 import {
   StaggerFadeIn,
   StaggerItem,
 } from "@/components/animations/stagger-fade-in";
+import { cn } from "@/lib/utils";
 
 function skillsByCategory(category: SkillCategory) {
   return skills.filter((skill) => skill.category === category);
 }
 
+const proficiencyDot: Record<SkillProficiency, string> = {
+  development: "bg-primary",
+  familiar: "bg-secondary",
+  learning: "bg-muted",
+};
+
+const legendItems: {
+  key: SkillProficiency;
+  label: string;
+  description: string;
+}[] = [
+  { key: "development", label: "Proficient", description: "Used daily on real projects" },
+  { key: "familiar", label: "Familiar", description: "Hands-on experience, comfortable using it" },
+  { key: "learning", label: "Learning", description: "Studying and practicing now" },
+];
+
 export function Skills() {
   return (
-    <section
-      id="skills"
-      className="scroll-mt-20 border-b border-border py-24"
-    >
+    <Section id="skills" aria-label="Skills">
       <Container>
         <FadeIn>
           <SectionHeading
@@ -34,7 +50,22 @@ export function Skills() {
           />
         </FadeIn>
 
-        <div className="mt-14 space-y-12">
+        <FadeIn delay={0.05}>
+          <div className="mt-10 flex flex-wrap items-center gap-x-6 gap-y-2.5 text-xs text-muted">
+            {legendItems.map(({ key, label, description }) => (
+              <span key={key} className="inline-flex items-center gap-2">
+                <span
+                  aria-hidden
+                  className={cn("h-1.5 w-1.5 rounded-full", proficiencyDot[key])}
+                />
+                <span className="font-medium text-foreground">{label}</span>
+                <span>{description}</span>
+              </span>
+            ))}
+          </div>
+        </FadeIn>
+
+        <div className="mt-12 space-y-12">
           {skillCategoryOrder.map((category, groupIndex) => {
             const meta = skillCategoryMeta[category];
             const items = skillsByCategory(category);
@@ -50,9 +81,6 @@ export function Skills() {
                         {meta.description}
                       </p>
                     </div>
-                    <span className="text-mono rounded-full border border-border bg-background-secondary px-3 py-1 text-xs text-foreground">
-                      {items.length} skills
-                    </span>
                   </div>
 
                   <StaggerFadeIn className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -62,9 +90,16 @@ export function Skills() {
                           <span className="text-sm font-medium text-foreground">
                             {skill.name}
                           </span>
-                          <span className="text-mono shrink-0 rounded-full border border-accent/30 bg-accent/10 px-2.5 py-0.5 text-[0.65rem] uppercase tracking-wide text-accent">
+                          <Chip className="shrink-0 gap-1.5 uppercase tracking-wide">
+                            <span
+                              aria-hidden
+                              className={cn(
+                                "h-1.5 w-1.5 rounded-full",
+                                proficiencyDot[skill.proficiency]
+                              )}
+                            />
                             {proficiencyLabels[skill.proficiency]}
-                          </span>
+                          </Chip>
                         </div>
                       </StaggerItem>
                     ))}
@@ -75,6 +110,6 @@ export function Skills() {
           })}
         </div>
       </Container>
-    </section>
+    </Section>
   );
 }

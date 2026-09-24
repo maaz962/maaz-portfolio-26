@@ -1,8 +1,10 @@
-import type { HTMLAttributes } from "react";
+import type { HTMLAttributes, ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
 interface TerminalWindowProps extends HTMLAttributes<HTMLDivElement> {
   title?: string;
+  /** Optional controls rendered on the right side of the terminal header. */
+  actions?: ReactNode;
 }
 
 /**
@@ -13,6 +15,7 @@ interface TerminalWindowProps extends HTMLAttributes<HTMLDivElement> {
  */
 export function TerminalWindow({
   title = "maaz@portfolio",
+  actions,
   className,
   children,
   ...props
@@ -30,6 +33,9 @@ export function TerminalWindow({
         <span className="h-2.5 w-2.5 rounded-full bg-yellow-400/70" />
         <span className="h-2.5 w-2.5 rounded-full bg-green-400/70" />
         <span className="text-mono ml-2 text-xs text-muted">{title}</span>
+        {actions ? (
+          <div className="ml-auto flex items-center gap-1">{actions}</div>
+        ) : null}
       </div>
       <div className="text-mono px-5 py-4 text-sm leading-relaxed text-foreground/90">
         {children}

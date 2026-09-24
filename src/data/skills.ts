@@ -2,7 +2,7 @@ import type { Skill, SkillCategory } from "@/types";
 
 /** Human-readable labels for skill proficiency levels. */
 export const proficiencyLabels = {
-  development: "Development",
+  development: "Proficient",
   familiar: "Familiar",
   learning: "Learning",
 } as const;

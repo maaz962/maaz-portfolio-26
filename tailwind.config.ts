@@ -12,6 +12,7 @@ const config: Config = {
         muted: "hsl(var(--muted) / <alpha-value>)",
         border: "hsl(var(--border) / <alpha-value>)",
         card: "hsl(var(--card) / <alpha-value>)",
+        input: "hsl(var(--input-border) / <alpha-value>)",
         primary: {
           DEFAULT: "hsl(var(--primary) / <alpha-value>)",
           foreground: "hsl(var(--primary-foreground) / <alpha-value>)",

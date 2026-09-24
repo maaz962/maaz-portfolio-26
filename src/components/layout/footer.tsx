@@ -13,7 +13,7 @@ export function Footer() {
   return (
     <footer className="border-t border-border bg-background-secondary/20 py-4">
       <div className="mx-auto flex w-full max-w-content-wide items-center justify-between px-[var(--content-pad-inline)] text-xs text-muted">
-        <p className="text-mono">
+        <p>
           © {year} {profile.name}. All rights reserved.
         </p>
 

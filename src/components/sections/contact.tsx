@@ -1,13 +1,29 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
-import { ArrowRight, Download, Github, Linkedin, Mail, MapPin, Loader2 } from "lucide-react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  type FormEvent,
+} from "react";
+import {
+  ArrowRight,
+  Check,
+  Copy,
+  Download,
+  Github,
+  Linkedin,
+  Mail,
+  MapPin,
+  Loader2,
+} from "lucide-react";
+import { Section } from "@/components/ui/section";
 import { Container } from "@/components/ui/container";
 import { SectionHeading } from "@/components/ui/section-heading";
-import { buttonStyles, iconLinkStyles } from "@/components/ui/button";
+import { buttonStyles } from "@/components/ui/button";
 import { profile, socialLinks } from "@/data/profile";
 import { FadeIn } from "@/components/animations/fade-in";
-import { StaggerFadeIn, StaggerItem } from "@/components/animations/stagger-fade-in";
+import { takePendingContactSubject } from "@/components/layout/section-navigation-context";
 import { cn } from "@/lib/utils";
 
 type FormState = "idle" | "submitting" | "mailto-ready";
@@ -27,16 +43,33 @@ interface FormErrors {
 }
 
 export function Contact() {
-  const [formData, setFormData] = useState<FormData>({
-    name: "",
-    email: "",
-    subject: "",
-    message: "",
+  const [formData, setFormData] = useState<FormData>(() => {
+    const prefilled = takePendingContactSubject();
+    return {
+      name: "",
+      email: "",
+      subject: prefilled ?? "",
+      message: "",
+    };
   });
 
   const [errors, setErrors] = useState<FormErrors>({});
   const [formState, setFormState] = useState<FormState>("idle");
   const [mailtoUrl, setMailtoUrl] = useState("");
+  const [emailCopied, setEmailCopied] = useState(false);
+
+  const subjectRef = useRef<HTMLInputElement>(null);
+  const initialSubjectRef = useRef(formData.subject);
+  const emailCopyTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    if (initialSubjectRef.current) {
+      subjectRef.current?.focus();
+    }
+    return () => {
+      if (emailCopyTimer.current) clearTimeout(emailCopyTimer.current);
+    };
+  }, []);
 
   const validate = (): boolean => {
     const tempErrors: FormErrors = {};
@@ -94,10 +127,10 @@ export function Contact() {
         `Name: ${formData.name}\nEmail: ${formData.email}\n\nMessage:\n${formData.message}`
       );
       const url = `mailto:${profile.email}?subject=${subjectEncoded}&body=${bodyEncoded}`;
-      
+
       setMailtoUrl(url);
       setFormState("mailto-ready");
-      
+
       // Attempt to launch the default mail client automatically
       window.location.href = url;
     }, 900);
@@ -115,14 +148,26 @@ export function Contact() {
     setMailtoUrl("");
   };
 
+  const handleCopyEmail = async () => {
+    try {
+      await navigator.clipboard.writeText(profile.email);
+      setEmailCopied(true);
+      if (emailCopyTimer.current) clearTimeout(emailCopyTimer.current);
+      emailCopyTimer.current = setTimeout(() => setEmailCopied(false), 2000);
+    } catch {
+      setEmailCopied(false);
+    }
+  };
+
   const contactSocials = socialLinks.filter(
     (link) => link.label === "GitHub" || link.label === "LinkedIn"
   );
 
   return (
-    <section
+    <Section
       id="contact"
-      className="scroll-mt-20 border-b border-border bg-noise relative overflow-hidden py-24"
+      aria-label="Contact"
+      className="bg-noise relative overflow-hidden"
     >
       {/* Background glow orb */}
       <div
@@ -148,16 +193,16 @@ export function Contact() {
           <FadeIn delay={0.05}>
             <div className="space-y-8">
               <div className="space-y-4">
-                <h3 className="font-display text-2xl font-semibold text-foreground md:text-3xl">
+                <h3 className="font-display text-xl font-semibold text-foreground md:text-2xl">
                   Let&apos;s Build Something Together
                 </h3>
-                <p className="max-w-md text-sm leading-relaxed text-muted">
+                <p className="max-w-md text-[15px] leading-relaxed text-muted">
                   I am available for web development contracts, cross-platform mobile apps, or local academic engagements in Lahore. Let&apos;s collaborate to build clean codebases and performant solutions.
                 </p>
               </div>
 
               {/* Status Badge */}
-              <div className="text-mono inline-flex items-center gap-2 rounded-full border border-border bg-background-secondary px-3 py-1 text-xs text-muted">
+              <div className="inline-flex items-center gap-2 rounded-full border border-border bg-background-secondary px-3 py-1 text-xs text-muted">
                 <span className="relative flex h-1.5 w-1.5">
                   <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400/60" />
                   <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-400" />
@@ -167,27 +212,45 @@ export function Contact() {
 
               {/* Contact details */}
               <div className="space-y-4 pt-4">
-                <a
-                  href={`mailto:${profile.email}`}
-                  className="flex items-center gap-3.5 group text-sm text-muted hover:text-foreground transition-colors"
-                >
-                  <span className="flex h-9 w-9 items-center justify-center rounded-xl border border-border bg-card text-muted transition-colors group-hover:border-primary/40 group-hover:text-primary">
-                    <Mail className="h-[18px] w-[18px]" strokeWidth={1.75} />
-                  </span>
-                  <div>
-                    <p className="text-[0.65rem] text-mono uppercase tracking-wider text-muted">
-                      Email
-                    </p>
-                    <p className="font-medium">{profile.email}</p>
-                  </div>
-                </a>
+                <div className="flex items-center gap-3.5 text-sm text-muted">
+                  <a
+                    href={`mailto:${profile.email}`}
+                    className="group flex min-w-0 flex-1 items-center gap-3.5 text-sm text-muted transition-colors hover:text-foreground"
+                  >
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-border bg-card text-muted transition-colors group-hover:border-primary/40 group-hover:text-primary">
+                      <Mail className="h-[18px] w-[18px]" strokeWidth={1.75} />
+                    </span>
+                    <span className="min-w-0">
+                      <span className="block text-xs uppercase tracking-wider text-muted">
+                        Email
+                      </span>
+                      <span className="block truncate font-medium text-foreground">
+                        {profile.email}
+                      </span>
+                    </span>
+                  </a>
+                  <button
+                    type="button"
+                    onClick={handleCopyEmail}
+                    aria-label={
+                      emailCopied ? "Email copied" : "Copy email address"
+                    }
+                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-border bg-card text-muted transition-colors hover:border-primary/40 hover:text-primary focus-visible:outline-none"
+                  >
+                    {emailCopied ? (
+                      <Check className="h-4 w-4" strokeWidth={2} />
+                    ) : (
+                      <Copy className="h-4 w-4" strokeWidth={1.75} />
+                    )}
+                  </button>
+                </div>
 
                 <div className="flex items-center gap-3.5 text-sm text-muted">
                   <span className="flex h-9 w-9 items-center justify-center rounded-xl border border-border bg-card text-muted">
                     <MapPin className="h-[18px] w-[18px]" strokeWidth={1.75} />
                   </span>
                   <div>
-                    <p className="text-[0.65rem] text-mono uppercase tracking-wider text-muted">
+                    <p className="text-xs uppercase tracking-wider text-muted">
                       Location
                     </p>
                     <p className="font-medium text-foreground">{profile.location}</p>
@@ -196,11 +259,7 @@ export function Contact() {
               </div>
 
               {/* Action Buttons: Resume & Socials */}
-              <div className="flex flex-wrap items-center gap-4 border-t border-border pt-8">
-                {/* 
-                  TODO: Place real PDF resume at /public/resume/maaz-arif-resume.pdf 
-                  to allow users to download it.
-                */}
+              <div className="flex flex-wrap items-center gap-3 border-t border-border pt-8">
                 <a
                   href={profile.resumeSrc}
                   download
@@ -210,7 +269,7 @@ export function Contact() {
                   Download Resume
                 </a>
 
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-3">
                   {contactSocials.map(({ label, href, icon: Icon }) => (
                     <a
                       key={label}
@@ -218,9 +277,10 @@ export function Contact() {
                       aria-label={label}
                       target="_blank"
                       rel="noreferrer noopener"
-                      className={iconLinkStyles()}
+                      className={buttonStyles({ variant: "outline", size: "sm" })}
                     >
                       <Icon className="h-4 w-4" strokeWidth={1.75} />
+                      {label}
                     </a>
                   ))}
                 </div>
@@ -232,7 +292,11 @@ export function Contact() {
           <FadeIn delay={0.1}>
             <div className="rounded-2xl border border-border bg-card p-6 md:p-8 shadow-card">
               {formState === "mailto-ready" ? (
-                <div className="text-center py-8 space-y-6">
+                <div
+                  role="status"
+                  aria-live="polite"
+                  className="text-center py-8 space-y-6"
+                >
                   <div className="flex h-12 w-12 mx-auto items-center justify-center rounded-full border border-emerald-500/20 bg-emerald-500/10 text-emerald-500">
                     <Mail className="h-5 w-5" strokeWidth={1.75} />
                   </div>
@@ -278,7 +342,7 @@ export function Contact() {
                         value={formData.name}
                         onChange={handleInputChange}
                         className={cn(
-                          "w-full rounded-xl border border-border bg-background-secondary px-4 py-3 text-sm text-foreground transition-all duration-200 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary focus-visible:border-primary disabled:opacity-50",
+                          "w-full rounded-xl border border-input bg-background-secondary px-4 py-3 text-sm text-foreground transition-all duration-200 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary focus-visible:border-primary disabled:opacity-50",
                           errors.name && "border-red-500 focus-visible:ring-red-500 focus-visible:border-red-500"
                         )}
                         placeholder="John Doe"
@@ -302,7 +366,7 @@ export function Contact() {
                         value={formData.email}
                         onChange={handleInputChange}
                         className={cn(
-                          "w-full rounded-xl border border-border bg-background-secondary px-4 py-3 text-sm text-foreground transition-all duration-200 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary focus-visible:border-primary disabled:opacity-50",
+                          "w-full rounded-xl border border-input bg-background-secondary px-4 py-3 text-sm text-foreground transition-all duration-200 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary focus-visible:border-primary disabled:opacity-50",
                           errors.email && "border-red-500 focus-visible:ring-red-500 focus-visible:border-red-500"
                         )}
                         placeholder="john@example.com"
@@ -319,6 +383,7 @@ export function Contact() {
                       Subject <span className="text-primary">*</span>
                     </label>
                     <input
+                      ref={subjectRef}
                       type="text"
                       id="subject"
                       name="subject"
@@ -327,7 +392,7 @@ export function Contact() {
                       value={formData.subject}
                       onChange={handleInputChange}
                       className={cn(
-                        "w-full rounded-xl border border-border bg-background-secondary px-4 py-3 text-sm text-foreground transition-all duration-200 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary focus-visible:border-primary disabled:opacity-50",
+                        "w-full rounded-xl border border-input bg-background-secondary px-4 py-3 text-sm text-foreground transition-all duration-200 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary focus-visible:border-primary disabled:opacity-50",
                         errors.subject && "border-red-500 focus-visible:ring-red-500 focus-visible:border-red-500"
                       )}
                       placeholder="Project details or inquiry description"
@@ -351,7 +416,7 @@ export function Contact() {
                       value={formData.message}
                       onChange={handleInputChange}
                       className={cn(
-                        "w-full resize-none rounded-xl border border-border bg-background-secondary px-4 py-3 text-sm text-foreground transition-all duration-200 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary focus-visible:border-primary disabled:opacity-50",
+                        "w-full resize-none rounded-xl border border-input bg-background-secondary px-4 py-3 text-sm text-foreground transition-all duration-200 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary focus-visible:border-primary disabled:opacity-50",
                         errors.message && "border-red-500 focus-visible:ring-red-500 focus-visible:border-red-500"
                       )}
                       placeholder="Hi Maaz, I'd like to discuss a freelance web project..."
@@ -360,6 +425,12 @@ export function Contact() {
                       <p className="text-xs text-red-500" role="alert">{errors.message}</p>
                     )}
                   </div>
+
+                  <p role="status" aria-live="polite" className="sr-only">
+                    {formState === "submitting"
+                      ? "Preparing your email draft."
+                      : ""}
+                  </p>
 
                   {/* Submit Button */}
                   <div className="pt-2">
@@ -390,6 +461,6 @@ export function Contact() {
           </FadeIn>
         </div>
       </Container>
-    </section>
+    </Section>
   );
 }
