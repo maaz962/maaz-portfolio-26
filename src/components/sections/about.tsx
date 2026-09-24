@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { ArrowRight, Check, Copy, Download } from "lucide-react";
+import { Check, Copy } from "lucide-react";
 import { aboutContent } from "@/data/about";
 import { profile } from "@/data/profile";
 import { Section } from "@/components/ui/section";
@@ -10,9 +10,7 @@ import { SectionHeading } from "@/components/ui/section-heading";
 import { TerminalWindow } from "@/components/ui/terminal-window";
 import { Card } from "@/components/ui/card";
 import { Chip } from "@/components/ui/chip";
-import { buttonStyles } from "@/components/ui/button";
 import { FadeIn } from "@/components/animations/fade-in";
-import { useSectionNavigation } from "@/components/layout/section-navigation-context";
 
 const IDENTITY_JSON = `{
   "name": "${profile.name}",
@@ -33,7 +31,6 @@ const IDENTITY_JSON = `{
 }`;
 
 export function About() {
-  const navigate = useSectionNavigation();
   const [copied, setCopied] = useState(false);
   const copyTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -185,30 +182,6 @@ export function About() {
             </div>
           </FadeIn>
         </div>
-
-        <FadeIn delay={0.1}>
-          <div className="mt-14 flex flex-wrap items-center gap-4 border-t border-border pt-10">
-            <a
-              href="#projects"
-              onClick={(e) => {
-                e.preventDefault();
-                navigate("projects");
-              }}
-              className={buttonStyles({ size: "lg" })}
-            >
-              View My Work
-              <ArrowRight className="h-4 w-4" strokeWidth={1.75} />
-            </a>
-            <a
-              href={profile.resumeSrc}
-              download
-              className={buttonStyles({ variant: "outline", size: "lg" })}
-            >
-              <Download className="h-4 w-4" strokeWidth={1.75} />
-              Download Resume
-            </a>
-          </div>
-        </FadeIn>
       </Container>
     </Section>
   );
