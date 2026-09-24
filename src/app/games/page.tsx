@@ -432,7 +432,7 @@ export default function GamesPage() {
     <div className="relative min-h-screen bg-background">
       <GlassNavbar activeSection="games" />
 
-      <main className="mx-auto max-w-5xl px-4 pb-24 pt-28">
+      <main id="main-content" className="main-content mx-auto w-full max-w-content px-[var(--content-pad-inline)] pb-24">
         <Link
           href="/"
           className="mb-8 inline-flex items-center gap-1.5 text-xs text-muted transition-colors hover:text-foreground"

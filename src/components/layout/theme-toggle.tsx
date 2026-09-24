@@ -13,7 +13,7 @@ export function ThemeToggle() {
       type="button"
       onClick={toggleTheme}
       aria-label={mounted ? `Switch to ${theme === "dark" ? "light" : "dark"} theme` : "Toggle theme"}
-      className={iconLinkStyles("relative")}
+      className={iconLinkStyles("relative h-11 w-11 lg:h-9 lg:w-9")}
     >
       <AnimatePresence mode="wait" initial={false}>
         {mounted && theme === "dark" ? (

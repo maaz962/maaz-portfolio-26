@@ -344,18 +344,31 @@ export function AIAssistant() {
       {/* Floating Action Button */}
       <AnimatePresence>
         {!isOpen && (
-          <motion.button
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.8 }}
-            transition={{ duration: 0.2 }}
-            onClick={() => setIsOpen(true)}
-            className="fixed bottom-6 right-6 z-40 flex items-center gap-2 rounded-full font-medium transition-all duration-200 shadow-glow hover:brightness-110 active:scale-95 bg-primary text-primary-foreground h-11 px-5 text-sm"
-            aria-label="Open AI Assistant"
+          <div
+            className="group fixed z-40"
+            style={{
+              bottom: "max(1.5rem, env(safe-area-inset-bottom))",
+              right: "max(1.5rem, env(safe-area-inset-right))",
+            }}
           >
-            <MessageSquare className="h-4 w-4" />
-            <span>Ask Maaz AI</span>
-          </motion.button>
+            <motion.button
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.8 }}
+              transition={{ duration: 0.2 }}
+              onClick={() => setIsOpen(true)}
+              className="flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-glow transition-all duration-200 hover:brightness-110 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2"
+              aria-label="Open AI Assistant"
+            >
+              <MessageSquare className="h-5 w-5" />
+            </motion.button>
+            <span
+              className="pointer-events-none absolute right-full top-1/2 mr-3 -translate-y-1/2 whitespace-nowrap rounded-lg bg-foreground px-2.5 py-1.5 text-xs font-medium text-background opacity-0 shadow-lg transition-opacity duration-200 group-focus-within:opacity-100 group-hover:opacity-100"
+              aria-hidden="true"
+            >
+              Ask Maaz AI
+            </span>
+          </div>
         )}
       </AnimatePresence>
 
@@ -442,7 +455,7 @@ export function AIAssistant() {
                 <div className="space-y-4 pt-2">
                   {/* Suggested Questions */}
                   <div className="space-y-1.5">
-                    <p className="text-[10px] font-semibold text-mono text-muted/80 uppercase tracking-wider">
+                    <p className="text-[10px] font-semibold text-mono text-muted uppercase tracking-wider">
                       Suggested Questions
                     </p>
                     <div className="flex flex-col gap-2">
@@ -520,7 +533,7 @@ export function AIAssistant() {
                 placeholder="Ask a question..."
                 disabled={isLoading || messageCount >= 20}
                 maxLength={1000}
-                className="flex-1 rounded-xl border border-border bg-background px-3 py-2 text-xs text-foreground placeholder:text-muted/60 transition-all duration-200 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary focus-visible:border-primary disabled:opacity-50"
+                className="flex-1 rounded-xl border border-border bg-background px-3 py-2 text-xs text-foreground placeholder:text-muted transition-all duration-200 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary focus-visible:border-primary disabled:opacity-50"
               />
               <button
                 type="submit"

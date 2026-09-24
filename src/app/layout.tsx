@@ -109,10 +109,10 @@ export default function RootLayout({
       <head>
         <script dangerouslySetInnerHTML={{ __html: noFlashThemeScript }} />
       </head>
-      <body className="font-sans">
+      <body className="flex min-h-screen flex-col font-sans">
         <ThemeProvider>
           <AuthProvider>
-            <main>{children}</main>
+            <div className="flex flex-1 flex-col">{children}</div>
             <Footer />
             <AIAssistant />
             <AnalyticsGate />

@@ -31,6 +31,12 @@
   --accent-foreground: 0 0% 100%;
 
   --radius: 0.75rem;
+
+  /* Navbar + layout spacing — single source of truth for every page */
+  --nav-top: 0.75rem; /* floating navbar's top offset */
+  --nav-h: 3.75rem; /* navbar height (60px) */
+  --nav-reserve: calc(var(--nav-top) + var(--nav-h) + 1.5rem); /* ≈96px cleared above content */
+  --content-pad-inline: clamp(1rem, 4vw, 2rem); /* shared container side padding */
 }
 
 .dark {
@@ -59,6 +65,20 @@
 
 html {
   scroll-behavior: smooth;
+  /* Reserve the scrollbar gutter so the fixed navbar never shifts when
+     navigating between short and long pages. */
+  scrollbar-gutter: stable;
+}
+
+/* Every anchor target clears the floating navbar; the shared `.main-content`
+   class starts real page content below it. */
+section,
+[id] {
+  scroll-margin-top: var(--nav-reserve);
+}
+
+.main-content {
+  padding-top: var(--nav-reserve);
 }
 
 body {

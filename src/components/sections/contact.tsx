@@ -175,7 +175,7 @@ export function Contact() {
                     <Mail className="h-[18px] w-[18px]" strokeWidth={1.75} />
                   </span>
                   <div>
-                    <p className="text-[0.65rem] text-mono uppercase tracking-wider text-muted/60">
+                    <p className="text-[0.65rem] text-mono uppercase tracking-wider text-muted">
                       Email
                     </p>
                     <p className="font-medium">{profile.email}</p>
@@ -187,7 +187,7 @@ export function Contact() {
                     <MapPin className="h-[18px] w-[18px]" strokeWidth={1.75} />
                   </span>
                   <div>
-                    <p className="text-[0.65rem] text-mono uppercase tracking-wider text-muted/60">
+                    <p className="text-[0.65rem] text-mono uppercase tracking-wider text-muted">
                       Location
                     </p>
                     <p className="font-medium text-foreground">{profile.location}</p>

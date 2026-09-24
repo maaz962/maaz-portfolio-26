@@ -267,7 +267,7 @@ export default function AnimationArenaPage() {
     <div className="relative min-h-screen bg-background">
       <GlassNavbar activeSection="games" />
 
-      <main className="mx-auto max-w-6xl px-4 pb-24 pt-28">
+      <main id="main-content" className="main-content mx-auto w-full max-w-content-wide px-[var(--content-pad-inline)] pb-24">
         <Link
           href="/games"
           className="mb-6 inline-flex items-center gap-1.5 text-xs text-muted transition-colors hover:text-foreground"

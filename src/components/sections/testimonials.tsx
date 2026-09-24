@@ -105,7 +105,7 @@ export function Testimonials() {
                 <p className="mt-4 max-w-sm text-sm leading-relaxed text-muted">
                   Feedback from clients and collaborators will appear here as I collect verified testimonials.
                 </p>
-                <p className="mt-2 text-xs text-muted/60 italic leading-relaxed">
+                <p className="mt-2 text-xs text-muted italic leading-relaxed">
                   {"// committed to building project records with full integrity"}
                 </p>
               </div>

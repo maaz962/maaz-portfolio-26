@@ -69,7 +69,8 @@ const config: Config = {
         },
       },
       maxWidth: {
-        content: "1200px",
+        content: "1280px",
+        "content-wide": "1400px",
       },
     },
   },

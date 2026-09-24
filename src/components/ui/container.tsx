@@ -7,7 +7,10 @@ export function Container({
 }: HTMLAttributes<HTMLDivElement>) {
   return (
     <div
-      className={cn("mx-auto w-full max-w-content px-6 md:px-10", className)}
+      className={cn(
+        "mx-auto w-full max-w-content px-[var(--content-pad-inline)]",
+        className
+      )}
       {...props}
     />
   );
