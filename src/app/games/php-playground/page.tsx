@@ -17,6 +17,7 @@ import {
   X,
 } from "lucide-react";
 import { GameShell } from "@/components/games/game-shell";
+import { MobileActionBar } from "@/components/games/mobile-action-bar";
 import { AuthGate } from "@/components/games/auth-gate";
 import { AuthModal } from "@/components/games/auth-modal";
 import { useGameProgress } from "@/hooks/use-game-progress";
@@ -653,6 +654,7 @@ export default function PhpPlaygroundPage() {
 
                   <div className="php-editor-actions">
                     <button
+                      id="run-btn"
                       type="button"
                       className="php-run-btn"
                       onClick={run}
@@ -664,6 +666,7 @@ export default function PhpPlaygroundPage() {
                     </button>
                     <div className="php-nav-buttons">
                       <button
+                        id="prev-btn"
                         type="button"
                         className="php-nav-btn prev"
                         disabled={currentIdx === 0}
@@ -673,6 +676,7 @@ export default function PhpPlaygroundPage() {
                         ← Prev
                       </button>
                       <button
+                        id="check-btn"
                         type="button"
                         className="php-check-btn"
                         onClick={check}
@@ -682,6 +686,7 @@ export default function PhpPlaygroundPage() {
                         Check
                       </button>
                       <button
+                        id="next-btn"
                         type="button"
                         className="php-nav-btn next"
                         disabled={!gameState.completed[currentIdx] || isLastLevel}
@@ -832,6 +837,8 @@ export default function PhpPlaygroundPage() {
           </div>
         )}
     </GameShell>
+
+    <MobileActionBar />
 
     <AuthModal
       open={showAuthModal}

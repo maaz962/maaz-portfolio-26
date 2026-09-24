@@ -300,6 +300,89 @@ h4 {
     min-width: 40px;
     min-height: 40px;
   }
+
+  /* keep bottom content clear of the floating action bar */
+  .game-shell-grid {
+    padding-bottom: 5.5rem;
+  }
+}
+
+/* Mobile action bar: sticky pill above the AI FAB, delegates clicks to the
+   in-card Run/Check/Prev/Next controls so engine state stays authoritative. */
+.game-shell-mobile-bar {
+  position: fixed;
+  left: 1rem;
+  right: 5.5rem;
+  bottom: max(1rem, env(safe-area-inset-bottom));
+  z-index: 45;
+  display: none;
+  align-items: stretch;
+  gap: 0.35rem;
+  padding: 0.35rem;
+  border-radius: 1rem;
+  border: 1px solid hsl(var(--border));
+  background: hsl(var(--card) / 0.92);
+  box-shadow: 0 0.5rem 1.5rem hsl(0 0% 0% / 0.08);
+  backdrop-filter: blur(12px);
+}
+
+@media (max-width: 900px) {
+  .game-shell-mobile-bar {
+    display: flex;
+  }
+}
+
+.game-shell-mobile-bar-btn {
+  display: inline-flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+  min-width: 0;
+  padding: 0.5rem 0.5rem;
+  border: none;
+  border-radius: 0.75rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: hsl(var(--foreground));
+  background: transparent;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.game-shell-mobile-bar-btn span {
+  white-space: nowrap;
+}
+
+.game-shell-mobile-bar-btn:hover {
+  background: hsl(var(--background-secondary));
+}
+
+.game-shell-mobile-bar-btn:active {
+  transform: scale(0.96);
+}
+
+.game-shell-mobile-bar-btn:focus-visible {
+  outline: 2px solid hsl(var(--primary) / 0.5);
+  outline-offset: 1px;
+}
+
+.game-shell-mobile-bar-btn.run {
+  background: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+}
+
+.game-shell-mobile-bar-btn.run:hover {
+  background: hsl(var(--primary) / 0.9);
+}
+
+.game-shell-mobile-bar-btn.check {
+  color: hsl(var(--primary));
+}
+
+.game-shell-mobile-bar-btn.nav {
+  color: hsl(var(--muted-foreground));
 }
 
 /* ==========================================================================

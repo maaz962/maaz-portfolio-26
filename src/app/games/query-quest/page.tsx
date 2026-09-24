@@ -18,6 +18,7 @@ import {
   X,
 } from "lucide-react";
 import { GameShell } from "@/components/games/game-shell";
+import { MobileActionBar } from "@/components/games/mobile-action-bar";
 import { AuthGate } from "@/components/games/auth-gate";
 import { AuthModal } from "@/components/games/auth-modal";
 import { useGameProgress } from "@/hooks/use-game-progress";
@@ -668,6 +669,7 @@ export default function QueryQuestPage() {
 
                   <div className="qq-editor-actions">
                     <button
+                      id="run-btn"
                       type="button"
                       className="qq-run-btn"
                       onClick={run}
@@ -679,6 +681,7 @@ export default function QueryQuestPage() {
                     </button>
                     <div className="qq-nav-buttons">
                       <button
+                        id="prev-btn"
                         type="button"
                         className="qq-nav-btn prev"
                         disabled={currentIdx === 0}
@@ -688,6 +691,7 @@ export default function QueryQuestPage() {
                         ← Prev
                       </button>
                       <button
+                        id="check-btn"
                         type="button"
                         className="qq-check-btn"
                         onClick={check}
@@ -697,6 +701,7 @@ export default function QueryQuestPage() {
                         Check
                       </button>
                       <button
+                        id="next-btn"
                         type="button"
                         className="qq-nav-btn next"
                         disabled={!gameState.completed[currentIdx] || isLastLevel}
@@ -865,6 +870,8 @@ export default function QueryQuestPage() {
           </div>
         )}
     </GameShell>
+
+    <MobileActionBar />
 
     <AuthModal
       open={showAuthModal}

@@ -12,6 +12,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { GameShell } from "@/components/games/game-shell";
+import { MobileActionBar } from "@/components/games/mobile-action-bar";
 import { AuthGate } from "@/components/games/auth-gate";
 import { AuthModal } from "@/components/games/auth-modal";
 import { useGameProgress } from "@/hooks/use-game-progress";
@@ -494,6 +495,8 @@ export default function JsDetectivePage() {
           </div>
         )}
     </GameShell>
+
+    <MobileActionBar />
 
     <AuthModal
       open={showAuthModal}
