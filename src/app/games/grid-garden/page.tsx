@@ -126,7 +126,7 @@ export default function GridGardenPage() {
       title="Grid Garden"
       tagline="Build layouts and master CSS Grid by arranging garden plots"
       icon={<span className="text-xl">🌱</span>}
-      iconClass="bg-emerald-500/10 text-emerald-500"
+      iconClass="bg-emerald-500/10 text-emerald-600 dark:text-emerald-500"
       scriptSrc={["/games/grid-garden/game.js"]}
       doneCount={levels.filter((l) => gameState.completed[l.id - 1]).length}
       totalLevels={gameState.totalLevels || FALLBACK_TOTAL_LEVELS}

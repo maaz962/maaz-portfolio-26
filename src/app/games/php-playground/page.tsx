@@ -433,7 +433,7 @@ export default function PhpPlaygroundPage() {
       title="PHP Playground"
       tagline="Solve PHP challenges — variables, functions, arrays &amp; the higher-order bosses"
       icon={<span className="text-xl">🐘</span>}
-      iconClass="bg-amber-500/10 text-amber-500"
+      iconClass="bg-amber-500/10 text-amber-600 dark:text-amber-500"
       scriptSrc={["/games/php-playground/levels.js", "/games/php-playground/game.js"]}
       doneCount={levels.filter((l) => gameState.completed[l.id - 1]).length}
       totalLevels={gameState.totalLevels || FALLBACK_TOTAL_LEVELS}

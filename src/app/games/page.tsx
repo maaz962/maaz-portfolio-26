@@ -264,7 +264,7 @@ function GameCard({
       >
         <GamePreview game={game} />
         {game.comingSoon && (
-          <div className="absolute right-3 top-3 rounded-full bg-background/80 px-3 py-1 text-[0.65rem] font-semibold text-muted backdrop-blur-sm">
+          <div className="absolute right-3 top-3 rounded-full bg-background/80 px-3 py-1 text-xs font-semibold text-muted backdrop-blur-sm">
             Coming Soon
           </div>
         )}
@@ -281,7 +281,7 @@ function GameCard({
                 ? "Multiple difficulty tiers inside one game \u2014 easy to advanced challenges"
                 : undefined
             }
-            className="shrink-0 rounded-full bg-primary/10 px-2.5 py-0.5 text-[0.65rem] font-semibold text-primary"
+            className="shrink-0 rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-semibold text-primary"
           >
             {game.difficulty}
           </span>
@@ -295,13 +295,13 @@ function GameCard({
           {game.topics.slice(0, 4).map((topic) => (
             <span
               key={topic}
-              className="rounded-md border border-border bg-background-secondary px-2 py-0.5 text-[0.6rem] font-medium text-muted"
+              className="rounded-md border border-border bg-background-secondary px-2 py-0.5 text-xs font-medium text-muted"
             >
               {topic}
             </span>
           ))}
           {game.topics.length > 4 && (
-            <span className="rounded-md border border-border bg-background-secondary px-2 py-0.5 text-[0.6rem] font-medium text-muted">
+            <span className="rounded-md border border-border bg-background-secondary px-2 py-0.5 text-xs font-medium text-muted">
               +{game.topics.length - 4}
             </span>
           )}
@@ -316,7 +316,7 @@ function GameCard({
               <p className="mt-1 flex items-center gap-1.5 text-xl font-bold leading-none text-foreground">
                 <Star className={cn("h-4 w-4", game.accentColor)} />
                 {progress ? progress.score.toLocaleString() : "0"}
-                <span className="text-[0.6rem] font-medium text-muted">
+                <span className="text-xs font-medium text-muted">
                   pts
                 </span>
               </p>
@@ -336,13 +336,13 @@ function GameCard({
         {authed && !game.comingSoon && (
           <div className="mt-3">
             {isComplete ? (
-              <span className="inline-flex items-center gap-1.5 text-[0.6rem] font-semibold text-green-500">
+              <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-green-700 dark:text-green-400">
                 <CheckCircle2 className="h-3.5 w-3.5" />
                 Completed
               </span>
             ) : (
               <>
-                <p className="text-[0.6rem] font-semibold uppercase tracking-wider text-muted">
+                <p className="text-xs font-semibold uppercase tracking-wider text-muted">
                   {doneCount > 0
                     ? `In progress \u2014 ${doneCount}/${levelCount} levels`
                     : "Not started"}
@@ -479,7 +479,7 @@ export default function GamesPage() {
           </div>
 
           {!gamesAuthed && (
-            <p className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-amber-500/20 bg-amber-500/10 px-3 py-1.5 text-[0.65rem] text-amber-600">
+            <p className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-amber-500/20 bg-amber-500/10 px-3 py-1.5 text-xs text-amber-700 dark:text-amber-400">
               <Sparkles className="h-3 w-3" />
               A quick sign-in saves your progress, earns XP, builds daily
               streaks and gets you on the leaderboard. Your session stays
@@ -541,20 +541,20 @@ export default function GamesPage() {
             <div className="mt-4 rounded-xl border border-border bg-background-secondary/60 p-3.5">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div className="flex flex-wrap items-center gap-2.5">
-                  <span className="rounded-lg bg-gradient-to-r from-primary to-violet-600 px-2.5 py-1 text-[0.65rem] font-bold text-white shadow-lg shadow-primary/25">
+                  <span className="rounded-lg bg-gradient-to-r from-primary to-violet-600 px-2.5 py-1 text-xs font-bold text-white shadow-lg shadow-primary/25">
                     LEVEL {gamification?.level ?? 1}
                   </span>
-                  <span className="text-[0.7rem] font-semibold text-foreground">
+                  <span className="text-xs font-semibold text-foreground">
                     {(gamification?.totalXp ?? totalScore).toLocaleString()} XP
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="flex items-center gap-1 rounded-full bg-orange-500/10 px-2.5 py-1 text-[0.65rem] font-semibold text-orange-500">
+                  <span className="flex items-center gap-1 rounded-full bg-orange-500/10 px-2.5 py-1 text-xs font-semibold text-orange-700 dark:text-orange-400">
                     <Flame className="h-3 w-3" />
                     {gamification?.currentStreak ?? 0} day streak
                   </span>
                   {gamification?.rank != null && (
-                    <span className="flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-1 text-[0.65rem] font-semibold text-primary">
+                    <span className="flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary">
                       <Medal className="h-3 w-3" />
                       Rank #{gamification.rank}
                     </span>
@@ -571,7 +571,7 @@ export default function GamesPage() {
               </div>
               {gamification &&
                 gamification.levelNext > gamification.totalXp && (
-                  <p className="mt-1.5 text-right text-[0.65rem] text-muted">
+                  <p className="mt-1.5 text-right text-xs text-muted">
                     {(gamification.levelNext - gamification.totalXp).toLocaleString()}{" "}
                     XP to next level
                   </p>
@@ -585,7 +585,7 @@ export default function GamesPage() {
                   <p className="text-lg font-bold leading-none text-foreground">
                     {(gamification?.totalXp ?? totalScore).toLocaleString()}
                   </p>
-                  <p className="mt-0.5 truncate text-[0.65rem] text-muted">
+                  <p className="mt-0.5 truncate text-xs text-muted">
                     Total XP
                   </p>
                 </div>
@@ -604,7 +604,7 @@ export default function GamesPage() {
                   className={cn(
                     "h-5 w-5 shrink-0",
                     completedGames === playerGames.length
-                      ? "text-green-500"
+                      ? "text-green-700 dark:text-green-400"
                       : "text-primary"
                   )}
                 />
@@ -612,18 +612,18 @@ export default function GamesPage() {
                   <p className="text-lg font-bold leading-none text-foreground">
                     {completedGames}/{playerGames.length}
                   </p>
-                  <p className="mt-0.5 truncate text-[0.65rem] text-muted">
+                  <p className="mt-0.5 truncate text-xs text-muted">
                     Games completed
                   </p>
                 </div>
               </div>
               <div className="flex items-center gap-2.5 rounded-xl border border-border bg-background-secondary/60 p-3">
-                <Flame className="h-5 w-5 shrink-0 text-orange-500" />
+                <Flame className="h-5 w-5 shrink-0 text-orange-600 dark:text-orange-400" />
                 <div className="min-w-0">
                   <p className="text-lg font-bold leading-none text-foreground">
                     {gamification?.currentStreak ?? 0}
                   </p>
-                  <p className="mt-0.5 truncate text-[0.65rem] text-muted">
+                  <p className="mt-0.5 truncate text-xs text-muted">
                     Day streak
                   </p>
                 </div>
@@ -631,7 +631,7 @@ export default function GamesPage() {
             </div>
 
             {completedGames < playerGames.length && (
-              <p className="mt-3 text-center text-[0.7rem] text-muted">
+              <p className="mt-3 text-center text-xs text-muted">
                 Finish any game to see it light up green below — your first
                 completed game is a level away.
               </p>

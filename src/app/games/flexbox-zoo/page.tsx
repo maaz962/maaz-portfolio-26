@@ -126,7 +126,7 @@ return (
       title="Flexbox Zoo"
       tagline="Master CSS Flexbox by helping animals find their enclosures"
       icon={<span className="text-xl">🦁</span>}
-      iconClass="bg-green-500/10 text-green-500"
+      iconClass="bg-green-500/10 text-green-600 dark:text-green-500"
       scriptSrc={["/games/flexbox-zoo/game.js"]}
       doneCount={levels.filter((l) => gameState.completed[l.id - 1]).length}
       totalLevels={gameState.totalLevels || FALLBACK_TOTAL_LEVELS}

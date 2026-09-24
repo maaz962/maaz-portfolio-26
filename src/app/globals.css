@@ -24,10 +24,11 @@
   --card: 0 0% 100%; /* pure white cards for crisp separation */
 
   --primary: 263.4 70% 50.4%; /* #6D28D9 - deepened purple for AA contrast on light */
+  --primary-ink: 263.4 70% 50.4%; /* primary as *text* (#6D28D9, passes AA on light) */
   --primary-foreground: 0 0% 100%;
   --secondary: 221.2 83.2% 53.3%; /* #2563EB */
   --secondary-foreground: 0 0% 100%;
-  --accent: 191.6 91.4% 36.5%; /* #0891B2 */
+  --accent: 187.9 76.4% 30.8%; /* #0E7490 - cyan-700, cleared for AA as small text on light */
   --accent-foreground: 0 0% 100%;
 
   --radius: 0.75rem;
@@ -51,6 +52,7 @@
   --card: 240 20.9% 8.4%;
 
   --primary: 262.1 83.3% 57.8%; /* #7C3AED */
+  --primary-ink: 258 90% 76%; /* #A78BFA - violet-400: primary-inked text clears AA on dark surfaces */
   --primary-foreground: 210 40% 98%;
   --secondary: 217.2 91.2% 59.8%; /* #3B82F6 */
   --secondary-foreground: 210 40% 98%;
@@ -154,11 +156,20 @@ h4 {
   font-size: 0.75rem;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: hsl(var(--primary));
+  color: hsl(var(--primary-ink));
 }
 
 .text-mono {
   font-family: var(--font-mono);
+}
+
+/* Primary fills (buttons, badges) keep the saturated --primary tone because
+   --primary-foreground pairs with it; primary-inked *text* needs a lighter
+   token on dark surfaces to clear WCAG AA (see --primary-ink). */
+.dark .text-primary,
+.dark .hover\:text-primary:hover,
+.dark .group:hover .group-hover\:text-primary {
+  color: hsl(var(--primary-ink));
 }
 
 /* ==========================================================================
@@ -385,7 +396,7 @@ h4 {
 }
 
 .game-shell-mobile-bar-btn.nav {
-  color: hsl(var(--muted-foreground));
+  color: hsl(var(--muted));
 }
 
 /* ==========================================================================

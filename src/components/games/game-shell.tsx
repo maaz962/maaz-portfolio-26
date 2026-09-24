@@ -66,10 +66,10 @@ export function GameShell({
             aria-label={`${done} of ${totalLevels} levels completed`}
           >
             <div className="flex items-center justify-between gap-3">
-              <span className="text-[0.6rem] font-semibold uppercase tracking-[0.12em] text-muted">
+              <span className="text-xs font-semibold uppercase tracking-[0.12em] text-muted">
                 Progress
               </span>
-              <span className="font-mono text-[0.6rem] font-semibold text-foreground">
+              <span className="font-mono text-xs font-semibold text-foreground">
                 {done}/{totalLevels} levels
               </span>
             </div>

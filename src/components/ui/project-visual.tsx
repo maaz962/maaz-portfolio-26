@@ -63,7 +63,7 @@ export function ProjectVisual({
       <p className="mt-3 max-w-[16rem] text-sm text-foreground">
         {project.title}
       </p>
-      <p className="text-mono mt-4 text-[0.65rem] text-muted">
+      <p className="text-mono mt-4 text-xs text-muted">
         {"// screenshot pending — add at public/images/projects/"}
         {project.slug}
         {".jpg"}

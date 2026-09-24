@@ -432,7 +432,7 @@ export default function QueryQuestPage() {
       title="Query Quest"
       tagline="Solve SQL challenges — SELECT, JOIN, aggregates &amp; the data-writing bosses"
       icon={<span className="text-xl">🗃️</span>}
-      iconClass="bg-emerald-500/10 text-emerald-500"
+      iconClass="bg-emerald-500/10 text-emerald-600 dark:text-emerald-500"
       scriptSrc={["/games/query-quest/levels.js", "/games/query-quest/game.js"]}
       doneCount={levels.filter((l) => gameState.completed[l.id - 1]).length}
       totalLevels={gameState.totalLevels || FALLBACK_TOTAL_LEVELS}

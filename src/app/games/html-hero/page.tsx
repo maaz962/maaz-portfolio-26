@@ -125,7 +125,7 @@ export default function HtmlHeroPage() {
       title="HTML Hero"
       tagline="Write real HTML tags, level by level, and become an HTML Master"
       icon={<span className="text-xl">🦸</span>}
-      iconClass="bg-indigo-500/10 text-indigo-500"
+      iconClass="bg-indigo-500/10 text-indigo-600 dark:text-indigo-500"
       scriptSrc={["/games/html-hero/game.js"]}
       doneCount={levels.filter((l) => gameState.completed[l.id - 1]).length}
       totalLevels={gameState.totalLevels || TOTAL_LEVELS}

@@ -297,7 +297,7 @@ export function Contact() {
                   aria-live="polite"
                   className="text-center py-8 space-y-6"
                 >
-                  <div className="flex h-12 w-12 mx-auto items-center justify-center rounded-full border border-emerald-500/20 bg-emerald-500/10 text-emerald-500">
+                  <div className="flex h-12 w-12 mx-auto items-center justify-center rounded-full border border-emerald-500/20 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
                     <Mail className="h-5 w-5" strokeWidth={1.75} />
                   </div>
                   <div className="space-y-2">
@@ -348,7 +348,7 @@ export function Contact() {
                         placeholder="John Doe"
                       />
                       {errors.name && (
-                        <p className="text-xs text-red-500" role="alert">{errors.name}</p>
+                        <p className="text-xs text-red-600 dark:text-red-400" role="alert">{errors.name}</p>
                       )}
                     </div>
 
@@ -372,7 +372,7 @@ export function Contact() {
                         placeholder="john@example.com"
                       />
                       {errors.email && (
-                        <p className="text-xs text-red-500" role="alert">{errors.email}</p>
+                        <p className="text-xs text-red-600 dark:text-red-400" role="alert">{errors.email}</p>
                       )}
                     </div>
                   </div>
@@ -398,7 +398,7 @@ export function Contact() {
                       placeholder="Project details or inquiry description"
                     />
                     {errors.subject && (
-                      <p className="text-xs text-red-500" role="alert">{errors.subject}</p>
+                      <p className="text-xs text-red-600 dark:text-red-400" role="alert">{errors.subject}</p>
                     )}
                   </div>
 
@@ -422,7 +422,7 @@ export function Contact() {
                       placeholder="Hi Maaz, I'd like to discuss a freelance web project..."
                     />
                     {errors.message && (
-                      <p className="text-xs text-red-500" role="alert">{errors.message}</p>
+                      <p className="text-xs text-red-600 dark:text-red-400" role="alert">{errors.message}</p>
                     )}
                   </div>
 

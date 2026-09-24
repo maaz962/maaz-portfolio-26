@@ -269,7 +269,7 @@ export default function AnimationArenaPage() {
       title="Animation Arena"
       tagline="Bring robots to life with CSS transitions, transforms &amp; keyframes"
       icon={<span className="text-xl">🤖</span>}
-      iconClass="bg-purple-500/10 text-purple-400"
+      iconClass="bg-purple-500/10 text-purple-600 dark:text-purple-400"
       scriptSrc={["/games/animation-arena/game.js"]}
       doneCount={levels.filter((l) => gameState.completed[l.id - 1]).length}
       totalLevels={gameState.totalLevels || FALLBACK_TOTAL_LEVELS}

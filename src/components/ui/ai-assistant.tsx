@@ -395,7 +395,7 @@ export function AIAssistant() {
                   <h3 className="font-display text-sm font-semibold text-foreground leading-tight">
                     Maaz AI
                   </h3>
-                  <p className="text-[10px] text-muted text-mono uppercase tracking-wider">
+                  <p className="text-xs text-muted text-mono uppercase tracking-wider">
                     Ask me about Maaz
                   </p>
                 </div>
@@ -433,7 +433,7 @@ export function AIAssistant() {
                         "rounded-2xl px-4 py-2.5 text-sm shadow-sm leading-relaxed max-w-[85%]",
                         isModel
                           ? msg.isError
-                            ? "self-stretch text-center text-xs text-red-500 font-mono border border-red-500/20 bg-red-500/5 rounded-xl py-2 px-3 max-w-full"
+                            ? "self-stretch text-center text-xs text-red-600 dark:text-red-400 font-mono border border-red-500/20 bg-red-500/5 rounded-xl py-2 px-3 max-w-full"
                             : "self-start bg-background-secondary border border-border text-foreground rounded-tl-none"
                           : "self-end bg-primary text-primary-foreground rounded-tr-none"
                       )}
@@ -455,7 +455,7 @@ export function AIAssistant() {
                 <div className="space-y-4 pt-2">
                   {/* Suggested Questions */}
                   <div className="space-y-1.5">
-                    <p className="text-[10px] font-semibold text-mono text-muted uppercase tracking-wider">
+                    <p className="text-xs font-semibold text-mono text-muted uppercase tracking-wider">
                       Suggested Questions
                     </p>
                     <div className="flex flex-col gap-2">
@@ -512,7 +512,10 @@ export function AIAssistant() {
 
             {/* Error Message banner */}
             {errorMsg && (
-              <div className="bg-red-500/10 border-t border-red-500/20 px-4 py-2 text-xs text-red-500 text-mono text-center">
+              <div
+                role="alert"
+                className="bg-red-500/10 border-t border-red-500/20 px-4 py-2 text-xs text-red-600 dark:text-red-400 text-mono text-center"
+              >
                 {errorMsg}
               </div>
             )}

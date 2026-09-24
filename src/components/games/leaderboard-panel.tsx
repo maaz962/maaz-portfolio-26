@@ -84,13 +84,13 @@ export function LeaderboardPanel({ currentUserId, onSignIn, onPlayGame }: Props)
             <h2 className="font-display text-sm font-bold text-foreground">
               Leaderboard
             </h2>
-            <p className="text-[0.65rem] text-muted">
+            <p className="text-xs text-muted">
               Top 10 players ranked by XP
             </p>
           </div>
         </div>
         {currentUserId && isInTopList && (
-          <span className="flex items-center gap-1.5 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-[0.65rem] font-semibold text-primary">
+          <span className="flex items-center gap-1.5 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
             <Medal className="h-3 w-3" />
             You are #{myRank}
           </span>
@@ -146,15 +146,15 @@ className={cn(
                   <p className="truncate text-xs font-semibold text-foreground">
                     {e.user.name}
                     {isMe && (
-                      <span className="ml-1.5 text-[0.6rem] font-medium text-primary">
+                      <span className="ml-1.5 text-xs font-medium text-primary">
                         (you)
                       </span>
                     )}
                   </p>
-                  <p className="truncate text-[0.6rem] text-muted">
+                  <p className="truncate text-xs text-muted">
                     @{e.user.username}
                     {e.currentStreak > 0 && (
-                      <span className="ml-1.5 inline-flex items-center gap-0.5 text-orange-500">
+                      <span className="ml-1.5 inline-flex items-center gap-0.5 text-orange-600 dark:text-orange-400">
                         <Flame className="h-2.5 w-2.5" />
                         {e.currentStreak}d
                       </span>
@@ -162,10 +162,10 @@ className={cn(
                   </p>
                 </div>
                 <div className="flex shrink-0 flex-col items-end">
-                  <span className="rounded-md bg-primary/10 px-1.5 py-0.5 text-[0.6rem] font-bold text-primary">
+                  <span className="rounded-md bg-primary/10 px-1.5 py-0.5 text-xs font-bold text-primary">
                     Lv {e.level}
                   </span>
-                  <span className="mt-0.5 text-[0.65rem] font-semibold text-foreground">
+                  <span className="mt-0.5 text-xs font-semibold text-foreground">
                     {e.totalXp.toLocaleString()} XP
                   </span>
                 </div>

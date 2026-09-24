@@ -118,7 +118,7 @@ export function AuthModal({ open, onClose, onAuthed, initialMode = "login" }: Au
                 <h3 className="font-display text-sm font-semibold text-foreground">
                   {mode === "login" ? "Welcome back" : "Create profile"}
                 </h3>
-                <p className="text-[0.65rem] text-muted">
+                <p className="text-xs text-muted">
                   Save progress, earn XP, build streaks and climb the
                   leaderboard — signed in for up to a year, or until you log
                   out
@@ -127,7 +127,10 @@ export function AuthModal({ open, onClose, onAuthed, initialMode = "login" }: Au
             </div>
 
             {error && (
-              <div className="mt-4 flex items-center gap-2 rounded-lg border border-red-500/20 bg-red-500/10 p-2 text-[0.7rem] text-red-500">
+              <div
+                role="alert"
+                className="mt-4 flex items-center gap-2 rounded-lg border border-red-500/20 bg-red-500/10 p-2 text-xs text-red-600 dark:text-red-400"
+              >
                 <AlertCircle className="h-3.5 w-3.5 shrink-0" />
                 <span>{error}</span>
               </div>
@@ -136,7 +139,7 @@ export function AuthModal({ open, onClose, onAuthed, initialMode = "login" }: Au
             <form onSubmit={handleSubmit} className="mt-4 space-y-3">
               {mode === "register" && (
                 <div>
-                  <label className="text-[0.65rem] font-semibold uppercase tracking-wider text-muted">
+                  <label className="text-xs font-semibold uppercase tracking-wider text-muted">
                     Full Name
                   </label>
                   <input
@@ -150,7 +153,7 @@ export function AuthModal({ open, onClose, onAuthed, initialMode = "login" }: Au
                 </div>
               )}
               <div>
-                <label className="text-[0.65rem] font-semibold uppercase tracking-wider text-muted">
+                <label className="text-xs font-semibold uppercase tracking-wider text-muted">
                   {mode === "register" ? "Username" : "Username or Email"}
                 </label>
                 <input
@@ -164,7 +167,7 @@ export function AuthModal({ open, onClose, onAuthed, initialMode = "login" }: Au
               </div>
               {mode === "register" && (
                 <div>
-                  <label className="text-[0.65rem] font-semibold uppercase tracking-wider text-muted">
+                  <label className="text-xs font-semibold uppercase tracking-wider text-muted">
                     Email
                   </label>
                   <input
@@ -178,7 +181,7 @@ export function AuthModal({ open, onClose, onAuthed, initialMode = "login" }: Au
                 </div>
               )}
               <div>
-                <label className="text-[0.65rem] font-semibold uppercase tracking-wider text-muted">
+                <label className="text-xs font-semibold uppercase tracking-wider text-muted">
                   Password
                 </label>
                 <div className="relative mt-1">

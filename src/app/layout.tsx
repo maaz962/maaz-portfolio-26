@@ -108,6 +108,26 @@ export default function RootLayout({
     >
       <head>
         <script dangerouslySetInnerHTML={{ __html: noFlashThemeScript }} />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "Person",
+              name: profile.name,
+              url: normalizedSiteUrl,
+              email: `mailto:${profile.email}`,
+              image: `${normalizedSiteUrl}/images/profile.jpg`,
+              jobTitle: "Full Stack Developer",
+              address: {
+                "@type": "PostalAddress",
+                addressLocality: "Lahore",
+                addressCountry: "Pakistan",
+              },
+              sameAs: [profile.github, profile.linkedin],
+            }),
+          }}
+        />
       </head>
       <body className="flex min-h-screen flex-col font-sans">
         <ThemeProvider>

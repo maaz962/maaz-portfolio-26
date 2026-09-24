@@ -207,7 +207,7 @@ export default function JsDetectivePage() {
       title="JS Detective"
       tagline="Solve JavaScript mysteries — variables, loops, arrays &amp; more"
       icon={<span className="text-xl">🕵️</span>}
-      iconClass="bg-amber-500/10 text-amber-500"
+      iconClass="bg-amber-500/10 text-amber-600 dark:text-amber-500"
       scriptSrc={["/games/js-detective/levels.js", "/games/js-detective/game.js"]}
       doneCount={levels.filter((l) => gameState.completed[l.id]).length}
       totalLevels={gameState.totalLevels || FALLBACK_TOTAL_LEVELS}
