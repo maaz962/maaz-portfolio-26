@@ -56,6 +56,11 @@ async function initDb(): Promise<void> {
         password_hash TEXT NOT NULL
       )
     `;
+    // Older deployments created `users` before this flag existed, and CREATE
+    // TABLE IF NOT EXISTS no-ops on the existing table — so the column must be
+    // added idempotently. DEFAULT false keeps every existing account visible
+    // (only accounts explicitly flagged true are hidden).
+    await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS hidden_from_leaderboard BOOLEAN NOT NULL DEFAULT false`;
     await sql`
       CREATE TABLE IF NOT EXISTS game_progress (
         user_id TEXT NOT NULL,

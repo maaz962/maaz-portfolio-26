@@ -9,6 +9,8 @@ export type GameMeta = {
   borderColor: string;
   accentColor: string;
   comingSoon: boolean;
+  /** Total number of levels shipped with this game (used for X/Y on cards). */
+  totalLevels: number;
 };
 
 export const games: GameMeta[] = [
@@ -24,6 +26,7 @@ export const games: GameMeta[] = [
     borderColor: "border-indigo-500/30",
     accentColor: "text-indigo-500",
     comingSoon: false,
+    totalLevels: 16,
   },
   {
     slug: "flexbox-zoo",
@@ -37,6 +40,7 @@ export const games: GameMeta[] = [
     borderColor: "border-green-500/30",
     accentColor: "text-green-500",
     comingSoon: false,
+    totalLevels: 15,
   },
   {
     slug: "grid-garden",
@@ -50,6 +54,7 @@ export const games: GameMeta[] = [
     borderColor: "border-emerald-500/30",
     accentColor: "text-emerald-500",
     comingSoon: false,
+    totalLevels: 15,
   },
   {
     slug: "js-detective",
@@ -63,6 +68,7 @@ export const games: GameMeta[] = [
     borderColor: "border-amber-500/30",
     accentColor: "text-amber-500",
     comingSoon: false,
+    totalLevels: 18,
   },
   {
     slug: "animation-arena",
@@ -76,6 +82,7 @@ export const games: GameMeta[] = [
     borderColor: "border-purple-500/30",
     accentColor: "text-purple-500",
     comingSoon: false,
+    totalLevels: 12,
   },
   {
     slug: "php-playground",
@@ -89,6 +96,7 @@ export const games: GameMeta[] = [
     borderColor: "border-violet-500/30",
     accentColor: "text-violet-500",
     comingSoon: false,
+    totalLevels: 16,
   },
   {
     slug: "query-quest",
@@ -102,5 +110,6 @@ export const games: GameMeta[] = [
     borderColor: "border-sky-500/30",
     accentColor: "text-sky-500",
     comingSoon: false,
+    totalLevels: 16,
   },
 ];

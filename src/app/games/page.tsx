@@ -226,6 +226,16 @@ function GameCard({
   onPlay: () => void;
   progress?: GameProgress;
 }) {
+  const doneCount = progress
+    ? Object.values(progress.completed ?? {}).filter(Boolean).length
+    : 0;
+  // Fall back to the shipped level count so cards always show "X/Y" — even
+  // before a progress row exists (e.g. "0/16"). Guard NaN/undefined.
+  const levelCount =
+    Number.isFinite(progress?.totalLevels) && (progress?.totalLevels ?? 0) > 0
+      ? (progress?.totalLevels as number)
+      : game.totalLevels;
+  const isComplete = levelCount > 0 && doneCount >= levelCount;
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -304,9 +314,7 @@ function GameCard({
               </p>
               <p className="mt-0.5 flex items-center gap-1.5 text-sm font-bold text-foreground">
                 <CheckCircle2 className={cn("h-3.5 w-3.5", game.accentColor)} />
-                {progress
-                  ? `${Object.values(progress.completed).filter(Boolean).length}/${progress.totalLevels}`
-                  : "\u2014"}
+                {`${doneCount}/${levelCount}`}
               </p>
             </div>
           </div>
@@ -315,19 +323,18 @@ function GameCard({
         {authed && !game.comingSoon && (
           <div className="mt-2">
             {(() => {
-              const done = progress
-                ? Object.values(progress.completed).filter(Boolean).length
-                : 0;
-              const total = progress?.totalLevels ?? 0;
-              const pct = total > 0 ? Math.min(100, Math.round((done / total) * 100)) : 0;
+              const pct =
+                levelCount > 0
+                  ? Math.min(100, Math.round((doneCount / levelCount) * 100))
+                  : 0;
               return (
                 <>
                   <span className="text-[0.6rem] font-semibold text-muted">
                     <span aria-hidden="true">{game.animal}</span>
-                    {done >= total
+                    {isComplete
                       ? " Completed!"
-                      : done > 0
-                        ? ` Playing \u2014 ${done}/${total} levels`
+                      : doneCount > 0
+                        ? ` In progress \u2014 ${doneCount}/${levelCount} levels`
                         : " Not started"}
                   </span>
                   <div className="mt-1 h-1 overflow-hidden rounded-full bg-background-secondary">
@@ -408,14 +415,17 @@ export default function GamesPage() {
   const pendingGames = playerGames.filter((g) => {
     const p = progress[g.slug];
     if (!p) return true;
-    const done = Object.values(p.completed).filter(Boolean).length;
-    return done < (p.totalLevels || 0);
+    const total = Number.isFinite(p.totalLevels) ? p.totalLevels : 0;
+    const done = Object.values(p.completed ?? {}).filter(Boolean).length;
+    return total <= 0 || done < total;
   });
   const totalScore = playerGames.reduce((sum, g) => sum + (progress[g.slug]?.score ?? 0), 0);
   const completedGames = playerGames.filter((g) => {
     const p = progress[g.slug];
     if (!p) return false;
-    return Object.values(p.completed).filter(Boolean).length >= (p.totalLevels || 0);
+    const total = Number.isFinite(p.totalLevels) ? p.totalLevels : 0;
+    if (total <= 0) return false;
+    return Object.values(p.completed ?? {}).filter(Boolean).length >= total;
   }).length;
 
   return (
@@ -615,11 +625,11 @@ export default function GamesPage() {
                 {playerGames.map((g) => {
                   const p = progress[g.slug];
                   const done = p
-                    ? Object.values(p.completed).filter(Boolean).length
+                    ? Object.values(p.completed ?? {}).filter(Boolean).length
                     : 0;
                   const total = p?.totalLevels ?? 0;
                   const left = p ? Math.max(0, total - done) : null;
-                  const isDone = left !== null && left === 0;
+                  const isDone = left !== null && total > 0 && left === 0;
                   return (
                     <Link
                       key={g.slug}
