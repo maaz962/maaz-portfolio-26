@@ -44,7 +44,7 @@ function GamePreview({ game }: { game: GameMeta }) {
 
   return (
     <div className="h-full w-full">
-      <div className="relative mx-3 mt-4 h-32 overflow-hidden rounded-xl border border-white/15 bg-card/90 p-3 shadow-xl">
+      <div className="relative mx-3 mt-4 h-32 overflow-hidden rounded-xl border border-white/15 bg-black/80 p-3 shadow-xl">
         {game.slug === "html-hero" && (
           <div className="font-mono text-[0.6rem] leading-relaxed">
             <div className="mb-2 flex gap-1.5">
@@ -236,12 +236,23 @@ function GameCard({
       ? (progress?.totalLevels as number)
       : game.totalLevels;
   const isComplete = levelCount > 0 && doneCount >= levelCount;
+  const pct =
+    levelCount > 0 ? Math.min(100, Math.round((doneCount / levelCount) * 100)) : 0;
+  const btnLabel = game.comingSoon
+    ? null
+    : !authed
+      ? "Play"
+      : isComplete
+        ? "Play again"
+        : doneCount > 0
+          ? "Continue"
+          : "Start";
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       className={cn(
-        "group relative overflow-hidden rounded-2xl border bg-card transition-all duration-300 hover:shadow-lg",
+        "group relative flex flex-col overflow-hidden rounded-2xl border bg-card motion-safe:transition-all motion-safe:duration-300 motion-safe:hover:-translate-y-0.5 hover:shadow-lg",
         game.borderColor
       )}
     >
@@ -259,8 +270,8 @@ function GameCard({
         )}
       </div>
 
-      <div className="p-5">
-        <div className="flex items-start justify-between">
+      <div className="flex flex-1 flex-col p-5">
+        <div className="flex items-start justify-between gap-3">
           <h3 className="font-display text-lg font-bold text-foreground">
             {game.title}
           </h3>
@@ -270,50 +281,52 @@ function GameCard({
                 ? "Multiple difficulty tiers inside one game \u2014 easy to advanced challenges"
                 : undefined
             }
-            className={cn(
-              "rounded-full bg-primary/10 px-2.5 py-0.5 text-[0.65rem] font-semibold",
-              game.accentColor
-            )}
+            className="shrink-0 rounded-full bg-primary/10 px-2.5 py-0.5 text-[0.65rem] font-semibold text-primary"
           >
             {game.difficulty}
           </span>
         </div>
 
-        <p className="mt-2 text-xs leading-relaxed text-muted">
+        <p className="mt-2 text-xs leading-relaxed text-muted line-clamp-3 min-h-[3.75rem]">
           {game.description}
         </p>
 
         <div className="mt-3 flex flex-wrap gap-1.5">
-          {game.topics.map((topic) => (
+          {game.topics.slice(0, 4).map((topic) => (
             <span
               key={topic}
-              className="rounded-md bg-background-secondary px-2 py-0.5 text-[0.6rem] font-medium text-muted"
+              className="rounded-md border border-border bg-background-secondary px-2 py-0.5 text-[0.6rem] font-medium text-muted"
             >
               {topic}
             </span>
           ))}
+          {game.topics.length > 4 && (
+            <span className="rounded-md border border-border bg-background-secondary px-2 py-0.5 text-[0.6rem] font-medium text-muted">
+              +{game.topics.length - 4}
+            </span>
+          )}
         </div>
 
         {!game.comingSoon && (
           <div className="mt-3 grid grid-cols-2 gap-2">
-            <div className="rounded-lg border border-border bg-background-secondary/60 px-2.5 py-1.5">
-              <p className="text-[0.55rem] font-semibold uppercase tracking-wider text-muted">
+            <div className="rounded-lg border border-border bg-background-secondary/60 px-3 py-2">
+              <p className="text-xs font-semibold uppercase tracking-wider text-muted">
                 Score
               </p>
-              <p className="mt-0.5 flex items-center gap-1.5 text-sm font-bold text-foreground">
-                <Star className={cn("h-3.5 w-3.5", game.accentColor)} />
+              <p className="mt-1 flex items-center gap-1.5 text-xl font-bold leading-none text-foreground">
+                <Star className={cn("h-4 w-4", game.accentColor)} />
                 {progress ? progress.score.toLocaleString() : "0"}
                 <span className="text-[0.6rem] font-medium text-muted">
                   pts
                 </span>
               </p>
             </div>
-            <div className="rounded-lg border border-border bg-background-secondary/60 px-2.5 py-1.5">
-              <p className="text-[0.55rem] font-semibold uppercase tracking-wider text-muted">
+            <div className="rounded-lg border border-border bg-background-secondary/60 px-3 py-2">
+              <p className="text-xs font-semibold uppercase tracking-wider text-muted">
                 Completed
               </p>
-              <p className="mt-0.5 flex items-center gap-1.5 text-sm font-bold text-foreground">
-                <CheckCircle2 className={cn("h-3.5 w-3.5", game.accentColor)} />
+              <p className="mt-1 flex items-center gap-1.5 text-xl font-bold leading-none text-foreground">
+                <CheckCircle2 className={cn("h-4 w-4", game.accentColor)} />
                 {`${doneCount}/${levelCount}`}
               </p>
             </div>
@@ -321,50 +334,51 @@ function GameCard({
         )}
 
         {authed && !game.comingSoon && (
-          <div className="mt-2">
-            {(() => {
-              const pct =
-                levelCount > 0
-                  ? Math.min(100, Math.round((doneCount / levelCount) * 100))
-                  : 0;
-              return (
-                <>
-                  <span className="text-[0.6rem] font-semibold text-muted">
-                    <span aria-hidden="true">{game.animal}</span>
-                    {isComplete
-                      ? " Completed!"
-                      : doneCount > 0
-                        ? ` In progress \u2014 ${doneCount}/${levelCount} levels`
-                        : " Not started"}
-                  </span>
-                  <div className="mt-1 h-1 overflow-hidden rounded-full bg-background-secondary">
+          <div className="mt-3">
+            {isComplete ? (
+              <span className="inline-flex items-center gap-1.5 text-[0.6rem] font-semibold text-green-500">
+                <CheckCircle2 className="h-3.5 w-3.5" />
+                Completed
+              </span>
+            ) : (
+              <>
+                <p className="text-[0.6rem] font-semibold uppercase tracking-wider text-muted">
+                  {doneCount > 0
+                    ? `In progress \u2014 ${doneCount}/${levelCount} levels`
+                    : "Not started"}
+                </p>
+                {doneCount > 0 && (
+                  <div className="mt-1.5 h-1 overflow-hidden rounded-full bg-background-secondary">
                     <div
-                      className={cn("h-full rounded-full bg-gradient-to-r", game.color)}
+                      className={cn(
+                        "h-full rounded-full bg-gradient-to-r",
+                        game.color
+                      )}
                       style={{ width: `${pct}%` }}
                     />
                   </div>
-                </>
-              );
-            })()}
+                )}
+              </>
+            )}
           </div>
         )}
 
-        <div className="mt-4 flex items-center justify-between border-t border-border/50 pt-3">
+        <div className="mt-auto flex flex-wrap items-center justify-center gap-3 border-t border-border/50 pt-4 sm:justify-end">
           {game.comingSoon ? (
             <span className="text-xs text-muted">Stay tuned...</span>
           ) : authed ? (
             <Link
               href={`/games/${game.slug}`}
-              className="rounded-full bg-primary px-4 py-1.5 text-xs font-semibold text-primary-foreground transition-all hover:brightness-110"
+              className="flex w-full justify-center rounded-full bg-primary px-5 py-2 text-xs font-semibold text-primary-foreground transition-all hover:brightness-110 sm:w-auto"
             >
-              Play Now
+              {btnLabel}
             </Link>
           ) : (
             <button
               onClick={onPlay}
-              className="rounded-full bg-primary px-4 py-1.5 text-xs font-semibold text-primary-foreground transition-all hover:brightness-110"
+              className="flex w-full justify-center rounded-full bg-primary px-5 py-2 text-xs font-semibold text-primary-foreground transition-all hover:brightness-110 sm:w-auto"
             >
-              Play Now
+              {btnLabel}
             </button>
           )}
         </div>
@@ -412,13 +426,6 @@ export default function GamesPage() {
   };
 
   const playerGames = games.filter((g) => !g.comingSoon);
-  const pendingGames = playerGames.filter((g) => {
-    const p = progress[g.slug];
-    if (!p) return true;
-    const total = Number.isFinite(p.totalLevels) ? p.totalLevels : 0;
-    const done = Object.values(p.completed ?? {}).filter(Boolean).length;
-    return total <= 0 || done < total;
-  });
   const totalScore = playerGames.reduce((sum, g) => sum + (progress[g.slug]?.score ?? 0), 0);
   const completedGames = playerGames.filter((g) => {
     const p = progress[g.slug];
@@ -435,7 +442,7 @@ export default function GamesPage() {
       <main id="main-content" className="main-content mx-auto w-full max-w-content px-[var(--content-pad-inline)] pb-24">
         <Link
           href="/"
-          className="mb-8 inline-flex items-center gap-1.5 text-xs text-muted transition-colors hover:text-foreground"
+          className="mb-6 inline-flex w-fit items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-xs font-medium text-muted shadow-sm transition-colors hover:border-primary/40 hover:text-foreground"
         >
           <ArrowLeft className="h-3 w-3" />
           Back to Portfolio
@@ -458,7 +465,7 @@ export default function GamesPage() {
               </div>
             </div>
 
-            {!gamesAuthed && !authLoading ? (
+            {!gamesAuthed && !authLoading && (
               <button
                 onClick={() => {
                   setShowAuthModal(true);
@@ -468,8 +475,6 @@ export default function GamesPage() {
                 <UserPlus className="h-3.5 w-3.5" />
                 Sign In / Sign Up
               </button>
-            ) : (
-              <div className="hidden h-10 w-10 items-center justify-center rounded-xl bg-background-secondary sm:flex" />
             )}
           </div>
 
@@ -487,6 +492,17 @@ export default function GamesPage() {
           <LeaderboardPanel
             currentUserId={gamesAuthed ? (currentUser?.id ?? null) : null}
             onSignIn={() => setShowAuthModal(true)}
+            onPlayGame={() => {
+              const reduced =
+                typeof window !== "undefined" &&
+                window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+              document
+                .getElementById("games-grid")
+                ?.scrollIntoView({
+                  behavior: reduced ? "auto" : "smooth",
+                  block: "start",
+                });
+            }}
           />
         </div>
 
@@ -531,13 +547,6 @@ export default function GamesPage() {
                   <span className="text-[0.7rem] font-semibold text-foreground">
                     {(gamification?.totalXp ?? totalScore).toLocaleString()} XP
                   </span>
-                  {gamification &&
-                    gamification.levelNext > gamification.totalXp && (
-                      <span className="text-[0.65rem] text-muted">
-                        {(gamification.levelNext - gamification.totalXp).toLocaleString()}{" "}
-                        XP to level {gamification.level + 1}
-                      </span>
-                    )}
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="flex items-center gap-1 rounded-full bg-orange-500/10 px-2.5 py-1 text-[0.65rem] font-semibold text-orange-500">
@@ -560,6 +569,13 @@ export default function GamesPage() {
                   }}
                 />
               </div>
+              {gamification &&
+                gamification.levelNext > gamification.totalXp && (
+                  <p className="mt-1.5 text-right text-[0.65rem] text-muted">
+                    {(gamification.levelNext - gamification.totalXp).toLocaleString()}{" "}
+                    XP to next level
+                  </p>
+                )}
             </div>
 
             <div className="mt-3 grid grid-cols-3 gap-3">
@@ -577,15 +593,19 @@ export default function GamesPage() {
               <div
                 className={cn(
                   "flex items-center gap-2.5 rounded-xl border p-3",
-                  completedGames > 0
+                  completedGames === playerGames.length
                     ? "border-green-400/30 bg-green-500/10"
-                    : "border-border bg-background-secondary/60"
+                    : completedGames > 0
+                      ? "border-primary/30 bg-primary/10"
+                      : "border-border bg-background-secondary/60"
                 )}
               >
                 <Award
                   className={cn(
                     "h-5 w-5 shrink-0",
-                    completedGames > 0 ? "text-green-500" : "text-primary"
+                    completedGames === playerGames.length
+                      ? "text-green-500"
+                      : "text-primary"
                   )}
                 />
                 <div className="min-w-0">
@@ -610,67 +630,16 @@ export default function GamesPage() {
               </div>
             </div>
 
-            {completedGames === 0 && (
+            {completedGames < playerGames.length && (
               <p className="mt-3 text-center text-[0.7rem] text-muted">
                 Finish any game to see it light up green below — your first
                 completed game is a level away.
               </p>
             )}
-
-            <div className="mt-4">
-              <p className="mb-2 text-[0.65rem] font-semibold uppercase tracking-wider text-muted">
-                Your progress
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {playerGames.map((g) => {
-                  const p = progress[g.slug];
-                  const done = p
-                    ? Object.values(p.completed ?? {}).filter(Boolean).length
-                    : 0;
-                  const total = p?.totalLevels ?? 0;
-                  const left = p ? Math.max(0, total - done) : null;
-                  const isDone = left !== null && total > 0 && left === 0;
-                  return (
-                    <Link
-                      key={g.slug}
-                      href={`/games/${g.slug}`}
-                      className={cn(
-                        "flex items-center gap-2 rounded-full border border-border bg-background-secondary px-3 py-1.5 text-xs transition-colors hover:border-primary/40",
-                        isDone && "border-green-400/40 bg-green-500/10",
-                        g.accentColor
-                      )}
-                      title={`${g.title} \u2014 ${p ? `${p.score} pts, ${done}/${total} levels` : "not started"}`}
-                    >
-                      {isDone ? (
-                        <CheckCircle2 className="h-3.5 w-3.5 text-green-500" />
-                      ) : (
-                        <span>{g.animal}</span>
-                      )}
-                      <span className="font-bold text-foreground">
-                        {p ? p.score : 0} pts
-                      </span>
-                      <span className="text-muted">
-                        {left === null
-                          ? "not started"
-                          : left > 0
-                            ? `${done}/${total} levels`
-                            : "done"}
-                      </span>
-                    </Link>
-                  );
-                })}
-              </div>
-              {pendingGames.length > 0 && (
-                <p className="mt-2.5 text-[0.7rem] text-muted">
-                  {pendingGames.length} game{pendingGames.length > 1 ? "s" : ""}{" "}
-                  still in progress — keep going!
-                </p>
-              )}
-            </div>
           </motion.section>
         )}
 
-        <div className="grid gap-5 sm:grid-cols-2">
+        <div id="games-grid" className="grid grid-cols-1 gap-5 min-[900px]:grid-cols-2">
           {games.map((game) => (
             <GameCard
               key={game.slug}

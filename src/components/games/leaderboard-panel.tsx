@@ -10,27 +10,28 @@ import type { LeaderboardEntry } from "@/types";
 interface Props {
   currentUserId: string | null;
   onSignIn: () => void;
+  onPlayGame: () => void;
 }
 
 function RankBadge({ rank }: { rank: number }) {
   if (rank === 1) {
     return (
-      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-amber-400/20 text-sm font-bold text-amber-500">
-        👑
+      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-amber-400/20 text-sm">
+        🥇
       </span>
     );
   }
   if (rank === 2) {
     return (
-      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-slate-300/20 text-xs font-bold text-slate-400">
-        2
+      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-slate-300/20 text-xs">
+        🥈
       </span>
     );
   }
   if (rank === 3) {
     return (
-      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-orange-500/15 text-xs font-bold text-orange-500">
-        3
+      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-orange-500/15 text-xs">
+        🥉
       </span>
     );
   }
@@ -41,9 +42,14 @@ function RankBadge({ rank }: { rank: number }) {
   );
 }
 
-export function LeaderboardPanel({ currentUserId, onSignIn }: Props) {
+export function LeaderboardPanel({ currentUserId, onSignIn, onPlayGame }: Props) {
   const [entries, setEntries] = useState<LeaderboardEntry[] | null>(null);
   const [myRank, setMyRank] = useState<number | null>(null);
+
+  const isInTopList =
+    currentUserId !== null &&
+    myRank !== null &&
+    entries?.some((e) => e.user.id === currentUserId);
 
   useEffect(() => {
     let cancelled = false;
@@ -83,7 +89,7 @@ export function LeaderboardPanel({ currentUserId, onSignIn }: Props) {
             </p>
           </div>
         </div>
-        {currentUserId && myRank !== null && (
+        {currentUserId && isInTopList && (
           <span className="flex items-center gap-1.5 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-[0.65rem] font-semibold text-primary">
             <Medal className="h-3 w-3" />
             You are #{myRank}
@@ -101,10 +107,20 @@ export function LeaderboardPanel({ currentUserId, onSignIn }: Props) {
           ))}
         </div>
       ) : entries.length === 0 ? (
-        <div className="mt-5 rounded-xl border border-dashed border-border bg-background-secondary/40 p-6 text-center">
-          <p className="text-xs text-muted">
-            No scores yet — be the first to earn XP and take the #1 spot!
+        <div className="mt-5 flex flex-col items-center rounded-xl border border-dashed border-border bg-background-secondary/40 p-6 text-center">
+          <Trophy className="h-8 w-8 text-muted" />
+          <p className="mt-2.5 text-xs font-bold text-foreground">
+            No scores yet
           </p>
+          <p className="mt-1 text-xs text-muted">
+            Be the first to earn XP and take the #1 spot!
+          </p>
+          <button
+            onClick={onPlayGame}
+            className="mt-3.5 rounded-full bg-primary px-4 py-1.5 text-xs font-semibold text-primary-foreground transition-all hover:brightness-110"
+          >
+            Play a game
+          </button>
         </div>
       ) : (
         <ol className="mt-4 space-y-1.5">
@@ -113,8 +129,8 @@ export function LeaderboardPanel({ currentUserId, onSignIn }: Props) {
             return (
               <li
                 key={e.user.id}
-                className={cn(
-                  "flex items-center gap-3 rounded-xl px-2.5 py-2 transition-colors",
+className={cn(
+  "flex items-center gap-3 rounded-xl px-2.5 py-2.5 transition-colors",
                   isMe
                     ? "border border-primary/25 bg-primary/5"
                     : "hover:bg-background-secondary/50"
