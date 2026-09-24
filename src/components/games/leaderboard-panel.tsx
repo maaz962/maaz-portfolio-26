@@ -187,7 +187,7 @@ className={cn(
             className={buttonStyles({
               size: "sm",
               className:
-                "w-full bg-gradient-to-r from-primary to-violet-600",
+                "w-full bg-gradient-to-r from-primary to-[hsl(var(--games-accent))]",
             })}
           >
             <UserPlus className="h-4 w-4" strokeWidth={1.75} />

@@ -254,7 +254,7 @@ function GameCard({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       className={cn(
-        "group relative flex flex-col overflow-hidden rounded-2xl border bg-card motion-safe:transition-all motion-safe:duration-300 motion-safe:hover:-translate-y-0.5 hover:shadow-lg",
+        "group relative flex flex-col overflow-hidden rounded-2xl border bg-card shadow-card motion-safe:transition-all motion-safe:duration-300 motion-safe:hover:-translate-y-0.5 hover:shadow-glow",
         game.borderColor
       )}
     >
@@ -445,7 +445,8 @@ export default function GamesPage() {
     <div className="relative min-h-screen bg-background">
       <GlassNavbar activeSection="games" />
 
-      <main id="main-content" className="main-content mx-auto w-full max-w-content px-[var(--content-pad-inline)] pb-24">
+      <main id="main-content" className="main-content mx-auto w-full max-w-content-wide px-[var(--content-pad-inline)] pb-24">
+        <div className="mx-auto w-full max-w-[1100px]">
         <Link
           href="/"
           className="mb-6 inline-flex w-fit items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-xs font-medium text-muted shadow-sm transition-colors hover:border-primary/40 hover:text-foreground"
@@ -478,7 +479,7 @@ export default function GamesPage() {
                 }}
                 className={buttonStyles({
                   size: "sm",
-                  className: "bg-gradient-to-r from-primary to-violet-600",
+                  className: "bg-gradient-to-r from-primary to-[hsl(var(--games-accent))]",
                 })}
               >
                 <UserPlus className="h-4 w-4" strokeWidth={1.75} />
@@ -554,7 +555,7 @@ export default function GamesPage() {
             <div className="mt-4 rounded-xl border border-border bg-background-secondary/60 p-3.5">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div className="flex flex-wrap items-center gap-2.5">
-                  <span className="rounded-lg bg-gradient-to-r from-primary to-violet-600 px-2.5 py-1 text-xs font-bold text-white shadow-lg shadow-primary/25">
+                  <span className="rounded-lg bg-gradient-to-r from-primary to-[hsl(var(--games-accent))] px-2.5 py-1 text-xs font-bold text-white shadow-lg shadow-primary/25">
                     LEVEL {gamification?.level ?? 1}
                   </span>
                   <span className="text-xs font-semibold text-foreground">
@@ -576,7 +577,7 @@ export default function GamesPage() {
               </div>
               <div className="mt-2.5 h-2 overflow-hidden rounded-full bg-background">
                 <div
-                  className="h-full rounded-full bg-gradient-to-r from-primary to-violet-600 transition-all duration-500"
+                  className="h-full rounded-full bg-gradient-to-r from-primary to-[hsl(var(--games-accent))] transition-all duration-500"
                   style={{
                     width: `${Math.round((gamification?.levelProgressPct ?? 0) * 100)}%`,
                   }}
@@ -678,6 +679,7 @@ export default function GamesPage() {
             Quest.
           </p>
         </div>
+      </div>
       </main>
 
       <AuthModal
