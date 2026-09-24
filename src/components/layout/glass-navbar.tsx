@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Menu, X } from "lucide-react";
+import { Gamepad2, Menu, X } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { navLinks } from "@/data/nav";
 import { profile } from "@/data/profile";
@@ -62,7 +62,17 @@ return (
                 ? pathname === "/games" || pathname.startsWith("/games/")
                 : isHomePage && activeSection === id;
 
-              return (
+              return isGames ? (
+                <a
+                  key={link.href}
+                  href={link.href}
+                  aria-current={isActive ? "true" : undefined}
+                  className="relative flex h-9 items-center gap-1.5 whitespace-nowrap rounded-full bg-gradient-to-r from-primary to-violet-600 px-4 text-[15px] font-semibold text-white shadow-lg shadow-primary/25 transition-all hover:brightness-110 motion-safe:hover:-translate-y-px"
+                >
+                  <Gamepad2 className="h-4 w-4" strokeWidth={2} />
+                  {link.label}
+                </a>
+              ) : (
                 <a
                   key={link.href}
                   href={link.href}
@@ -154,11 +164,14 @@ return (
                       setOpen(false);
                     }}
                     className={`flex min-h-11 w-full items-center justify-center rounded-full px-5 text-[15px] transition-colors ${
-                      isActive
-                        ? "bg-primary/15 font-medium text-primary"
-                        : "font-medium text-muted hover:text-foreground"
+                      isGames
+                        ? "bg-gradient-to-r from-primary to-violet-600 font-semibold text-white shadow-lg shadow-primary/25"
+                        : isActive
+                          ? "bg-primary/15 font-medium text-primary"
+                          : "font-medium text-muted hover:text-foreground"
                     }`}
                   >
+                    {isGames && <Gamepad2 className="mr-2 h-4 w-4" strokeWidth={2} />}
                     {link.label}
                   </a>
                 );
