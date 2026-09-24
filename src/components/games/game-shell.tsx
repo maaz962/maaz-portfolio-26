@@ -46,7 +46,7 @@ export function GameShell({
       >
         <Link
           href="/games"
-          className="mb-4 inline-flex items-center gap-1.5 text-xs text-muted transition-colors hover:text-foreground"
+          className="mb-4 mx-auto flex w-full max-w-[1100px] items-center gap-1.5 text-xs text-muted transition-colors hover:text-foreground"
         >
           <ArrowLeft className="h-3 w-3" />
           All Games
