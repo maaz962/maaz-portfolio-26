@@ -121,6 +121,9 @@ async function initDb(): Promise<void> {
     await sql`ALTER TABLE game_progress ADD COLUMN IF NOT EXISTS hints JSONB NOT NULL DEFAULT '{}'`;
     await sql`ALTER TABLE game_progress ADD COLUMN IF NOT EXISTS version INT NOT NULL DEFAULT 3`;
     await sql`ALTER TABLE gamification ADD COLUMN IF NOT EXISTS hints JSONB NOT NULL DEFAULT '{}'`;
+    // Admin-applied XP bonus/penalty layered on top of the score-derived total;
+    // added idempotently so pre-existing deployments pick it up on next boot.
+    await sql`ALTER TABLE gamification ADD COLUMN IF NOT EXISTS xp_adjustment INT NOT NULL DEFAULT 0`;
     // Idempotent seed of the site owner's admin account â€” mirrors the file-store
     // seed so /admin is reachable on first production deploy too. ON CONFLICT
     // makes it safe on every cold start / redeploy.
@@ -362,15 +365,23 @@ export async function saveGameProgress(
       ? JSON.stringify(streakRow.hints)
       : JSON.stringify({ date: "", used: 0 });
 
+  // Persist any admin-applied XP adjustment so a fresh play session recomputes
+  // the total as score-sum + adjustment (never wipes a manual grant/penalty).
+  const xpAdjustment = Number.isInteger(streakRow?.xp_adjustment)
+    ? (streakRow.xp_adjustment as number)
+    : 0;
+
   let currentStreak = streakRow?.current_streak ?? 0;
   if (streakRow?.last_played_at !== today) {
     currentStreak = streakRow?.last_played_at === yesterday ? currentStreak + 1 : 1;
   }
   const longestStreak = Math.max(streakRow?.longest_streak ?? 0, currentStreak);
 
+  const recomputedXp = (sumRow?.total_xp ?? 0) + xpAdjustment;
+
   await sql`
-    INSERT INTO gamification (user_id, total_xp, games_played, current_streak, longest_streak, last_played_at, hints, updated_at)
-    VALUES (${userId}, ${sumRow?.total_xp ?? 0}, ${sumRow?.games_played ?? 0}, ${currentStreak}, ${longestStreak}, ${today}, ${hintsJson}, ${nowISO()})
+    INSERT INTO gamification (user_id, total_xp, games_played, current_streak, longest_streak, last_played_at, hints, xp_adjustment, updated_at)
+    VALUES (${userId}, ${recomputedXp}, ${sumRow?.games_played ?? 0}, ${currentStreak}, ${longestStreak}, ${today}, ${hintsJson}, ${xpAdjustment}, ${nowISO()})
     ON CONFLICT (user_id)
     DO UPDATE SET
       total_xp = EXCLUDED.total_xp,
@@ -379,6 +390,7 @@ export async function saveGameProgress(
       longest_streak = EXCLUDED.longest_streak,
       last_played_at = EXCLUDED.last_played_at,
       hints = EXCLUDED.hints,
+      xp_adjustment = EXCLUDED.xp_adjustment,
       updated_at = EXCLUDED.updated_at
   `;
 
@@ -398,9 +410,12 @@ export async function getGamification(userId: string): Promise<Gamification> {
   const [stored] = await sql`
     SELECT * FROM gamification WHERE user_id = ${userId} LIMIT 1
   `;
+  const xpAdjustment = Number.isInteger(stored?.xp_adjustment)
+    ? (stored.xp_adjustment as number)
+    : 0;
   return {
     userId,
-    totalXp: sumRow?.total_xp ?? 0,
+    totalXp: (sumRow?.total_xp ?? 0) + xpAdjustment,
     gamesPlayed: sumRow?.games_played ?? 0,
     currentStreak: stored?.current_streak ?? 0,
     longestStreak: stored?.longest_streak ?? 0,
@@ -412,6 +427,7 @@ export async function getGamification(userId: string): Promise<Gamification> {
             used: Number.isInteger(stored.hints.used) ? stored.hints.used : 0,
           }
         : undefined,
+    xpAdjustment,
     updatedAt: stored?.updated_at ?? nowISO(),
   };
 }
@@ -462,11 +478,12 @@ export async function consumeDailyHint(
   const nextUsed = used + 1;
   const hintsJson = JSON.stringify({ date: today, used: nextUsed });
   await sql`
-    INSERT INTO gamification (user_id, total_xp, games_played, current_streak, longest_streak, last_played_at, hints, updated_at)
-    VALUES (${userId}, ${stored?.total_xp ?? 0}, ${stored?.games_played ?? 0}, ${stored?.current_streak ?? 0}, ${stored?.longest_streak ?? 0}, ${stored?.last_played_at ?? null}, ${hintsJson}, ${nowISO()})
+    INSERT INTO gamification (user_id, total_xp, games_played, current_streak, longest_streak, last_played_at, hints, xp_adjustment, updated_at)
+    VALUES (${userId}, ${stored?.total_xp ?? 0}, ${stored?.games_played ?? 0}, ${stored?.current_streak ?? 0}, ${stored?.longest_streak ?? 0}, ${stored?.last_played_at ?? null}, ${hintsJson}, ${Number.isInteger(stored?.xp_adjustment) ? stored.xp_adjustment : 0}, ${nowISO()})
     ON CONFLICT (user_id)
     DO UPDATE SET
       hints = EXCLUDED.hints,
+      xp_adjustment = EXCLUDED.xp_adjustment,
       updated_at = EXCLUDED.updated_at
   `;
   return { ok: true, used: nextUsed, left: DAILY_HINT_LIMIT - nextUsed };
@@ -477,7 +494,7 @@ export async function getLeaderboard(limit = 10): Promise<LeaderboardEntry[]> {
   await initDb();
   const rows = await sql`
     SELECT u.id, u.name, u.username, u.avatar_url, u.created_at,
-           COALESCE(SUM(gp.score), 0)::int AS total_xp,
+           (COALESCE(SUM(gp.score), 0) + COALESCE(g.xp_adjustment, 0))::int AS total_xp,
            COUNT(DISTINCT gp.game_slug)::int AS games_played,
            COALESCE(g.current_streak, 0)::int AS current_streak
     FROM users u
@@ -485,10 +502,10 @@ export async function getLeaderboard(limit = 10): Promise<LeaderboardEntry[]> {
     LEFT JOIN gamification g ON g.user_id = u.id
     WHERE u.is_admin = false
       AND LOWER(u.username) NOT IN (${HIDDEN_USERNAMES.map((n) => n.toLowerCase())})
-    GROUP BY u.id, u.created_at, g.current_streak
+    GROUP BY u.id, u.created_at, g.current_streak, g.xp_adjustment
     HAVING NOT (
       COALESCE(u.hidden_from_leaderboard, false)
-      AND COALESCE(SUM(gp.score), 0) < 100
+      AND (COALESCE(SUM(gp.score), 0) + COALESCE(g.xp_adjustment, 0)) < 100
     )
     ORDER BY total_xp DESC, u.created_at ASC
     LIMIT ${limit}
@@ -508,15 +525,16 @@ export async function getUserRank(userId: string): Promise<number | null> {
   await initDb();
   const rows = await sql`
     SELECT u.id, u.created_at,
-           COALESCE(SUM(gp.score), 0)::int AS xp
+           (COALESCE(SUM(gp.score), 0) + COALESCE(g.xp_adjustment, 0))::int AS xp
     FROM users u
     LEFT JOIN game_progress gp ON gp.user_id = u.id
+    LEFT JOIN gamification g ON g.user_id = u.id
     WHERE u.is_admin = false
       AND LOWER(u.username) NOT IN (${HIDDEN_USERNAMES.map((n) => n.toLowerCase())})
-    GROUP BY u.id, u.created_at
+    GROUP BY u.id, u.created_at, g.xp_adjustment
     HAVING NOT (
       COALESCE(u.hidden_from_leaderboard, false)
-      AND COALESCE(SUM(gp.score), 0) < 100
+      AND (COALESCE(SUM(gp.score), 0) + COALESCE(g.xp_adjustment, 0)) < 100
     )
   `;
   const ranked = rows
@@ -526,4 +544,71 @@ export async function getUserRank(userId: string): Promise<number | null> {
     .map((r: any) => r.id);
   const idx = ranked.indexOf(userId);
   return idx > -1 ? idx + 1 : null;
+}
+
+// --- ADMIN USER MANAGEMENT ---
+
+/**
+ * Applies an XP bonus/penalty to a non-admin user. The adjustment is stored on
+ * the gamification row and layered on top of the score-derived total, so it
+ * survives future recomputes (new play sessions, hint consumption, etc.).
+ */
+export async function adjustUserXp(
+  userId: string,
+  delta: number
+): Promise<Gamification> {
+  await initDb();
+  const [target] = await sql`SELECT is_admin FROM users WHERE id = ${userId} LIMIT 1`;
+  if (!target) throw new Error("User not found");
+  if (target.is_admin) throw new Error("Cannot adjust an admin account");
+
+  const [sumRow] = await sql`
+    SELECT COALESCE(SUM(score), 0)::int AS total_xp,
+           COUNT(DISTINCT game_slug)::int AS games_played
+    FROM game_progress WHERE user_id = ${userId}
+  `;
+  const [stored] = await sql`
+    SELECT * FROM gamification WHERE user_id = ${userId} LIMIT 1
+  `;
+  const baseAdjustment = Number.isInteger(stored?.xp_adjustment)
+    ? (stored.xp_adjustment as number)
+    : 0;
+  const adjustment = baseAdjustment + delta;
+  const effectiveXp = (sumRow?.total_xp ?? 0) + adjustment;
+
+  const hintsJson =
+    stored?.hints && typeof stored.hints === "object"
+      ? JSON.stringify(stored.hints)
+      : JSON.stringify({ date: "", used: 0 });
+
+  await sql`
+    INSERT INTO gamification (user_id, total_xp, games_played, current_streak, longest_streak, last_played_at, hints, xp_adjustment, updated_at)
+    VALUES (${userId}, ${effectiveXp}, ${sumRow?.games_played ?? 0}, ${stored?.current_streak ?? 0}, ${stored?.longest_streak ?? 0}, ${stored?.last_played_at ?? null}, ${hintsJson}, ${adjustment}, ${nowISO()})
+    ON CONFLICT (user_id)
+    DO UPDATE SET
+      total_xp = EXCLUDED.total_xp,
+      xp_adjustment = EXCLUDED.xp_adjustment,
+      updated_at = EXCLUDED.updated_at
+  `;
+  return getGamification(userId);
+}
+
+/**
+ * Permanently removes a non-admin user and every record referencing them
+ * (game progress, gamification cascades via FK, comments, likes). Admin
+ * accounts are protected.
+ */
+export async function deleteUser(userId: string): Promise<{ ok: boolean }> {
+  await initDb();
+  const [target] = await sql`SELECT is_admin FROM users WHERE id = ${userId} LIMIT 1`;
+  if (!target) throw new Error("User not found");
+  if (target.is_admin) throw new Error("Cannot delete an admin account");
+
+  await sql`DELETE FROM game_progress WHERE user_id = ${userId}`;
+  await sql`DELETE FROM gamification WHERE user_id = ${userId}`;
+  await sql`DELETE FROM post_likes WHERE user_id = ${userId}`;
+  await sql`DELETE FROM comment_likes WHERE user_id = ${userId}`;
+  await sql`DELETE FROM comments WHERE user_id = ${userId}`;
+  await sql`DELETE FROM users WHERE id = ${userId}`;
+  return { ok: true };
 }

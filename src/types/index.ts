@@ -211,6 +211,12 @@ export interface Gamification {
    * 3-hint daily cap as every other game.
    */
   hints?: { date: string; used: number };
+  /**
+   * Admin-applied XP bonus/penalty layered on top of the score-derived total.
+   * XP is always recomputed from game progress, so this persistent offset is
+   * what keeps an admin adjustment visible in the leaderboard.
+   */
+  xpAdjustment?: number;
   updatedAt: string;
 }
 

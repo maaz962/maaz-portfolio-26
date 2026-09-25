@@ -442,7 +442,7 @@ function recomputeGamificationLocked(
   userId: string
 ): Gamification {
   const rows = (db.gameProgress ?? []).filter((p) => p.userId === userId);
-  const totalXp = rows.reduce((sum, p) => sum + (p.score || 0), 0);
+  const baseXp = rows.reduce((sum, p) => sum + (p.score || 0), 0);
   const gamesPlayed = new Set(rows.map((p) => p.gameSlug)).size;
 
   const today = dateKeyFromDaysAgo(0);
@@ -454,26 +454,29 @@ function recomputeGamificationLocked(
   const lastPlayedAt = existing?.lastPlayedAt ?? null;
 
   if (lastPlayedAt === today) {
-    // Already counted a play today â€” streak unchanged.
+    // Already counted a play today — streak unchanged.
   } else if (lastPlayedAt === yesterday) {
     currentStreak += 1;
     longestStreak = Math.max(longestStreak, currentStreak);
   } else {
-    // Missed a day (or first play ever) â€” streak restarts at 1.
+    // Missed a day (or first play ever) — streak restarts at 1.
     currentStreak = 1;
     longestStreak = Math.max(longestStreak, currentStreak);
   }
 
   const gamification: Gamification = {
     userId,
-    totalXp,
+    // Recompute the score-derived total, then carry any admin adjustment so
+    // a new play session never erases a manual XP grant/penalty.
+    totalXp: baseXp + (existing?.xpAdjustment ?? 0),
     gamesPlayed,
     currentStreak,
     longestStreak,
     lastPlayedAt: today,
     // The shared daily hint budget lives on the gamification row (one pool
-    // across all games) â€” preserve whatever was already spent today.
+    // across all games) — preserve whatever was already spent today.
     hints: existing?.hints,
+    xpAdjustment: existing?.xpAdjustment ?? 0,
     updatedAt: new Date().toISOString(),
   };
 
@@ -488,18 +491,19 @@ function recomputeGamificationLocked(
 export async function getGamification(userId: string): Promise<Gamification> {
   const db = await readDbFile();
   const rows = (db.gameProgress ?? []).filter((p) => p.userId === userId);
-  const totalXp = rows.reduce((sum, p) => sum + (p.score || 0), 0);
+  const baseXp = rows.reduce((sum, p) => sum + (p.score || 0), 0);
   const gamesPlayed = new Set(rows.map((p) => p.gameSlug)).size;
   const stored = (db.gamification ?? []).find((g) => g.userId === userId);
 
   return {
     userId,
-    totalXp,
+    totalXp: baseXp + (stored?.xpAdjustment ?? 0),
     gamesPlayed,
     currentStreak: stored?.currentStreak ?? 0,
     longestStreak: stored?.longestStreak ?? 0,
     lastPlayedAt: stored?.lastPlayedAt ?? null,
     hints: stored?.hints,
+    xpAdjustment: stored?.xpAdjustment ?? 0,
     updatedAt: stored?.updatedAt ?? new Date().toISOString(),
   };
 }
@@ -555,6 +559,7 @@ export async function consumeDailyHint(
       longestStreak: existing?.longestStreak ?? 0,
       lastPlayedAt: existing?.lastPlayedAt ?? null,
       hints: { date: today, used: nextUsed },
+      xpAdjustment: existing?.xpAdjustment ?? 0,
       updatedAt: new Date().toISOString(),
     };
 
@@ -577,8 +582,8 @@ export async function getLeaderboard(limit = 10): Promise<LeaderboardEntry[]> {
     .filter((u) => !u.isAdmin && !HIDDEN_USERNAMES.has(u.username))
     .map((u) => {
       const gp = (db.gameProgress ?? []).filter((p) => p.userId === u.id);
-      const totalXp = gp.reduce((sum, p) => sum + (p.score || 0), 0);
       const stored = (db.gamification ?? []).find((g) => g.userId === u.id);
+      const totalXp = gp.reduce((sum, p) => sum + (p.score || 0), 0) + (stored?.xpAdjustment ?? 0);
       return {
         id: u.id,
         name: u.name,
@@ -619,7 +624,8 @@ export async function getUserRank(userId: string): Promise<number | null> {
     .filter((u) => !u.isAdmin && !HIDDEN_USERNAMES.has(u.username))
     .map((u) => {
       const gp = (db.gameProgress ?? []).filter((p) => p.userId === u.id);
-      const xp = gp.reduce((sum, p) => sum + (p.score || 0), 0);
+      const stored = (db.gamification ?? []).find((g) => g.userId === u.id);
+      const xp = gp.reduce((sum, p) => sum + (p.score || 0), 0) + (stored?.xpAdjustment ?? 0);
       return {
         id: u.id,
         xp,
@@ -632,6 +638,75 @@ export async function getUserRank(userId: string): Promise<number | null> {
 
   const idx = ranked.findIndex((r) => r.id === userId);
   return idx > -1 ? idx + 1 : null;
+}
+
+// --- ADMIN USER MANAGEMENT ---
+
+/**
+ * Applies an XP bonus/penalty to a non-admin user. The adjustment is stored on
+ * the gamification row and layered on top of the score-derived total, so it
+ * survives future recomputes (new play sessions, hint consumption, etc.).
+ */
+export async function adjustUserXp(
+  userId: string,
+  delta: number
+): Promise<Gamification> {
+  return withDbLock(async () => {
+    const db = await readDbFile();
+    const target = db.users.find((u) => u.id === userId);
+    if (!target) throw new Error("User not found");
+    if (target.isAdmin) throw new Error("Cannot adjust an admin account");
+
+    const baseXp = (db.gameProgress ?? [])
+      .filter((p) => p.userId === userId)
+      .reduce((sum, p) => sum + (p.score || 0), 0);
+    const gamesPlayed = new Set(
+      (db.gameProgress ?? []).filter((p) => p.userId === userId).map((p) => p.gameSlug)
+    ).size;
+
+    const stored = (db.gamification ?? []).find((g) => g.userId === userId);
+    const adjustment = (stored?.xpAdjustment ?? 0) + delta;
+
+    const gamification: Gamification = {
+      userId,
+      totalXp: baseXp + adjustment,
+      gamesPlayed,
+      currentStreak: stored?.currentStreak ?? 0,
+      longestStreak: stored?.longestStreak ?? 0,
+      lastPlayedAt: stored?.lastPlayedAt ?? null,
+      hints: stored?.hints,
+      xpAdjustment: adjustment,
+      updatedAt: new Date().toISOString(),
+    };
+
+    db.gamification = [
+      ...(db.gamification ?? []).filter((g) => g.userId !== userId),
+      gamification,
+    ];
+    await saveDbFile(db);
+    return gamification;
+  });
+}
+
+/**
+ * Permanently removes a non-admin user and every record referencing them
+ * (game progress, gamification, comments, likes). Admin accounts are protected.
+ */
+export async function deleteUser(userId: string): Promise<{ ok: boolean }> {
+  return withDbLock(async () => {
+    const db = await readDbFile();
+    const target = db.users.find((u) => u.id === userId);
+    if (!target) throw new Error("User not found");
+    if (target.isAdmin) throw new Error("Cannot delete an admin account");
+
+    db.users = db.users.filter((u) => u.id !== userId);
+    db.gameProgress = (db.gameProgress ?? []).filter((p) => p.userId !== userId);
+    db.gamification = (db.gamification ?? []).filter((g) => g.userId !== userId);
+    db.comments = (db.comments ?? []).filter((c) => c.userId !== userId);
+    db.likes = (db.likes ?? []).filter((l) => l.userId !== userId);
+    await saveDbFile(db);
+    return { ok: true };
+  });
 }
 
 // Re-export hashes for any external consumers (kept for API parity).
