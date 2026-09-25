@@ -47,25 +47,40 @@ export function LeaderboardPanel({ currentUserId, onSignIn, onPlayGame }: Props)
   const [entries, setEntries] = useState<LeaderboardEntry[] | null>(null);
   const [myRank, setMyRank] = useState<number | null>(null);
 
-  const isInTopList =
-    currentUserId !== null &&
-    myRank !== null &&
-    entries?.some((e) => e.user.id === currentUserId);
-
   useEffect(() => {
     let cancelled = false;
-    fetch("/api/games/leaderboard")
-      .then((r) => r.json())
-      .then((d) => {
+
+    const loadLeaderboard = async () => {
+      try {
+        const res = await fetch("/api/games/leaderboard", {
+          cache: "no-store",
+        });
+        if (!res.ok) return;
+        const data = await res.json();
         if (cancelled) return;
-        setEntries(Array.isArray(d?.entries) ? d.entries : []);
-        setMyRank(d?.myRank ?? null);
-      })
-      .catch(() => {
+        setEntries(Array.isArray(data?.entries) ? data.entries : []);
+        setMyRank(data?.myRank ?? null);
+      } catch {
         if (!cancelled) setEntries([]);
-      });
+      }
+    };
+
+    const refreshLeaderboard = () => {
+      if (document.visibilityState === "visible") {
+        void loadLeaderboard();
+      }
+    };
+
+    void loadLeaderboard();
+    const interval = window.setInterval(refreshLeaderboard, 10000);
+    window.addEventListener("focus", refreshLeaderboard);
+    document.addEventListener("visibilitychange", refreshLeaderboard);
+
     return () => {
       cancelled = true;
+      window.clearInterval(interval);
+      window.removeEventListener("focus", refreshLeaderboard);
+      document.removeEventListener("visibilitychange", refreshLeaderboard);
     };
   }, [currentUserId]);
 
@@ -90,7 +105,7 @@ export function LeaderboardPanel({ currentUserId, onSignIn, onPlayGame }: Props)
             </p>
           </div>
         </div>
-        {currentUserId && isInTopList && (
+        {currentUserId && myRank !== null && (
           <span className="flex items-center gap-1.5 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
             <Medal className="h-3 w-3" />
             You are #{myRank}

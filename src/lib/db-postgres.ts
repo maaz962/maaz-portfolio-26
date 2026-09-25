@@ -567,28 +567,18 @@ export async function adjustUserXp(
            COUNT(DISTINCT game_slug)::int AS games_played
     FROM game_progress WHERE user_id = ${userId}
   `;
-  const [stored] = await sql`
-    SELECT * FROM gamification WHERE user_id = ${userId} LIMIT 1
-  `;
-  const baseAdjustment = Number.isInteger(stored?.xp_adjustment)
-    ? (stored.xp_adjustment as number)
-    : 0;
-  const adjustment = baseAdjustment + delta;
-  const effectiveXp = (sumRow?.total_xp ?? 0) + adjustment;
-
-  const hintsJson =
-    stored?.hints && typeof stored.hints === "object"
-      ? JSON.stringify(stored.hints)
-      : JSON.stringify({ date: "", used: 0 });
+  const baseXp = sumRow?.total_xp ?? 0;
+  const gamesPlayed = sumRow?.games_played ?? 0;
+  const hintsJson = JSON.stringify({ date: "", used: 0 });
 
   await sql`
     INSERT INTO gamification (user_id, total_xp, games_played, current_streak, longest_streak, last_played_at, hints, xp_adjustment, updated_at)
-    VALUES (${userId}, ${effectiveXp}, ${sumRow?.games_played ?? 0}, ${stored?.current_streak ?? 0}, ${stored?.longest_streak ?? 0}, ${stored?.last_played_at ?? null}, ${hintsJson}, ${adjustment}, ${nowISO()})
+    VALUES (${userId}, ${baseXp + delta}, ${gamesPlayed}, 0, 0, NULL, ${hintsJson}, ${delta}, ${nowISO()})
     ON CONFLICT (user_id)
     DO UPDATE SET
-      total_xp = EXCLUDED.total_xp,
-      xp_adjustment = EXCLUDED.xp_adjustment,
-      updated_at = EXCLUDED.updated_at
+      total_xp = ${baseXp} + gamification.xp_adjustment + ${delta},
+      xp_adjustment = gamification.xp_adjustment + ${delta},
+      updated_at = ${nowISO()}
   `;
   return getGamification(userId);
 }

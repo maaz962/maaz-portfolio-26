@@ -23,8 +23,9 @@ let writePromise: Promise<void> = Promise.resolve();
 // Neon's tagged template returns a wide union type; narrow to Promise<any[]>.
 type DbTag = (strings: TemplateStringsArray, ...values: any[]) => Promise<any[]>;
 
+const connectionString = getPgConnectionString();
 const sql = (
-  process.env.DATABASE_URL ? neon(process.env.DATABASE_URL) : null
+  connectionString ? neon(connectionString) : null
 ) as unknown as DbTag;
 let initPromise: Promise<void> | null = null;
 

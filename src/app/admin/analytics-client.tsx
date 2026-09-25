@@ -9,6 +9,18 @@ import {
 import type { VisitorLog, VisitorStats } from "@/types/tracking";
 import type { User, LeaderboardEntry } from "@/types";
 
+type DeletableUser = Pick<User, "id" | "name" | "username"> &
+  Partial<Pick<User, "isAdmin">>;
+
+async function getResponseError(res: Response, fallback: string): Promise<string> {
+  try {
+    const data = await res.json();
+    return typeof data?.error === "string" ? data.error : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
 export function AnalyticsClient() {
   const [stats, setStats] = useState<VisitorStats | null>(null);
   const [logs, setLogs] = useState<VisitorLog[]>([]);
@@ -17,21 +29,22 @@ export function AnalyticsClient() {
   const [loading, setLoading] = useState(false);
   const [expandedLog, setExpandedLog] = useState<string | null>(null);
   const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
   const [busy, setBusy] = useState<string | null>(null);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
     setError("");
     try {
-      const res = await fetch("/api/track");
+      const res = await fetch("/api/track", { cache: "no-store" });
       if (!res.ok) {
-        setError("Access denied");
+        setError(await getResponseError(res, "Failed to load data"));
         return;
       }
       const data = await res.json();
       setStats(data.stats);
       setLogs(data.logs);
-      setUsers(data.users || []);
+      setUsers(Array.isArray(data.users) ? data.users : []);
     } catch {
       setError("Failed to load data");
     } finally {
@@ -41,11 +54,18 @@ export function AnalyticsClient() {
 
   const fetchLeaderboard = useCallback(async () => {
     try {
-      const res = await fetch("/api/games/leaderboard");
-      if (!res.ok) return;
+      const res = await fetch("/api/games/leaderboard?admin=1", {
+        cache: "no-store",
+      });
+      if (!res.ok) {
+        setError(await getResponseError(res, "Failed to load leaderboard"));
+        return;
+      }
       const data = await res.json();
-      setLeaderboard(data.entries || []);
-    } catch {}
+      setLeaderboard(Array.isArray(data.entries) ? data.entries : []);
+    } catch {
+      setError("Failed to load leaderboard");
+    }
   }, []);
 
   useEffect(() => {
@@ -56,36 +76,71 @@ export function AnalyticsClient() {
   const adjustXp = useCallback(async (id: string, delta: number) => {
     if (busy) return;
     setBusy(`${id}:xp`);
+    setError("");
+    setNotice("");
     try {
       const res = await fetch(`/api/admin/users/${id}/xp`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ delta }),
       });
-      if (res.ok) await fetchLeaderboard();
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setError(
+          typeof data?.error === "string"
+            ? data.error
+            : "Failed to update XP"
+        );
+        return;
+      }
+
+      setLeaderboard((current) =>
+        current.map((entry) =>
+          entry.user.id === id && Number.isInteger(data.totalXp)
+            ? { ...entry, totalXp: data.totalXp }
+            : entry
+        )
+      );
+      setNotice(
+        `XP updated by ${delta > 0 ? "+" : ""}${delta}.`
+      );
+      await fetchLeaderboard();
     } catch {
+      setError("Failed to update XP");
     } finally {
       setBusy(null);
     }
   }, [busy, fetchLeaderboard]);
 
-  const removeUser = useCallback(async (entry: LeaderboardEntry) => {
-    if (busy) return;
+  const removeUser = useCallback(async (user: DeletableUser) => {
+    if (busy || user.isAdmin) return;
     if (
       !window.confirm(
-        `Delete @${entry.user.username} and all of their progress, comments and likes? This cannot be undone.`
+        `Delete @${user.username} and all of their progress, comments and likes? This cannot be undone.`
       )
     ) {
       return;
     }
-    setBusy(`${entry.user.id}:del`);
+    setBusy(`${user.id}:del`);
+    setError("");
+    setNotice("");
     try {
-      const res = await fetch(`/api/admin/users/${entry.user.id}`, { method: "DELETE" });
-      if (res.ok) {
-        await fetchLeaderboard();
-        await fetchData();
+      const res = await fetch(`/api/admin/users/${user.id}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) {
+        setError(await getResponseError(res, "Failed to delete user"));
+        return;
       }
+
+      setUsers((current) => current.filter((item) => item.id !== user.id));
+      setLeaderboard((current) =>
+        current.filter((entry) => entry.user.id !== user.id)
+      );
+      setNotice(`@${user.username} was deleted.`);
+      await Promise.all([fetchLeaderboard(), fetchData()]);
     } catch {
+      setError("Failed to delete user");
     } finally {
       setBusy(null);
     }
@@ -107,7 +162,10 @@ export function AnalyticsClient() {
           </div>
           <div className="flex items-center gap-2">
             <button
-              onClick={fetchData}
+              onClick={() => {
+                fetchData();
+                fetchLeaderboard();
+              }}
               disabled={loading}
               className="flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-2 text-xs font-medium text-muted transition-colors hover:text-foreground"
             >
@@ -118,6 +176,9 @@ export function AnalyticsClient() {
         </div>
 
         {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
+        {notice && !error && (
+          <p className="text-sm text-green-600 dark:text-green-400">{notice}</p>
+        )}
 
         {/* Stats Grid */}
         {stats && (
@@ -332,7 +393,26 @@ export function AnalyticsClient() {
                     <span className="text-mono text-[0.65rem] text-muted/60">
                       {new Date(u.createdAt).toLocaleDateString()}
                     </span>
-                    <span className="text-mono text-[0.65rem] text-muted/60">{u.id}</span>
+                    <span className="hidden max-w-36 truncate text-mono text-[0.65rem] text-muted/60 sm:inline">
+                      {u.id}
+                    </span>
+                    {u.isAdmin ? (
+                      <span className="text-[0.65rem] text-muted/60">Protected</span>
+                    ) : (
+                      <button
+                        onClick={() => removeUser(u)}
+                        disabled={busy !== null}
+                        className="flex h-7 items-center gap-1.5 rounded-lg border border-red-500/30 bg-red-500/10 px-2.5 text-[0.65rem] font-medium text-red-500 transition-colors hover:bg-red-500/20 disabled:opacity-50"
+                        title={`Delete @${u.username}`}
+                      >
+                        {busy === `${u.id}:del` ? (
+                          <Loader2 className="h-3 w-3 animate-spin" />
+                        ) : (
+                          <Trash2 className="h-3 w-3" />
+                        )}
+                        Delete
+                      </button>
+                    )}
                   </div>
                 </div>
               ))}
@@ -347,7 +427,7 @@ export function AnalyticsClient() {
               <h3 className="flex items-center gap-2 text-sm font-semibold text-foreground">
                 <Trophy className="h-4 w-4 text-primary" /> Games Leaderboard Manager
               </h3>
-              <span className="text-xs text-muted">Adjust any player&apos;s XP or remove them</span>
+              <span className="text-xs text-muted">Adjust player XP or remove them</span>
             </div>
             <div className="space-y-2">
               {leaderboard.map((entry) => {
@@ -398,7 +478,7 @@ export function AnalyticsClient() {
                           </button>
                         ))}
                         <button
-                          onClick={() => removeUser(entry)}
+                          onClick={() => removeUser(entry.user)}
                           disabled={busy !== null}
                           className="ml-1 flex h-6 w-6 items-center justify-center rounded-lg border border-red-500/30 bg-red-500/10 text-red-500 transition-colors hover:bg-red-500/20 disabled:opacity-50"
                           title={`Delete @${entry.user.username}`}

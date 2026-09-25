@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useCallback, useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -394,7 +394,7 @@ function GameCard({
 }
 
 export default function GamesPage() {
-  const { user, loading: authLoading, logout } = useAuth();
+  const { user, loading: authLoading, logout, refresh } = useAuth();
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [pendingSlug, setPendingSlug] = useState<string | null>(null);
   const [progress, setProgress] = useState<Record<string, GameProgress>>({});
@@ -406,24 +406,53 @@ export default function GamesPage() {
   const currentUser = user;
   const gamesAuthed = Boolean(user) && !authLoading;
 
-  useEffect(() => {
+  const loadProgress = useCallback(async () => {
     if (!gamesAuthed || !currentUser) {
       setProgress({});
       setGamification(null);
       return;
     }
-    fetch("/api/games/progress")
-      .then((r) => r.json())
-      .then((d) => {
-        if (d?.progress && typeof d.progress === "object") {
-          setProgress(d.progress);
-        }
-        if (d?.gamification && typeof d.gamification === "object") {
-          setGamification(d.gamification);
-        }
-      })
-      .catch(() => {});
-  }, [gamesAuthed, currentUser]);
+
+    try {
+      const res = await fetch("/api/games/progress", {
+        cache: "no-store",
+      });
+      if (res.status === 401) {
+        setProgress({});
+        setGamification(null);
+        await refresh();
+        return;
+      }
+      if (!res.ok) return;
+
+      const data = await res.json();
+      if (data?.progress && typeof data.progress === "object") {
+        setProgress(data.progress);
+      }
+      if (data?.gamification && typeof data.gamification === "object") {
+        setGamification(data.gamification);
+      }
+    } catch {}
+  }, [gamesAuthed, currentUser, refresh]);
+
+  useEffect(() => {
+    const refreshProgress = () => {
+      if (document.visibilityState === "visible") {
+        void loadProgress();
+      }
+    };
+
+    void loadProgress();
+    const interval = window.setInterval(refreshProgress, 15000);
+    window.addEventListener("focus", refreshProgress);
+    document.addEventListener("visibilitychange", refreshProgress);
+
+    return () => {
+      window.clearInterval(interval);
+      window.removeEventListener("focus", refreshProgress);
+      document.removeEventListener("visibilitychange", refreshProgress);
+    };
+  }, [loadProgress]);
 
   const handleLogout = async () => {
     await logout();

@@ -34,7 +34,7 @@ export async function getSessionUser(): Promise<User | null> {
 
   try {
     const fresh = await findUserById(claims.sub);
-    if (fresh) return fresh;
+    return fresh;
   } catch {
     // Transient lookup failure — fall through to token claims.
   }
