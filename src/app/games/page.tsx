@@ -2,6 +2,7 @@
 
 import { useCallback, useState, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
@@ -32,6 +33,18 @@ import type { GameProgress, GamificationSummary } from "@/types";
  * cards show the game in action without a single image request (lighter than
  * any GIF/video). Coming-soon games just show their mascot over the gradient.
  */
+
+// Brand logos dropped on the game cards' mascot corner (see /public/icon).
+const LOGO_SRC: Record<string, string> = {
+  "html-hero": "/icon/html3.png",
+  "flexbox-zoo": "/icon/css%202.png",
+  "grid-garden": "/icon/css%202.png",
+  "animation-arena": "/icon/css%202.png",
+  "js-detective": "/icon/js3.png",
+  "php-playground": "/icon/php.png",
+  "query-quest": "/icon/mysql.png",
+};
+
 function GamePreview({ game }: { game: GameMeta }) {
   if (game.comingSoon) {
     return (
@@ -43,6 +56,8 @@ function GamePreview({ game }: { game: GameMeta }) {
       </span>
     );
   }
+
+  const logoSrc = LOGO_SRC[game.slug];
 
   return (
     <div className="h-full w-full">
@@ -209,9 +224,19 @@ function GamePreview({ game }: { game: GameMeta }) {
       </div>
       <span
         aria-hidden="true"
-        className="absolute bottom-1.5 right-3 text-5xl opacity-80 drop-shadow-lg transition-transform duration-300 group-hover:scale-110"
+        className="absolute bottom-1.5 right-3 flex h-12 items-center justify-center text-5xl opacity-80 transition-transform duration-300 group-hover:scale-110"
       >
-        {game.animal}
+        {logoSrc ? (
+          <Image
+            src={logoSrc}
+            alt=""
+            width={48}
+            height={48}
+            className="h-full w-auto object-contain"
+          />
+        ) : (
+          game.animal
+        )}
       </span>
     </div>
   );
