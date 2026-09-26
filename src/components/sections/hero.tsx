@@ -25,7 +25,7 @@ export function Hero() {
     >
       <AmbientBackground />
 
-      <Container className="relative grid gap-12 py-16 md:grid-cols-[1.15fr_0.85fr] md:items-center md:py-20">
+      <Container className="relative grid gap-12 pt-4 pb-16 md:grid-cols-[1.15fr_0.85fr] md:items-center md:pt-8 md:pb-24">
         <FadeIn>
           {/* Micro status indicator — small, quiet, no glow abuse. */}
           <div className="inline-flex items-center gap-2 rounded-full border border-border bg-background-secondary px-3 py-1 text-xs text-muted">

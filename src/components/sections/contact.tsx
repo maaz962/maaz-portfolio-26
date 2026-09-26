@@ -167,7 +167,7 @@ export function Contact() {
     <Section
       id="contact"
       aria-label="Contact"
-      className="bg-noise relative overflow-hidden"
+      className="bg-noise relative overflow-hidden pb-8 md:pb-12"
     >
       {/* Background glow orb */}
       <div
