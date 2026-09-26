@@ -22,6 +22,7 @@ import { SectionGlow } from "@/components/ui/section-glow";
 import { Container } from "@/components/ui/container";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { buttonStyles } from "@/components/ui/button";
+import { StatusBadge } from "@/components/ui/status-badge";
 import { profile, socialLinks } from "@/data/profile";
 import { FadeIn } from "@/components/animations/fade-in";
 import { takePendingContactSubject } from "@/components/layout/section-navigation-context";
@@ -189,7 +190,7 @@ export function Contact() {
           <FadeIn delay={0.05}>
             <div className="space-y-8">
               <div className="space-y-4">
-                <h3 className="font-display text-xl font-semibold text-foreground md:text-2xl">
+                <h3 className="text-xl text-foreground">
                   Let&apos;s Build Something Together
                 </h3>
                 <p className="max-w-md text-[15px] leading-relaxed text-muted">
@@ -198,19 +199,7 @@ export function Contact() {
               </div>
 
               {/* Status Badge */}
-              <div className="inline-flex items-center gap-2 rounded-full border border-border bg-background-secondary px-3 py-1 text-xs text-muted">
-                <span className="relative flex h-1.5 w-1.5">
-                  <span
-                    aria-hidden="true"
-                    className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400/60"
-                  />
-                  <span
-                    aria-hidden="true"
-                    className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-400"
-                  />
-                </span>
-                {profile.status}
-              </div>
+              <StatusBadge label={profile.status} />
 
               {/* Contact details */}
               <div className="space-y-4 pt-4">
@@ -223,7 +212,7 @@ export function Contact() {
                       <Mail className="h-[18px] w-[18px]" strokeWidth={1.75} />
                     </span>
                     <span className="min-w-0">
-                      <span className="block text-xs uppercase tracking-wider text-muted">
+                      <span className="text-eyebrow">
                         Email
                       </span>
                       <span className="block truncate font-medium text-foreground">
@@ -252,7 +241,7 @@ export function Contact() {
                     <MapPin className="h-[18px] w-[18px]" strokeWidth={1.75} />
                   </span>
                   <div>
-                    <p className="text-xs uppercase tracking-wider text-muted">
+                    <p className="text-eyebrow">
                       Location
                     </p>
                     <p className="font-medium text-foreground">{profile.location}</p>

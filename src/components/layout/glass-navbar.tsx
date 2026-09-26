@@ -36,7 +36,7 @@ return (
       >
         <nav
           aria-label="Primary"
-          className="glass-nav flex h-[var(--nav-h)] w-fit max-w-[1100px] items-center justify-between gap-2 rounded-2xl border border-white/10 bg-background/70 px-2 shadow-lg shadow-black/10 backdrop-blur-xl sm:px-3 dark:border-white/10 dark:bg-background/70 dark:shadow-black/20"
+          className="glass-nav flex h-[var(--nav-h)] w-fit max-w-[1100px] items-center justify-between gap-1.5 rounded-2xl border border-white/10 bg-background/70 px-2 shadow-lg shadow-black/10 backdrop-blur-xl sm:px-3 dark:border-white/10 dark:bg-background/70 dark:shadow-black/20"
         >
           <a
             href="/#top"
@@ -67,7 +67,7 @@ return (
                   key={link.href}
                   href={link.href}
                   aria-current={isActive ? "true" : undefined}
-                  className="relative flex h-9 items-center gap-1.5 whitespace-nowrap rounded-full bg-primary px-4 text-[15px] font-semibold text-primary-foreground shadow-glow transition-all hover:brightness-110 motion-safe:hover:-translate-y-px"
+                  className="relative flex h-9 items-center gap-1.5 whitespace-nowrap rounded-full bg-primary px-3.5 text-sm font-semibold text-primary-foreground shadow-glow transition-all hover:brightness-110 motion-safe:hover:-translate-y-px"
                 >
                   <Gamepad2 className="h-4 w-4" strokeWidth={2} />
                   {link.label}
@@ -83,7 +83,7 @@ return (
                     }
                   }}
                   aria-current={isActive ? "true" : undefined}
-                  className="relative flex h-9 items-center whitespace-nowrap rounded-full px-3 text-[15px] transition-colors"
+                  className="relative flex h-9 items-center whitespace-nowrap rounded-full px-2.5 text-sm transition-colors"
                 >
                   {isActive && (
                     <motion.span

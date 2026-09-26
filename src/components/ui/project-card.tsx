@@ -40,11 +40,11 @@ export function ProjectCard({
 
       <div className={cn("flex flex-1 flex-col p-6", featured && "lg:p-8")}>
         <div className="flex flex-wrap items-center gap-2">
-          <Chip variant="primary" className="uppercase tracking-wide">
+          <Chip variant="primary">
             {project.category}
           </Chip>
           {featured ? (
-            <Chip variant="accent" className="uppercase tracking-wide">
+            <Chip variant="accent">
               Featured
             </Chip>
           ) : null}

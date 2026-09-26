@@ -57,7 +57,7 @@ export function Skills() {
         </FadeIn>
 
         <FadeIn delay={0.05}>
-          <div className="mt-10 flex flex-wrap items-center gap-x-6 gap-y-2.5 text-xs text-muted">
+          <div className="mt-14 flex flex-wrap items-center gap-x-6 gap-y-2.5 text-xs text-muted">
             {legendItems.map(({ key, label, description }) => (
               <span key={key} className="inline-flex items-center gap-2">
                 <span
@@ -71,7 +71,7 @@ export function Skills() {
           </div>
         </FadeIn>
 
-        <div className="mt-12 space-y-12">
+        <div className="mt-14 space-y-12">
           {skillCategoryOrder.map((category, groupIndex) => {
             const meta = skillCategoryMeta[category];
             const items = skillsByCategory(category);
@@ -92,11 +92,11 @@ export function Skills() {
                   <StaggerFadeIn className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                     {items.map((skill) => (
                       <StaggerItem key={skill.name}>
-                        <div className="flex items-center justify-between gap-3 rounded-xl border border-border bg-card px-4 py-3 shadow-card transition-colors hover:border-primary/30">
+                        <div className="flex items-center justify-between gap-3 rounded-xl border border-border bg-card px-4 py-3 shadow-card transition-colors hover:border-primary/35">
                           <span className="text-sm font-medium text-foreground">
                             {skill.name}
                           </span>
-                          <Chip className="shrink-0 gap-1.5 uppercase tracking-wide">
+                          <Chip className="shrink-0 gap-1.5">
                             <span
                               aria-hidden
                               className={cn(

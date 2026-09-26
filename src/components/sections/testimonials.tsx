@@ -38,56 +38,56 @@ export function Testimonials() {
 
             <StaggerFadeIn className="grid gap-4 sm:grid-cols-2">
               <StaggerItem>
-                <div className="rounded-xl border border-border bg-card p-5 shadow-card transition-colors hover:border-primary/20">
+                <div className="rounded-2xl border border-border bg-card p-6 shadow-card transition-colors hover:border-primary/35">
                   <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-primary/20 bg-primary/5 text-primary">
                     <Users className="h-[18px] w-[18px]" strokeWidth={1.75} />
                   </div>
                   <h4 className="mt-4 text-sm font-semibold text-foreground">
                     Club Leadership
                   </h4>
-                  <p className="mt-1 text-xs text-muted leading-relaxed">
+                  <p className="mt-1 text-[15px] text-muted leading-relaxed">
                     Senior Vice President at UAF Freelancing Club. Managed operations and coordinated flood relief and campus walks.
                   </p>
                 </div>
               </StaggerItem>
 
               <StaggerItem>
-                <div className="rounded-xl border border-border bg-card p-5 shadow-card transition-colors hover:border-primary/20">
+                <div className="rounded-2xl border border-border bg-card p-6 shadow-card transition-colors hover:border-primary/35">
                   <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-accent/25 bg-accent/5 text-accent">
                     <BookOpen className="h-[18px] w-[18px]" strokeWidth={1.75} />
                   </div>
                   <h4 className="mt-4 text-sm font-semibold text-foreground">
                     Technical Teaching
                   </h4>
-                  <p className="mt-1 text-xs text-muted leading-relaxed">
+                  <p className="mt-1 text-[15px] text-muted leading-relaxed">
                     Instructed a Basic Web Development course through the freelancing club, helping students learn code fundamentals.
                   </p>
                 </div>
               </StaggerItem>
 
               <StaggerItem>
-                <div className="rounded-xl border border-border bg-card p-5 shadow-card transition-colors hover:border-primary/20">
+                <div className="rounded-2xl border border-border bg-card p-6 shadow-card transition-colors hover:border-primary/35">
                   <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-primary/20 bg-primary/5 text-primary">
                     <Code2 className="h-[18px] w-[18px]" strokeWidth={1.75} />
                   </div>
                   <h4 className="mt-4 text-sm font-semibold text-foreground">
                     Verified Builds
                   </h4>
-                  <p className="mt-1 text-xs text-muted leading-relaxed">
-                    Contributed to the STO UAF website and developed stand alone mobile applications like Cyber Scam Checker.
+                  <p className="mt-1 text-[15px] text-muted leading-relaxed">
+                    Contributed to the STO UAF website and developed standalone mobile applications like Cyber Scam Checker.
                   </p>
                 </div>
               </StaggerItem>
 
               <StaggerItem>
-                <div className="rounded-xl border border-border bg-card p-5 shadow-card transition-colors hover:border-primary/20">
+                <div className="rounded-2xl border border-border bg-card p-6 shadow-card transition-colors hover:border-primary/35">
                   <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-accent/25 bg-accent/5 text-accent">
                     <GraduationCap className="h-[18px] w-[18px]" strokeWidth={1.75} />
                   </div>
                   <h4 className="mt-4 text-sm font-semibold text-foreground">
                     Academic Base
                   </h4>
-                  <p className="mt-1 text-xs text-muted leading-relaxed">
+                  <p className="mt-1 text-[15px] text-muted leading-relaxed">
                     BS Computer Science candidate at the University of Agriculture Faisalabad (2023 – 2027).
                   </p>
                 </div>
@@ -97,7 +97,7 @@ export function Testimonials() {
 
           {/* Right Column: Verified Testimonial Placeholder */}
           <FadeIn delay={0.1} className="flex h-full flex-col">
-            <div className="group relative flex flex-1 flex-col justify-between rounded-2xl border border-dashed border-border bg-card/60 p-8 text-center shadow-card transition-all duration-300 hover:border-primary/30">
+            <div className="group relative flex flex-1 flex-col justify-between rounded-2xl border border-dashed border-border bg-card/60 p-8 text-center shadow-card transition-all duration-300 hover:border-primary/35">
               <div aria-hidden="true" className="bg-grid absolute inset-0 opacity-10" />
 
               <div className="relative z-10 flex flex-1 flex-col items-center justify-center py-6">
@@ -122,9 +122,7 @@ export function Testimonials() {
                     <h5 className="text-xs font-semibold text-foreground">
                       Client & Collaborator Reviews
                     </h5>
-                    <p className="text-xs text-muted tracking-wider uppercase">
-                      Pending Collection
-                    </p>
+                    <p className="text-eyebrow">Pending Collection</p>
                   </div>
                 </div>
               </div>

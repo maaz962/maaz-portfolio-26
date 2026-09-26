@@ -93,7 +93,7 @@ export function Experience() {
                   <span
                     aria-hidden
                     className={cn(
-                      "absolute left-3 top-2 flex h-6 w-6 items-center justify-center rounded-full border md:left-[1.125rem]",
+                      "absolute left-1.5 top-2 flex h-6 w-6 items-center justify-center rounded-full border md:left-3",
                       entry.featured
                         ? "border-primary bg-primary/15 shadow-glow"
                         : "border-border bg-card"
@@ -112,7 +112,7 @@ export function Experience() {
                     {entry.featured ? (
                       <Chip
                         variant="primary"
-                        className="mt-2 uppercase tracking-wide"
+                        className="mt-2"
                       >
                         Current
                       </Chip>
@@ -121,10 +121,10 @@ export function Experience() {
 
                   <div
                     className={cn(
-                      "rounded-2xl border p-6 md:p-7",
+                      "rounded-2xl border p-6 md:p-8 transition-colors hover:border-primary/35",
                       entry.featured
                         ? "border-primary/35 bg-card shadow-glow"
-                        : "border-border bg-card/90"
+                        : "border-border bg-card shadow-card"
                     )}
                   >
                     <header>

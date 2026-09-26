@@ -82,7 +82,7 @@ export function Projects() {
 
         <FadeIn delay={0.05}>
           <div
-            className="mt-10 flex flex-wrap gap-2"
+            className="mt-14 flex flex-wrap gap-2"
             aria-label="Filter projects by technology"
           >
             <FilterTab
@@ -124,7 +124,7 @@ export function Projects() {
               initial="hidden"
               animate="visible"
               exit="exit"
-              className="grid gap-6 md:grid-cols-2 xl:grid-cols-3"
+              className="grid gap-6 md:grid-cols-2 lg:grid-cols-3"
             >
               {filteredProjects.length > 0 ? (
                 filteredProjects.map((project) => (
@@ -161,7 +161,7 @@ function GamesTeaserCard() {
   return (
     <Link
       href="/games"
-      className="group mt-12 flex flex-col gap-6 overflow-hidden rounded-2xl border border-border bg-card shadow-card transition-all duration-300 hover:border-primary/35 hover:shadow-glow sm:flex-row sm:items-stretch sm:p-6 lg:p-8"
+      className="group mt-14 flex flex-col gap-6 overflow-hidden rounded-2xl border border-border bg-card shadow-card transition-all duration-300 hover:border-primary/35 hover:shadow-glow sm:flex-row sm:items-stretch sm:p-6 lg:p-8"
     >
       <div
         aria-hidden="true"
@@ -195,7 +195,7 @@ function GamesTeaserCard() {
       </div>
 
       <div className="flex flex-1 flex-col p-6 sm:p-0">
-        <Chip variant="primary" className="self-start uppercase tracking-wide">
+        <Chip variant="primary" className="self-start">
           Games
         </Chip>
         <h3 className="mt-4 text-xl text-foreground">

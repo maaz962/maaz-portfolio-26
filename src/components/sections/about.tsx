@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Briefcase, Check, Copy, GraduationCap } from "lucide-react";
+import { ArrowRight, Briefcase, Check, Copy, GraduationCap } from "lucide-react";
 import { aboutContent } from "@/data/about";
 import { profile } from "@/data/profile";
 import { Section } from "@/components/ui/section";
@@ -63,8 +63,8 @@ export function About() {
       className="bg-noise relative overflow-hidden"
     >
       <SectionGlow
-        primaryClassName="top-20 bg-primary/20"
-        accentClassName="bg-accent/15"
+        primaryClassName="top-20 bg-primary/15"
+        accentClassName="bg-accent/10"
       />
 
       <Container className="relative">
@@ -85,7 +85,7 @@ export function About() {
 
               <div className="grid gap-6 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <h3 className="text-lg text-foreground">
+                  <h3 className="text-xl text-foreground">
                     {aboutContent.identity.title}
                   </h3>
                   <p className="text-[15px] leading-relaxed text-muted">
@@ -94,15 +94,17 @@ export function About() {
                 </div>
 
                 <div className="space-y-2">
-                  <h3 className="text-lg text-foreground">
+                  <h3 className="text-xl text-foreground">
                     {aboutContent.learning.title}
                   </h3>
                   <ul className="space-y-1.5 text-[15px] text-muted">
                     {aboutContent.learning.items.map((item) => (
                       <li key={item} className="flex gap-2">
-                        <span className="text-primary" aria-hidden>
-                          →
-                        </span>
+                        <ArrowRight
+                          className="mt-1 h-3.5 w-3.5 shrink-0 text-primary"
+                          aria-hidden="true"
+                          strokeWidth={2}
+                        />
                         {item}
                       </li>
                     ))}
@@ -111,7 +113,7 @@ export function About() {
               </div>
 
               <div className="rounded-2xl border border-border bg-background-secondary/50 p-6">
-                <h3 className="text-lg text-foreground">
+                <h3 className="text-xl text-foreground">
                   {aboutContent.builds.title}
                 </h3>
                 <ul className="mt-4 space-y-3">
@@ -168,8 +170,8 @@ export function About() {
                 </pre>
               </TerminalWindow>
 
-              <div className="rounded-2xl border border-border bg-card p-5 shadow-card transition-colors">
-                <h3 className="text-sm font-medium text-foreground">
+              <div className="rounded-2xl border border-border bg-card p-6 shadow-card transition-colors hover:border-primary/35 md:p-8">
+                <h3 className="text-sm font-semibold text-foreground">
                   {aboutContent.aside.title}
                 </h3>
                 <ul className="mt-4 space-y-3">

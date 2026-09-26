@@ -6,6 +6,7 @@ import { Container } from "@/components/ui/container";
 import { buttonStyles, iconLinkStyles } from "@/components/ui/button";
 import { ProfilePhoto } from "@/components/ui/profile-photo";
 import { AmbientBackground } from "@/components/animations/ambient-background";
+import { StatusBadge } from "@/components/ui/status-badge";
 import { FadeIn } from "@/components/animations/fade-in";
 import { useSectionNavigation } from "@/components/layout/section-navigation-context";
 
@@ -28,19 +29,7 @@ export function Hero() {
       <Container className="relative grid gap-12 pt-4 pb-16 md:grid-cols-[1.15fr_0.85fr] md:items-center md:pt-8 md:pb-24">
         <FadeIn>
           {/* Micro status indicator — small, quiet, no glow abuse. */}
-          <div className="inline-flex items-center gap-2 rounded-full border border-border bg-background-secondary px-3 py-1 text-xs text-muted">
-            <span className="relative flex h-1.5 w-1.5">
-              <span
-                aria-hidden="true"
-                className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400/60"
-              />
-              <span
-                aria-hidden="true"
-                className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-400"
-              />
-            </span>
-            {profile.status}
-          </div>
+          <StatusBadge label={profile.status} />
 
           <h1 className="mt-5 text-[clamp(2.25rem,5vw,3.75rem)] text-foreground">
             {profile.name}

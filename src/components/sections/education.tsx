@@ -48,7 +48,7 @@ export function Education() {
                 <span
                   aria-hidden
                   className={cn(
-                    "absolute left-3 top-1.5 flex h-6 w-6 items-center justify-center rounded-full border md:left-[1.125rem]",
+                    "absolute left-1.5 top-1.5 flex h-6 w-6 items-center justify-center rounded-full border md:left-3",
                     entry.current
                       ? "border-primary bg-primary/15 shadow-glow"
                       : "border-border bg-card"
@@ -64,10 +64,10 @@ export function Education() {
 
                 <div
                   className={cn(
-                    "rounded-2xl border p-6 transition-colors",
+                    "rounded-2xl border p-6 md:p-8 transition-colors hover:border-primary/35",
                     entry.current
-                      ? "border-primary/40 bg-card shadow-glow"
-                      : "border-border bg-card/80"
+                      ? "border-primary/35 bg-card shadow-glow"
+                      : "border-border bg-card shadow-card"
                   )}
                 >
                   <div className="flex flex-wrap items-start justify-between gap-3">
@@ -85,7 +85,7 @@ export function Education() {
                       <div>
                         <h3
                           id={entry.current ? "education-heading" : undefined}
-                          className="text-lg text-foreground md:text-xl"
+                          className="text-xl text-foreground"
                         >
                           {entry.degree}
                         </h3>
