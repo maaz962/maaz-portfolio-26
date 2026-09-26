@@ -3,6 +3,7 @@
 import { ArrowRight } from "lucide-react";
 import { services } from "@/data/services";
 import { Section } from "@/components/ui/section";
+import { SectionGlow } from "@/components/ui/section-glow";
 import { Container } from "@/components/ui/container";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { Chip } from "@/components/ui/chip";
@@ -30,14 +31,9 @@ export function Services() {
       aria-label="Services"
       className="bg-noise relative overflow-hidden"
     >
-      {/* Background Orbs */}
-      <div
-        aria-hidden="true"
-        className="glow-orb -left-20 bottom-10 h-64 w-64 bg-accent/10"
-      />
-      <div
-        aria-hidden="true"
-        className="glow-orb -right-10 top-20 h-56 w-56 bg-primary/15"
+      <SectionGlow
+        primaryClassName="-right-10 top-20 h-56 w-56 bg-primary/15"
+        accentClassName="-left-20 bottom-10 h-64 w-64 bg-accent/10"
       />
 
       <Container className="relative">

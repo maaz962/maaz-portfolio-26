@@ -8,6 +8,7 @@ import {
   skills,
 } from "@/data/skills";
 import { Section } from "@/components/ui/section";
+import { SectionGlow } from "@/components/ui/section-glow";
 import { Container } from "@/components/ui/container";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { Chip } from "@/components/ui/chip";
@@ -40,8 +41,13 @@ const legendItems: {
 
 export function Skills() {
   return (
-    <Section id="skills" aria-label="Skills">
-      <Container>
+    <Section
+      id="skills"
+      aria-label="Skills"
+      className="bg-noise relative overflow-hidden"
+    >
+      <SectionGlow />
+      <Container className="relative">
         <FadeIn>
           <SectionHeading
             eyebrow="Toolbox"

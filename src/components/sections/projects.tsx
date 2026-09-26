@@ -15,11 +15,13 @@ import {
 import { Container } from "@/components/ui/container";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { Section } from "@/components/ui/section";
+import { SectionGlow } from "@/components/ui/section-glow";
 import { ProjectCard } from "@/components/ui/project-card";
 import { Chip } from "@/components/ui/chip";
 import { buttonStyles } from "@/components/ui/button";
 import { FadeIn } from "@/components/animations/fade-in";
 import { games } from "@/data/games";
+import { GamePreview } from "@/components/games/game-preview";
 import { cn } from "@/lib/utils";
 
 type ActiveFilter = "all" | ProjectFilterCategory;
@@ -64,9 +66,9 @@ export function Projects() {
       aria-label="Projects"
       className="bg-noise relative overflow-hidden"
     >
-      <div
-        aria-hidden
-        className="glow-orb -right-20 top-10 h-56 w-56 bg-primary/15"
+      <SectionGlow
+        primaryClassName="-right-20 top-10 h-56 w-56 bg-primary/15"
+        accentClassName="-left-24 bottom-8 h-48 w-48 bg-accent/10"
       />
 
       <Container className="relative">
@@ -155,12 +157,6 @@ export function Projects() {
   );
 }
 
-const gameTeaserTiles = games.map((game) => ({
-  slug: game.slug,
-  emoji: game.animal,
-  color: game.color,
-}));
-
 function GamesTeaserCard() {
   return (
     <Link
@@ -171,17 +167,29 @@ function GamesTeaserCard() {
         aria-hidden="true"
         className="grid grid-cols-3 gap-2 p-6 sm:w-56 sm:grid-cols-2 sm:p-0"
       >
-        {gameTeaserTiles.map((tile, index) => (
+        {games.map((game, index) => (
           <span
-            key={tile.slug}
+            key={game.slug}
             className={cn(
-              "flex h-16 items-center justify-center rounded-xl border border-white/10 bg-gradient-to-br text-3xl transition-transform duration-300 group-hover:scale-105",
-              index === gameTeaserTiles.length - 1 &&
-                "col-span-3 sm:col-span-2",
-              tile.color
+              "relative h-20 overflow-hidden rounded-xl border border-white/10 bg-gradient-to-br transition-transform duration-300 group-hover:scale-105",
+              games.length - 1 === index && "col-span-3 sm:col-span-2",
+              game.color
             )}
           >
-            <span aria-hidden="true">{tile.emoji}</span>
+            {game.comingSoon ? (
+              <span
+                aria-hidden="true"
+                className="flex h-full w-full items-center justify-center text-3xl"
+              >
+                {game.animal}
+              </span>
+            ) : (
+              <GamePreview
+                game={game}
+                showcaseClassName="absolute inset-x-1 inset-y-1.5 mx-0 mt-0 h-auto rounded-md p-1.5"
+                badgeClassName="bottom-0.5 right-0.5 h-4 text-base"
+              />
+            )}
           </span>
         ))}
       </div>

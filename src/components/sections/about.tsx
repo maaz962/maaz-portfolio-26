@@ -5,6 +5,7 @@ import { Briefcase, Check, Copy, GraduationCap } from "lucide-react";
 import { aboutContent } from "@/data/about";
 import { profile } from "@/data/profile";
 import { Section } from "@/components/ui/section";
+import { SectionGlow } from "@/components/ui/section-glow";
 import { Container } from "@/components/ui/container";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { TerminalWindow } from "@/components/ui/terminal-window";
@@ -61,13 +62,9 @@ export function About() {
       aria-label="About"
       className="bg-noise relative overflow-hidden"
     >
-      <div
-        aria-hidden
-        className="glow-orb -left-24 top-20 h-64 w-64 bg-primary/20"
-      />
-      <div
-        aria-hidden
-        className="glow-orb -right-16 bottom-0 h-48 w-48 bg-accent/15"
+      <SectionGlow
+        primaryClassName="top-20 bg-primary/20"
+        accentClassName="bg-accent/15"
       />
 
       <Container className="relative">

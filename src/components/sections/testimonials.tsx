@@ -2,6 +2,7 @@
 
 import { Award, BookOpen, Code2, GraduationCap, Quote, Users } from "lucide-react";
 import { Section } from "@/components/ui/section";
+import { SectionGlow } from "@/components/ui/section-glow";
 import { Container } from "@/components/ui/container";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { FadeIn } from "@/components/animations/fade-in";
@@ -11,9 +12,10 @@ export function Testimonials() {
   return (
     <Section
       id="testimonials"
-      className="bg-background-secondary/20"
+      className="bg-noise relative overflow-hidden bg-background-secondary/20"
     >
-      <Container>
+      <SectionGlow />
+      <Container className="relative">
         <FadeIn>
           <SectionHeading
             eyebrow="Trust"

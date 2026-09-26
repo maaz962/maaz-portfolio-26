@@ -4,6 +4,7 @@ import { useState } from "react";
 import { ChevronDown } from "lucide-react";
 import { experience } from "@/data/experience";
 import { Section } from "@/components/ui/section";
+import { SectionGlow } from "@/components/ui/section-glow";
 import { Container } from "@/components/ui/container";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { Chip } from "@/components/ui/chip";
@@ -59,8 +60,13 @@ function HighlightList({ items, itemId }: { items: string[]; itemId: string }) {
 
 export function Experience() {
   return (
-    <Section id="experience" aria-label="Experience">
-      <Container>
+    <Section
+      id="experience"
+      aria-label="Experience"
+      className="bg-noise relative overflow-hidden"
+    >
+      <SectionGlow />
+      <Container className="relative">
         <FadeIn>
           <SectionHeading
             eyebrow="Timeline"

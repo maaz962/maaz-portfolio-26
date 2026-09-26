@@ -18,6 +18,7 @@ import {
   Loader2,
 } from "lucide-react";
 import { Section } from "@/components/ui/section";
+import { SectionGlow } from "@/components/ui/section-glow";
 import { Container } from "@/components/ui/container";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { buttonStyles } from "@/components/ui/button";
@@ -169,14 +170,9 @@ export function Contact() {
       aria-label="Contact"
       className="bg-noise relative overflow-hidden pb-8 md:pb-12"
     >
-      {/* Background glow orb */}
-      <div
-        aria-hidden="true"
-        className="glow-orb -left-28 top-10 h-72 w-72 bg-primary/10"
-      />
-      <div
-        aria-hidden="true"
-        className="glow-orb -right-20 bottom-10 h-64 w-64 bg-accent/10"
+      <SectionGlow
+        primaryClassName="-left-28 h-72 w-72 bg-primary/10"
+        accentClassName="-right-20 h-64 w-64 bg-accent/10"
       />
 
       <Container className="relative">

@@ -3,6 +3,7 @@
 import { GraduationCap } from "lucide-react";
 import { education } from "@/data/education";
 import { Section } from "@/components/ui/section";
+import { SectionGlow } from "@/components/ui/section-glow";
 import { Container } from "@/components/ui/container";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { Chip } from "@/components/ui/chip";
@@ -18,9 +19,10 @@ export function Education() {
     <Section
       id="education"
       aria-labelledby="education-heading"
-      className="bg-background-secondary/30"
+      className="bg-noise relative overflow-hidden bg-background-secondary/30"
     >
-      <Container>
+      <SectionGlow />
+      <Container className="relative">
         <FadeIn>
           <SectionHeading
             eyebrow="Academics"
