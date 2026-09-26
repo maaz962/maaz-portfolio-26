@@ -75,16 +75,15 @@ export const projects: Project[] = [
   },
   {
     slug: "e-commerce",
-    title: "E-Commerce App",
+    title: "ShopFlow",
     description:
-      "Full-featured online store with product browsing, admin dashboard, and PHP/MySQL backend from the earlier M44Z portfolio build.",
+      "Full-featured online store with product browsing, admin dashboard, and PHP/MySQL backend.",
     category: "Web",
     technologies: ["PHP", "MySQL", "JavaScript"],
     categories: ["web", "php"],
-    image:
-      "https://images.unsplash.com/photo-1556740758-90de374c12ad?w=800&h=600&fit=crop&q=80",
-    imageAlt:
-      "Online shopping and e-commerce representing the E-Commerce App store",
+    image: "/images/projects/shopflow_app.png",
+    imageAlt: "ShopFlow e-commerce storefront preview",
+    github: "https://github.com/maaz962/shop-flow",
   },
   {
     slug: "scholarship-website",
@@ -108,8 +107,7 @@ export const projects: Project[] = [
     category: "Web",
     technologies: ["HTML", "CSS", "JavaScript"],
     categories: ["web"],
-    image:
-      "https://images.unsplash.com/photo-1449965408869-eaa3f722e40d?w=800&h=600&fit=crop&q=80",
+    image: "/images/projects/m44z-web-dev.jpg",
     imageAlt:
       "Laptop with code representing the M44Z Web Dev Portfolio website",
     github: "https://github.com/maaz962/M44Z-WEB-DEV",
