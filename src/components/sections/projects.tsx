@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Sparkles } from "lucide-react";
 import type { ProjectFilterCategory } from "@/types";
 import {
   featuredProject,
@@ -21,7 +21,8 @@ import { Chip } from "@/components/ui/chip";
 import { buttonStyles } from "@/components/ui/button";
 import { FadeIn } from "@/components/animations/fade-in";
 import { games } from "@/data/games";
-import { GamePreview } from "@/components/games/game-preview";
+import { GAME_LOGO_SRC } from "@/components/games/game-preview";
+import Image from "next/image";
 import { cn } from "@/lib/utils";
 
 type ActiveFilter = "all" | ProjectFilterCategory;
@@ -157,56 +158,91 @@ export function Projects() {
   );
 }
 
+const gameTileStyles: Record<string, string> = {
+  "html-hero":
+    "border-orange-500/30 bg-orange-500/10 hover:border-orange-400/60 hover:bg-orange-500/15",
+  "flexbox-zoo":
+    "border-sky-500/30 bg-sky-500/10 hover:border-sky-400/60 hover:bg-sky-500/15",
+  "grid-garden":
+    "border-cyan-500/30 bg-cyan-500/10 hover:border-cyan-400/60 hover:bg-cyan-500/15",
+  "js-detective":
+    "border-yellow-500/30 bg-yellow-500/10 hover:border-yellow-400/60 hover:bg-yellow-500/15",
+  "animation-arena":
+    "border-purple-500/30 bg-purple-500/10 hover:border-purple-400/60 hover:bg-purple-500/15",
+  "php-playground":
+    "border-violet-500/30 bg-violet-500/10 hover:border-violet-400/60 hover:bg-violet-500/15",
+  "query-quest":
+    "border-blue-500/30 bg-blue-500/10 hover:border-blue-400/60 hover:bg-blue-500/15",
+};
+
 function GamesTeaserCard() {
+  const tiles = [
+    ...games.map((game) => ({
+      key: game.slug,
+      title: game.title,
+      logo: GAME_LOGO_SRC[game.slug],
+      styles: gameTileStyles[game.slug] ?? "",
+    })),
+    {
+      key: "coming-soon",
+      title: "More games coming soon",
+      logo: null,
+      styles:
+        "border-dashed border-border bg-background-secondary/60 hover:border-primary/50",
+    },
+  ];
+
   return (
     <Link
       href="/games"
-      className="group mt-14 flex flex-col gap-6 overflow-hidden rounded-2xl border border-border bg-card shadow-card transition-all duration-300 hover:border-primary/35 hover:shadow-glow sm:flex-row sm:items-stretch sm:p-6 lg:p-8"
+      className="group mt-14 flex flex-col gap-8 overflow-hidden rounded-2xl border border-border bg-card shadow-card transition-all duration-300 hover:border-primary/35 hover:shadow-glow sm:p-6 lg:p-8"
     >
       <div
         aria-hidden="true"
-        className="grid grid-cols-3 gap-2 p-6 sm:w-56 sm:grid-cols-2 sm:p-0"
+        className="mx-auto grid w-full max-w-xs grid-cols-4 gap-3 px-6 pt-6 sm:p-0"
       >
-        {games.map((game, index) => (
+        {tiles.map((tile) => (
           <span
-            key={game.slug}
+            key={tile.key}
+            title={tile.title}
             className={cn(
-              "relative h-20 overflow-hidden rounded-xl border border-white/10 bg-gradient-to-br transition-transform duration-300 group-hover:scale-105",
-              games.length - 1 === index && "col-span-3 sm:col-span-2",
-              game.color
+              "flex aspect-square items-center justify-center rounded-xl border transition-all duration-200 hover:-translate-y-0.5",
+              tile.styles
             )}
           >
-            {game.comingSoon ? (
-              <span
-                aria-hidden="true"
-                className="flex h-full w-full items-center justify-center text-3xl"
-              >
-                {game.animal}
-              </span>
+            {tile.logo ? (
+              <Image
+                src={tile.logo}
+                alt=""
+                width={40}
+                height={40}
+                className="h-[52%] w-[52%] object-contain drop-shadow-sm"
+              />
             ) : (
-              <GamePreview
-                game={game}
-                showcaseClassName="absolute inset-x-1 inset-y-1.5 mx-0 mt-0 h-auto rounded-md p-1.5"
-                badgeClassName="bottom-0.5 right-0.5 h-4 text-base"
+              <Sparkles
+                aria-hidden="true"
+                className="h-5 w-5 text-muted"
+                strokeWidth={1.75}
               />
             )}
           </span>
         ))}
       </div>
 
-      <div className="flex flex-1 flex-col p-6 sm:p-0">
-        <Chip variant="primary" className="self-start">
-          Games
-        </Chip>
+      <div className="flex flex-1 flex-col items-center px-6 pb-6 text-center sm:p-0">
+        <Chip variant="primary">Games</Chip>
         <h3 className="mt-4 text-xl text-foreground">
           Learn Web Dev by Playing
         </h3>
-        <p className="mt-3 flex-1 text-[15px] leading-relaxed text-muted">
+        <p className="mt-3 max-w-md text-[15px] leading-relaxed text-muted">
           Interactive games teaching HTML, CSS, JavaScript, PHP &amp; SQL —
           built from scratch. Solve coding puzzles, earn XP, and level up while
           exploring web development hands-on.
         </p>
-        <ul className="mt-5 flex flex-wrap gap-2" aria-label="Technologies used">
+        <ul
+          className="mt-5 flex flex-wrap justify-center gap-2"
+          aria-label="Technologies used"
+        >
           {["HTML", "CSS", "JavaScript", "PHP", "SQL"].map((tech) => (
             <li key={tech}>
               <Chip>{tech}</Chip>
@@ -217,7 +253,7 @@ function GamesTeaserCard() {
           className={buttonStyles({
             variant: "primary",
             size: "sm",
-            className: "mt-6 self-start",
+            className: "mt-6",
           })}
         >
           Explore Games
