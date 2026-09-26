@@ -44,7 +44,7 @@ src/
 │
 ├── components/
 │   ├── layout/            # Sticky Header, Footer, Theme toggle switches
-│   ├── sections/          # Content blocks: Hero, About, Skills, Education, Experience, Projects, Services, Testimonials, Contact
+│   ├── sections/          # Content blocks: Hero, About, Skills, Education, Experience, Projects, Services, Contact
 │   ├── ui/                # Core design cards, buttons, wrappers, and visual handlers
 │   └── animations/        # Reusable reveals, staggered lists, and background backdrops
 │

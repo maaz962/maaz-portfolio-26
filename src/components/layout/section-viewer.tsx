@@ -13,7 +13,6 @@ const sectionIds = [
   "experience",
   "projects",
   "services",
-  "testimonials",
   "contact",
 ] as const;
 
