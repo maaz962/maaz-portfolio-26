@@ -76,10 +76,10 @@ function phpErrorFrom(output?: string): string {
 const TIER_ORDER = ["easy", "intermediate", "hard", "mostHard"];
 
 const TIER_META = [
-  { key: "easy", label: "Easy", blurb: "Warm-up — echo, variables, types and control flow." },
-  { key: "intermediate", label: "Intermediate", blurb: "Clues tighten — functions, arrays and string helpers." },
-  { key: "hard", label: "Hard", blurb: "Real casework — superglobals, null-coalescing and array helpers." },
-  { key: "mostHard", label: "Most Hard", blurb: "Final stretch — array_map, array_filter and the boss reduce." },
+  { key: "easy", label: "Easy", blurb: "Warm-up: echo, variables, types and control flow." },
+  { key: "intermediate", label: "Intermediate", blurb: "Clues tighten: functions, arrays and string helpers." },
+  { key: "hard", label: "Hard", blurb: "Real casework: superglobals, null-coalescing and array helpers." },
+  { key: "mostHard", label: "Most Hard", blurb: "Final stretch: array_map, array_filter and the boss reduce." },
 ];
 
 const CONCEPT_LABELS: Record<string, string> = {

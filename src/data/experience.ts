@@ -8,7 +8,7 @@ export const experience: ExperienceEntry[] = [
     role: "Senior Vice President",
     organization: "UAF Freelancing Club",
     affiliation: clubAffiliation,
-    period: "June 2026 – Present",
+    period: "June 2026 - Present",
     featured: true,
     summary:
       "Supporting club leadership, coordinating with the team on events and freelancing initiatives, and contributing technically where needed including mentoring and workshop support around web development.",
@@ -17,7 +17,7 @@ export const experience: ExperienceEntry[] = [
     role: "General Secretary",
     organization: "UAF Freelancing Club",
     affiliation: clubAffiliation,
-    period: "May 2025 – May 2026",
+    period: "May 2025 - May 2026",
     summary:
       "Led club operations alongside the executive team organizing activities, supporting members, and contributing to initiatives across campus and online.",
     highlights: [

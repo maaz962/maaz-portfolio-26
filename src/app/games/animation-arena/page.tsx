@@ -45,12 +45,12 @@ const TIER_META = [
   {
     key: "beginner",
     label: "Beginner",
-    blurb: "First steps — transitions, transforms and one keyframe loop.",
+    blurb: "First steps: transitions, transforms and one keyframe loop.",
   },
   {
     key: "intermediate",
     label: "Intermediate",
-    blurb: "Delays, direction and hover — fine-tune your motion.",
+    blurb: "Delays, direction and hover: fine-tune your motion.",
   },
 ];
 
@@ -174,7 +174,7 @@ export default function AnimationArenaPage() {
         } else {
           if (typeof w.__animationArenaToast === "function") {
             w.__animationArenaToast(
-              (data && data.error) || "No hints left today — come back tomorrow!",
+              (data && data.error) || "No hints left today, come back tomorrow!",
               true
             );
           }
@@ -553,7 +553,7 @@ export default function AnimationArenaPage() {
                 <Sparkles className="h-3 w-3 shrink-0 text-primary" />
                 <span>
                   <strong>Hint:</strong> press Run to watch your CSS play live on
-                  the robot — every <code>#board</code> rule targets it. Press{" "}
+                  the robot. Every <code>#board</code> rule targets it. Press{" "}
                   Check to validate against the goal.
                 </span>
               </div>

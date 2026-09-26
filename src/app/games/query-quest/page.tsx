@@ -71,10 +71,10 @@ interface QueryOut {
 const TIER_ORDER = ["easy", "intermediate", "hard", "mostHard"];
 
 const TIER_META = [
-  { key: "easy", label: "Easy", blurb: "Warm-up — SELECT, WHERE, sorting and limits." },
-  { key: "intermediate", label: "Intermediate", blurb: "Clues tighten — JOINs and the first aggregates." },
-  { key: "hard", label: "Hard", blurb: "Real casework — subqueries and writing data." },
-  { key: "mostHard", label: "Most Hard", blurb: "Final stretch — DELETE, revenue reports and the boss query." },
+  { key: "easy", label: "Easy", blurb: "Warm-up: SELECT, WHERE, sorting and limits." },
+  { key: "intermediate", label: "Intermediate", blurb: "Clues tighten: JOINs and the first aggregates." },
+  { key: "hard", label: "Hard", blurb: "Real casework: subqueries and writing data." },
+  { key: "mostHard", label: "Most Hard", blurb: "Final stretch: DELETE, revenue reports and the boss query." },
 ];
 
 const CONCEPT_LABELS: Record<string, string> = {
@@ -330,9 +330,9 @@ export default function QueryQuestPage() {
     if (!r.error) return "";
     const m = String(r.error);
     if (r.errorType === "syntax") return `Syntax error: ${m}`;
-    if (r.errorType === "table") return `Table not found — ${m}. Check the table names in the Mission.`;
-    if (r.errorType === "column") return `Column not found — ${m}. Check the column names in the Mission.`;
-    if (r.errorType === "function") return `Unknown function — ${m}.`;
+    if (r.errorType === "table") return `Table not found: ${m}. Check the table names in the Mission.`;
+    if (r.errorType === "column") return `Column not found: ${m}. Check the column names in the Mission.`;
+    if (r.errorType === "function") return `Unknown function: ${m}.`;
     return m;
   };
 

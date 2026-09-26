@@ -101,7 +101,7 @@ export function Education() {
                 </div>
 
                 <p className="self-start pt-2 text-sm text-muted md:pt-6 md:text-right">
-                  {entry.startDate} – {entry.endDate}
+                  {entry.startDate} - {entry.endDate}
                 </p>
               </article>
             </StaggerItem>

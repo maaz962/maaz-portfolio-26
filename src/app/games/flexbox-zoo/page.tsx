@@ -279,7 +279,7 @@ return (
               <div id="level-hint" className="zoo-hint">
                 <Sparkles className="mt-0.5 h-3 w-3 shrink-0 text-primary" />
                 <span>
-                  The magic property is <code>display: flex</code> — add it to
+                  The magic property is <code>display: flex</code>; add it to
                   the parent container.
                 </span>
               </div>

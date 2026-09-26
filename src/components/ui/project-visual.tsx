@@ -64,7 +64,7 @@ export function ProjectVisual({
         {project.title}
       </p>
       <p className="text-mono mt-4 text-xs text-muted">
-        {"// screenshot pending — add at public/images/projects/"}
+        {"// screenshot pending at public/images/projects/"}
         {project.slug}
         {".jpg"}
       </p>

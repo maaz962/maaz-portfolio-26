@@ -44,10 +44,10 @@ interface JsGameState {
 const TIER_ORDER = ["beginner", "easy", "intermediate", "mostHard"];
 
 const TIER_META = [
-  { key: "beginner", label: "Beginner", blurb: "First steps — console.log, strings, numbers and variables." },
-  { key: "easy", label: "Easy", blurb: "Warm-up — variables, types, operators and control flow." },
-  { key: "intermediate", label: "Intermediate", blurb: "Clues tighten — loops, arrays, functions and objects." },
-  { key: "mostHard", label: "Most Hard", blurb: "Final stretch — events, BOM and async bring the boss fight." },
+  { key: "beginner", label: "Beginner", blurb: "First steps: console.log, strings, numbers and variables." },
+  { key: "easy", label: "Easy", blurb: "Warm-up: variables, types, operators and control flow." },
+  { key: "intermediate", label: "Intermediate", blurb: "Clues tighten: loops, arrays, functions and objects." },
+  { key: "mostHard", label: "Most Hard", blurb: "Final stretch: events, BOM and async bring the boss fight." },
 ];
 
 const CONCEPT_LABELS: Record<string, string> = {

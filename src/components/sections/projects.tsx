@@ -235,7 +235,7 @@ function GamesTeaserCard() {
           Learn Web Dev by Playing
         </h3>
         <p className="mt-3 max-w-md text-[15px] leading-relaxed text-muted">
-          Interactive games teaching HTML, CSS, JavaScript, PHP &amp; SQL —
+          Interactive games teaching HTML, CSS, JavaScript, PHP &amp; SQL,
           built from scratch. Solve coding puzzles, earn XP, and level up while
           exploring web development hands-on.
         </p>
