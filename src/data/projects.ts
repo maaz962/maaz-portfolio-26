@@ -83,6 +83,7 @@ export const projects: Project[] = [
     categories: ["web", "php"],
     image: "/images/projects/shopflow_app.png",
     imageAlt: "ShopFlow e-commerce storefront preview",
+    imageFit: "contain",
     github: "https://github.com/maaz962/shop-flow",
   },
   {
@@ -110,6 +111,7 @@ export const projects: Project[] = [
     image: "/images/projects/m44z-web-dev.jpg",
     imageAlt:
       "Laptop with code representing the M44Z Web Dev Portfolio website",
+    imageFit: "contain",
     github: "https://github.com/maaz962/M44Z-WEB-DEV",
     liveDemo: "https://m44z-web-dev.vercel.app",
   },

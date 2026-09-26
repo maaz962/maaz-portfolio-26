@@ -52,6 +52,8 @@ export interface Project {
   categories: ProjectFilterCategory[];
   image?: string;
   imageAlt?: string;
+  /** Fill behavior for the card visual; "contain" shows the whole image. */
+  imageFit?: "cover" | "contain";
   github?: string;
   liveDemo?: string;
   featured?: boolean;

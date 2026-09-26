@@ -36,7 +36,12 @@ export function ProjectVisual({
           fill
           priority={priority}
           sizes={sizes}
-          className="object-cover object-top transition-transform duration-500 group-hover:scale-[1.03]"
+          className={cn(
+            "transition-transform duration-500 group-hover:scale-[1.03]",
+            project.imageFit === "contain"
+              ? "object-contain"
+              : "object-cover object-top"
+          )}
         />
         <div
           aria-hidden
