@@ -32,7 +32,7 @@ interface GamePreviewProps {
 const DEFAULT_SHOWCASE =
   "relative mx-3 mt-4 h-32 overflow-hidden rounded-xl border border-white/15 bg-black/80 p-3 shadow-xl";
 const DEFAULT_BADGE =
-  "absolute bottom-1.5 right-3 flex h-12 items-center justify-center text-5xl opacity-80 transition-transform duration-300 group-hover:scale-110";
+  "absolute bottom-2.5 right-2.5 flex h-12 items-center justify-center text-5xl opacity-80 transition-transform duration-300 group-hover:scale-110";
 
 export function GamePreview({
   game,
@@ -82,13 +82,13 @@ export function GamePreview({
         {game.slug === "flexbox-zoo" && (
           <div className="flex h-full flex-col">
             <div className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-black/20 p-2">
-              <span className="flex h-9 flex-1 items-center justify-center rounded-lg bg-red-400/25 text-2xl">
+              <span className="flex h-9 flex-1 items-center justify-center rounded-lg bg-red-400/25 text-2xl leading-none">
                 🦁
               </span>
-              <span className="flex h-9 flex-1 items-center justify-center rounded-lg bg-sky-400/25 text-2xl">
+              <span className="flex h-9 flex-1 items-center justify-center rounded-lg bg-sky-400/25 text-2xl leading-none">
                 🐰
               </span>
-              <span className="flex h-9 flex-1 items-center justify-center rounded-lg bg-yellow-400/25 text-2xl">
+              <span className="flex h-9 flex-1 items-center justify-center rounded-lg bg-yellow-400/25 text-2xl leading-none">
                 🦊
               </span>
             </div>
@@ -101,12 +101,12 @@ export function GamePreview({
         {game.slug === "grid-garden" && (
           <div className="flex h-full flex-col">
             <div className="grid flex-1 grid-cols-3 grid-rows-2 gap-1">
-              <div className="flex items-center justify-center rounded-md border border-emerald-400/50 bg-emerald-500/30 text-xl">
+              <div className="flex items-center justify-center rounded-md border border-emerald-400/50 bg-emerald-500/30 text-xl leading-none">
                 🌱
               </div>
               <div className="rounded-md bg-emerald-200/10" />
               <div className="rounded-md bg-emerald-200/10" />
-              <div className="flex items-center justify-center rounded-md bg-emerald-500/20 text-sm">
+              <div className="flex items-center justify-center rounded-md bg-emerald-500/20 text-sm leading-none">
                 🧺
               </div>
               <div className="rounded-md bg-emerald-200/10" />
@@ -199,7 +199,7 @@ export function GamePreview({
               className="pointer-events-none absolute inset-x-0 -top-6 h-1/3 bg-purple-500/20 blur-xl"
             />
             <div className="flex flex-1 items-center justify-center pb-1">
-              <span className="rob-preview-still text-5xl drop-shadow-[0_6px_10px_rgba(167,139,250,0.35)]">
+              <span className="rob-preview-still text-5xl leading-none drop-shadow-[0_6px_10px_rgba(167,139,250,0.35)]">
                 🤖
               </span>
             </div>
@@ -213,23 +213,23 @@ export function GamePreview({
             </p>
           </div>
         )}
+        <span
+          aria-hidden="true"
+          className={cn(DEFAULT_BADGE, badgeClassName)}
+        >
+          {logoSrc ? (
+            <Image
+              src={logoSrc}
+              alt=""
+              width={48}
+              height={48}
+              className="h-full w-auto object-contain"
+            />
+          ) : (
+            game.animal
+          )}
+        </span>
       </div>
-      <span
-        aria-hidden="true"
-        className={cn(DEFAULT_BADGE, badgeClassName)}
-      >
-        {logoSrc ? (
-          <Image
-            src={logoSrc}
-            alt=""
-            width={48}
-            height={48}
-            className="h-full w-auto object-contain"
-          />
-        ) : (
-          game.animal
-        )}
-      </span>
     </div>
   );
 }
