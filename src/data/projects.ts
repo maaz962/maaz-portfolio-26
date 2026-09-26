@@ -68,10 +68,10 @@ export const projects: Project[] = [
     category: "Mobile",
     technologies: ["Flutter", "Dart"],
     categories: ["flutter"],
-    image:
-      "https://images.unsplash.com/photo-1484480974693-6ca0a78fb36b?w=800&h=600&fit=crop&q=80",
+    image: "/images/projects/to-do-app.png",
     imageAlt:
-      "Checklist and notes representing the Flutter To-Do task management app",
+      "Flutter To-Do App task list interface preview",
+    imageFit: "contain",
   },
   {
     slug: "e-commerce",
@@ -94,10 +94,10 @@ export const projects: Project[] = [
     category: "Web",
     technologies: ["PHP", "MySQL", "HTML"],
     categories: ["web", "php"],
-    image:
-      "https://images.unsplash.com/photo-1541339907198-e08756dedf3f?w=800&h=600&fit=crop&q=80",
+    image: "/images/projects/scholarship-portal.jpg",
     imageAlt:
-      "Graduation celebration representing the Scholarship Website for education",
+      "Scholarship Website listing page preview",
+    imageFit: "contain",
     github: "https://github.com/maaz962/Scholarship_website",
   },
   {
