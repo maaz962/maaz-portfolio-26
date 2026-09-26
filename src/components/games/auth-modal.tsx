@@ -67,7 +67,7 @@ export function AuthModal({ open, onClose, onAuthed, initialMode = "login" }: Au
             setUsername(email.trim() || username.trim());
             setPassword("");
             setError(
-              "That account already exists — your email is filled in, just press Sign In with your password."
+              "That account already exists: your email is filled in, just press Sign In with your password."
             );
             setSubmitting(false);
             return;
@@ -121,7 +121,7 @@ export function AuthModal({ open, onClose, onAuthed, initialMode = "login" }: Au
                 </h3>
                 <p className="text-xs text-muted">
                   Save progress, earn XP, build streaks and climb the
-                  leaderboard — signed in for up to a year, or until you log
+                  leaderboard: signed in for up to a year, or until you log
                   out
                 </p>
               </div>

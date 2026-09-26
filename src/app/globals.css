@@ -30,11 +30,11 @@
   --secondary-foreground: 0 0% 100%;
   --accent: 187.9 76.4% 30.8%; /* #0E7490 - cyan-700, cleared for AA as small text on light */
   --accent-foreground: 0 0% 100%;
-  --games-accent: 187.9 76.4% 30.8%; /* gradient end for games CTAs — same family as --accent */
+  --games-accent: 187.9 76.4% 30.8%; /* gradient end for games CTAs, same family as --accent */
 
   --radius: 0.75rem;
 
-  /* Navbar + layout spacing — single source of truth for every page */
+  /* Navbar + layout spacing, single source of truth for every page */
   --nav-top: 0.75rem; /* floating navbar's top offset */
   --nav-h: 3.75rem; /* navbar height (60px) */
   --nav-reserve: calc(var(--nav-top) + var(--nav-h) + 1.5rem); /* ≈96px cleared above content */
@@ -59,7 +59,7 @@
   --secondary-foreground: 210 40% 98%;
   --accent: 188.7 94.5% 42.7%; /* #06B6D4 */
   --accent-foreground: 210 40% 98%;
-  --games-accent: 187.9 76.4% 30.8%; /* gradient end for games CTAs — keeps white-text AA on dark */
+  --games-accent: 187.9 76.4% 30.8%; /* gradient end for games CTAs, keeps white-text AA on dark */
 }
 
 /* ==========================================================================

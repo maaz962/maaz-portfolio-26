@@ -278,7 +278,7 @@ export default function GridGardenPage() {
               <div id="level-hint" className="grid-hint">
                 <Sparkles className="mt-0.5 h-3 w-3 shrink-0 text-primary" />
                 <span>
-                  The magic property is <code>display: grid</code> — add it to the container.
+                  The magic property is <code>display: grid</code> , add it to the container.
                 </span>
               </div>
             </div>
@@ -356,7 +356,7 @@ export default function GridGardenPage() {
             {/* Preview Panel for Level 15 */}
             <div id="grid-preview" className="grid-preview-panel" style={{ display: "none" }}>
               <div className="grid-preview-header">
-                <span>Target Layout — Recreate This!</span>
+                <span>Target Layout, Recreate This!</span>
               </div>
               <div className="grid-preview-board">
                 <div className="grid-preview-item" style={{ gridArea: "header", background: "linear-gradient(135deg, #f43f5e, #e11d48)" }}>Header</div>

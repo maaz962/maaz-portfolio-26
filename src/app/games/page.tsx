@@ -256,7 +256,7 @@ function GameCard({
   const doneCount = progress
     ? Object.values(progress.completed ?? {}).filter(Boolean).length
     : 0;
-  // Fall back to the shipped level count so cards always show "X/Y" — even
+  // Fall back to the shipped level count so cards always show "X/Y": even
   // before a progress row exists (e.g. "0/16"). Guard NaN/undefined.
   const levelCount =
     Number.isFinite(progress?.totalLevels) && (progress?.totalLevels ?? 0) > 0
@@ -700,7 +700,7 @@ export default function GamesPage() {
 
             {completedGames < playerGames.length && (
               <p className="mt-3 text-center text-xs text-muted">
-                Finish any game to see it light up green below — your first
+                Finish any game to see it light up green below, your first
                 completed game is a level away.
               </p>
             )}
@@ -729,7 +729,7 @@ export default function GamesPage() {
           </p>
           <p className="mt-1 text-xs text-muted">
             HTML, CSS, JavaScript, PHP, and SQL games to help you learn web
-            development step by step — start at HTML Hero and climb to Query
+            development step by step, start at HTML Hero and climb to Query
             Quest.
           </p>
         </div>

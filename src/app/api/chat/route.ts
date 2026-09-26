@@ -35,11 +35,11 @@ PROJECTS:
 - E-Commerce App (A mobile shopping application built with Flutter)
 
 EDUCATION:
-- BS Computer Science — University of Agriculture Faisalabad (2023–2027)
-- FSc Pre-Medical — Superior College (2020–2022)
+- BS Computer Science: University of Agriculture Faisalabad (2023–2027)
+- FSc Pre-Medical: Superior College (2020–2022)
 
 PROFESSIONAL / LEADERSHIP EXPERIENCE:
-- Senior Vice President — UAF Freelancing Club
+- Senior Vice President: UAF Freelancing Club
 - Previously General Secretary
 - Previously Joint Secretary
 - Previously Executive Member

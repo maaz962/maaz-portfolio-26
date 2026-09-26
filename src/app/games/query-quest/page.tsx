@@ -430,7 +430,7 @@ export default function QueryQuestPage() {
     <>
     <GameShell
       title="Query Quest"
-      tagline="Solve SQL challenges — SELECT, JOIN, aggregates &amp; the data-writing bosses"
+      tagline="Solve SQL challenges: SELECT, JOIN, aggregates &amp; the data-writing bosses"
       icon={<span className="text-xl">🗃️</span>}
       iconClass="bg-emerald-500/10 text-emerald-600 dark:text-emerald-500"
       scriptSrc={["/games/query-quest/levels.js", "/games/query-quest/game.js"]}
@@ -582,7 +582,7 @@ export default function QueryQuestPage() {
                     </div>
                   )}
                   {showSolvedNote && (
-                    <div className="qq-solved-note">Solved! Answers are saved — you can return to this level anytime.</div>
+                    <div className="qq-solved-note">Solved! Answers are saved, you can return to this level anytime.</div>
                   )}
 
                   <details className="qq-schema">
@@ -674,7 +674,7 @@ export default function QueryQuestPage() {
                       className="qq-run-btn"
                       onClick={run}
                       disabled={running}
-                      title={running ? "Please wait — running…" : undefined}
+                      title={running ? "Please wait, running…" : undefined}
                     >
                       <Terminal className="h-3 w-3" />
                       {running ? "Running…" : "Run Query"}
@@ -696,7 +696,7 @@ export default function QueryQuestPage() {
                         className="qq-check-btn"
                         onClick={check}
                         disabled={running}
-                        title={running ? "Please wait — running…" : undefined}
+                        title={running ? "Please wait, running…" : undefined}
                       >
                         Check
                       </button>
@@ -750,7 +750,7 @@ export default function QueryQuestPage() {
                 <div className="qq-console">
                   {!queryOut || (queryOut.columns.length === 0 && !queryOut.error) ? (
                     <div className="qq-console-empty">
-                      Result table appears here — hit Run Query to execute your SQL, or Check to test your answer.
+                      Result table appears here, hit Run Query to execute your SQL, or Check to test your answer.
                     </div>
                   ) : queryOut.error ? (
                     <div className="qq-console-error">
@@ -863,7 +863,7 @@ export default function QueryQuestPage() {
                 <span>
                   Use <strong>Run Query</strong> to execute your SQL live and{" "}
                   <strong>Check</strong> when you think the result matches.{" "}
-                  <strong>Show Hint</strong> reveals a nudge — you get 3 hints per day.
+                  <strong>Show Hint</strong> reveals a nudge, you get 3 hints per day.
                 </span>
               </div>
             </div>

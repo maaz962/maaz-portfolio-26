@@ -96,7 +96,7 @@ function AdminLoginForm() {
             </div>
             <div>
               <h1 className="font-display text-lg font-semibold text-foreground">Admin Access</h1>
-              <p className="text-xs text-muted">Restricted area — admins only</p>
+              <p className="text-xs text-muted">Restricted area, admins only</p>
             </div>
           </div>
 

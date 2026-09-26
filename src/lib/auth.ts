@@ -62,7 +62,7 @@ export async function getAdminUser(): Promise<User | null> {
     (!process.env.SESSION_SECRET || process.env.SESSION_SECRET.length < DEFAULT_SECRET_MIN_LENGTH)
   ) {
     console.error(
-      "[auth] SESSION_SECRET is not set in production — admin access is disabled. " +
+      "[auth] SESSION_SECRET is not set in production: admin access is disabled. " +
         "Set a strong SESSION_SECRET env var to enable the /admin dashboard."
     );
     return null;

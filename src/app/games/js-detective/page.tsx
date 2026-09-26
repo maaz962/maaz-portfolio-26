@@ -205,7 +205,7 @@ export default function JsDetectivePage() {
     <>
     <GameShell
       title="JS Detective"
-      tagline="Solve JavaScript mysteries — variables, loops, arrays &amp; more"
+      tagline="Solve JavaScript mysteries: variables, loops, arrays &amp; more"
       icon={<span className="text-xl">🕵️</span>}
       iconClass="bg-amber-500/10 text-amber-600 dark:text-amber-500"
       scriptSrc={["/games/js-detective/levels.js", "/games/js-detective/game.js"]}

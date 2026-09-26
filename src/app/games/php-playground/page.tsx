@@ -431,7 +431,7 @@ export default function PhpPlaygroundPage() {
     <>
     <GameShell
       title="PHP Playground"
-      tagline="Solve PHP challenges — variables, functions, arrays &amp; the higher-order bosses"
+      tagline="Solve PHP challenges: variables, functions, arrays &amp; the higher-order bosses"
       icon={<span className="text-xl">🐘</span>}
       iconClass="bg-amber-500/10 text-amber-600 dark:text-amber-500"
       scriptSrc={["/games/php-playground/levels.js", "/games/php-playground/game.js"]}
@@ -583,7 +583,7 @@ export default function PhpPlaygroundPage() {
                     </div>
                   )}
                   {showSolvedNote && (
-                    <div className="php-solved-note">Solved! Answers are saved — you can return to this level anytime.</div>
+                    <div className="php-solved-note">Solved! Answers are saved, you can return to this level anytime.</div>
                   )}
                 </div>
               )}
@@ -659,7 +659,7 @@ export default function PhpPlaygroundPage() {
                       className="php-run-btn"
                       onClick={run}
                       disabled={running}
-                      title={running ? "Please wait — running…" : undefined}
+                      title={running ? "Please wait, running…" : undefined}
                     >
                       <Terminal className="h-3 w-3" />
                       {running ? "Running…" : "Run PHP"}
@@ -681,7 +681,7 @@ export default function PhpPlaygroundPage() {
                         className="php-check-btn"
                         onClick={check}
                         disabled={running}
-                        title={running ? "Please wait — running…" : undefined}
+                        title={running ? "Please wait, running…" : undefined}
                       >
                         Check
                       </button>
@@ -735,7 +735,7 @@ export default function PhpPlaygroundPage() {
                 <div className="php-console">
                   {consoleLines.length === 0 ? (
                     <div className="php-console-empty">
-                      Output appears here — hit Run PHP to execute your script, or Check to test your answer.
+                      Output appears here, hit Run PHP to execute your script, or Check to test your answer.
                     </div>
                   ) : (
                     consoleLines.map((line, i) => (
@@ -830,7 +830,7 @@ export default function PhpPlaygroundPage() {
                 <span>
                   Use <strong>Run PHP</strong> to try your script live and{" "}
                   <strong>Check</strong> when you think the output matches.{" "}
-                  <strong>Show Hint</strong> reveals a nudge — you get 3 hints per day.
+                  <strong>Show Hint</strong> reveals a nudge, you get 3 hints per day.
                 </span>
               </div>
             </div>

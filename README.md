@@ -6,7 +6,7 @@ A premium, dark-first, highly optimized developer portfolio website built with N
 
 ## Project Overview
 
-The website represents **M. Maaz Arif** — a computer science student and developer focused on:
+The website represents **M. Maaz Arif**, a computer science student and developer focused on:
 - **Full Stack Web Development** (React, Next.js, JavaScript, PHP, MySQL)
 - **Mobile Application Development** (Flutter, Dart)
 - **Cybersecurity Learning** (Networking and security concepts)
