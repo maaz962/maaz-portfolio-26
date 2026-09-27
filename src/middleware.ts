@@ -30,10 +30,15 @@ async function verifySessionCookie(req: NextRequest): Promise<boolean> {
     const payload = parts[1]!;
     const signature = parts[2]!;
 
+    // Pass the Uint8Array itself rather than its `.buffer`. The Edge runtime's
+    // SubtleCrypto validates the signature argument with an `instanceof`
+    // check, and the ArrayBuffer behind a typed array created in this sandbox
+    // fails that cross-realm check — which made every verify() throw and sent
+    // signed-in admins back to the login page.
     const valid = await crypto.subtle.verify(
       "HMAC",
       key,
-      fromBase64Url(signature).buffer as ArrayBuffer,
+      fromBase64Url(signature) as BufferSource,
       new TextEncoder().encode(`${header}.${payload}`)
     );
     if (!valid) return false;

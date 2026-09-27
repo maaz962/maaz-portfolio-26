@@ -5,6 +5,38 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Shield, Lock, AlertCircle, ArrowLeft, Loader2, Eye, EyeOff } from "lucide-react";
 import type { User } from "@/types";
 
+const ADMIN_HOME = "/admin";
+
+/**
+ * Restricts the post-login redirect to a path inside this app.
+ *
+ * `?from=` is attacker-controllable — anyone can send a link to
+ * /admin/login?from=… — and it ends up in `router.replace()`, which performs a
+ * full navigation for anything that is not a local path. Left unvalidated, a
+ * link like /admin/login?from=//evil.com would authenticate a real admin and
+ * then bounce them to a page an attacker controls (a convincing password
+ * re-entry, a fake session-expired notice, …).
+ *
+ * Rejected, because the URL parser resolves each of these to another origin:
+ *   //evil.com      protocol-relative
+ *   /\evil.com      backslashes are normalized to slashes
+ *   /<tab>/evil.com tabs/newlines are stripped before parsing
+ * Anything that is not a plain absolute in-app path falls back to /admin.
+ *
+ * The legitimate producer is the middleware gate, which always sets `from` to
+ * the current pathname — so real values look like "/admin" or "/admin/users".
+ */
+function safeInternalPath(raw: string | null): string {
+  if (!raw) return ADMIN_HOME;
+  const path = raw.trim();
+  if (!path.startsWith("/")) return ADMIN_HOME;
+  if (path.startsWith("//")) return ADMIN_HOME;
+  if (path.includes("\\")) return ADMIN_HOME;
+  // eslint-disable-next-line no-control-regex
+  if (/[\u0000-\u001F\u007F]/.test(path)) return ADMIN_HOME;
+  return path;
+}
+
 export default function AdminLoginPage() {
   return (
     <Suspense>
@@ -23,7 +55,7 @@ function AdminLoginForm() {
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
-  const redirectTo = searchParams.get("from") || "/admin";
+  const redirectTo = safeInternalPath(searchParams.get("from"));
 
   // Already signed in as an admin? Skip the form.
   useEffect(() => {

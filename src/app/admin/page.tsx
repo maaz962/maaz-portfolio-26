@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { getAdminUser } from "@/lib/auth";
-import { AnalyticsClient } from "./analytics-client";
+import { DashboardView } from "./analytics/dashboard-view";
 
 export const metadata = {
   title: "Analytics Dashboard | Admin",
@@ -12,5 +12,5 @@ export default async function AdminDashboardPage() {
   const admin = await getAdminUser();
   if (!admin) redirect("/admin/login?from=/admin");
 
-  return <AnalyticsClient />;
+  return <DashboardView />;
 }

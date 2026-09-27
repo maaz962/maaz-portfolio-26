@@ -19,6 +19,7 @@ import {
   scoreForCompleted,
   DAILY_HINT_LIMIT,
 } from "./gamification";
+import { getAdminEnv, adminAvatarUrl, ADMIN_ID, ADMIN_CREATED_AT } from "./admin-seed";
 
 // DB Types
 interface DatabaseSchema {
@@ -112,21 +113,33 @@ async function withDbLock<T>(task: () => Promise<T>): Promise<T> {
 }
 
 function getSeedData(): DatabaseSchema {
-  const adminId = "admin-user-id";
+  const adminEnv = getAdminEnv();
+  if (!adminEnv.ok) console.error(adminEnv.reason);
+
+  // The owner account only exists when the environment describes it. It used to
+  // be hardcoded here (username + password in a public repo), so a fresh local
+  // database could hand /admin to anyone who cloned the project.
+  const adminId = adminEnv.ok ? adminEnv.config.id : ADMIN_ID;
   const user1Id = "user-jane-id";
   const user2Id = "user-ninja-id";
 
   const users: UserWithPassword[] = [
-    {
-      id: adminId,
-      name: "M. Maaz Arif",
-      username: "maaz_admin",
-      email: "muhammadmaaz4405@gmail.com",
-      isAdmin: true,
-      avatarUrl: "https://api.dicebear.com/7.x/bottts/svg?seed=maaz_admin",
-      createdAt: new Date("2026-08-01T12:00:00Z").toISOString(),
-      passwordHash: hashPassword("maaz-analytics-2026"),
-    },
+    // Spreading `adminId` (rather than repeating the literal) keeps the seeded
+    // comment authors below pointing at whichever id the env actually configured.
+    ...(adminEnv.ok
+      ? [
+          {
+            id: adminId,
+            name: adminEnv.config.name,
+            username: adminEnv.config.username,
+            email: adminEnv.config.email,
+            isAdmin: true,
+            avatarUrl: adminAvatarUrl(adminEnv.config.username),
+            createdAt: ADMIN_CREATED_AT,
+            passwordHash: adminEnv.config.passwordHash,
+          },
+        ]
+      : []),
     {
       id: user1Id,
       name: "Jane Doe",

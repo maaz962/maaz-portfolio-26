@@ -9,6 +9,7 @@ import type {
 import { hashPassword, verifyPassword } from "./password";
 import { getPgConnectionString, usePostgres } from "./pg-connection";
 import { dateKeyFromDaysAgo, levelForXp, scoreForCompleted, DAILY_HINT_LIMIT } from "./gamification";
+import { getAdminEnv, adminAvatarUrl, ADMIN_CREATED_AT } from "./admin-seed";
 
 /**
  * Postgres-backed persistent data layer. Used when process.env.DATABASE_URL is
@@ -126,21 +127,34 @@ async function initDb(): Promise<void> {
     await sql`ALTER TABLE gamification ADD COLUMN IF NOT EXISTS xp_adjustment INT NOT NULL DEFAULT 0`;
     // Idempotent seed of the site owner's admin account â€” mirrors the file-store
     // seed so /admin is reachable on first production deploy too. ON CONFLICT
-    // makes it safe on every cold start / redeploy.
-    await sql`
-      INSERT INTO users (id, name, username, email, is_admin, avatar_url, created_at, password_hash)
-      VALUES (
-        'admin-user-id',
-        'M. Maaz Arif',
-        'maaz_admin',
-        'muhammadmaaz4405@gmail.com',
-        true,
-        'https://api.dicebear.com/7.x/bottts/svg?seed=maaz_admin',
-        '2026-08-01T12:00:00.000Z',
-        ${hashPassword("maaz-analytics-2026")}
-      )
-      ON CONFLICT DO NOTHING
-    `;
+    // makes it safe on every cold start / redeploy, and crucially it never
+    // OVERWRITES an existing row: rotating the password is an explicit
+    // `admin-credentials.mjs apply`, not a side effect of a cold start.
+    //
+    // The identity + password hash come from the environment (never from source,
+    // which used to expose this account to anyone who cloned the repo). When
+    // they are absent we skip the seed entirely and say so, so a deploy without
+    // an admin is loud rather than silently locked out later.
+    const adminEnv = getAdminEnv();
+    if (adminEnv.ok) {
+      const { id, name, username, email, passwordHash } = adminEnv.config;
+      await sql`
+        INSERT INTO users (id, name, username, email, is_admin, avatar_url, created_at, password_hash)
+        VALUES (
+          ${id},
+          ${name},
+          ${username},
+          ${email},
+          true,
+          ${adminAvatarUrl(username)},
+          ${ADMIN_CREATED_AT},
+          ${passwordHash}
+        )
+        ON CONFLICT DO NOTHING
+      `;
+    } else {
+      console.error(adminEnv.reason);
+    }
   })();
   return initPromise;
 }
