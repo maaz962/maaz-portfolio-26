@@ -5,7 +5,7 @@ import { deleteUser } from "@/lib/db";
 /**
  * DELETE /api/admin/users/[id]
  * Permanently removes a non-admin user and all their records
- * (game progress, gamification, comments, likes). Admin-only.
+ * (game progress, gamification). Admin-only.
  */
 export async function DELETE(
   _req: NextRequest,

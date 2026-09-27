@@ -143,29 +143,6 @@ export interface User {
   hiddenFromLeaderboard?: boolean;
 }
 
-export interface Comment {
-  id: string;
-  blogSlug: string;
-  userId: string;
-  userName: string;
-  userAvatar: string;
-  content: string;
-  parentId?: string; // For nesting reply threads
-  isDeleted: boolean;
-  createdAt: string;
-  updatedAt?: string;
-}
-
-export interface Like {
-  id: string;
-  /** Set when the like targets a post/game (keyed by slug). */
-  blogSlug?: string;
-  /** Set when the like targets an individual comment. */
-  commentId?: string;
-  userId: string;
-  createdAt: string;
-}
-
 /** Per-user progress for a single game, so the user can resume where they left off. */
 export interface GameProgress {
   userId: string;

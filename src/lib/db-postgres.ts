@@ -14,7 +14,7 @@ import { getAdminEnv, adminAvatarUrl, ADMIN_CREATED_AT } from "./admin-seed";
 /**
  * Postgres-backed persistent data layer. Used when process.env.DATABASE_URL is
  * set (i.e. on Vercel). Unlike the file-based store, this survives deploys and
- * cold starts â€” game progress, likes, comments and users are never reset.
+ * cold starts â€” game progress and users are never reset.
  */
 
 // Neon's tagged template returns a wide union type that is awkward to map over;
@@ -72,36 +72,6 @@ async function initDb(): Promise<void> {
         total_levels INT NOT NULL DEFAULT 1,
         updated_at TEXT NOT NULL,
         PRIMARY KEY (user_id, game_slug)
-      )
-    `;
-    await sql`
-      CREATE TABLE IF NOT EXISTS post_likes (
-        id TEXT PRIMARY KEY,
-        blog_slug TEXT NOT NULL,
-        user_id TEXT NOT NULL,
-        created_at TEXT NOT NULL
-      )
-    `;
-    await sql`
-      CREATE TABLE IF NOT EXISTS comment_likes (
-        id TEXT PRIMARY KEY,
-        comment_id TEXT NOT NULL,
-        user_id TEXT NOT NULL,
-        created_at TEXT NOT NULL
-      )
-    `;
-    await sql`
-      CREATE TABLE IF NOT EXISTS comments (
-        id TEXT PRIMARY KEY,
-        blog_slug TEXT NOT NULL,
-        user_id TEXT NOT NULL,
-        user_name TEXT NOT NULL,
-        user_avatar TEXT NOT NULL DEFAULT '',
-        content TEXT NOT NULL,
-        parent_id TEXT,
-        is_deleted BOOLEAN NOT NULL DEFAULT false,
-        created_at TEXT NOT NULL,
-        updated_at TEXT
       )
     `;
     await sql`
@@ -599,8 +569,7 @@ export async function adjustUserXp(
 
 /**
  * Permanently removes a non-admin user and every record referencing them
- * (game progress, gamification cascades via FK, comments, likes). Admin
- * accounts are protected.
+ * (game progress, gamification cascades via FK). Admin accounts are protected.
  */
 export async function deleteUser(userId: string): Promise<{ ok: boolean }> {
   await initDb();
@@ -610,9 +579,6 @@ export async function deleteUser(userId: string): Promise<{ ok: boolean }> {
 
   await sql`DELETE FROM game_progress WHERE user_id = ${userId}`;
   await sql`DELETE FROM gamification WHERE user_id = ${userId}`;
-  await sql`DELETE FROM post_likes WHERE user_id = ${userId}`;
-  await sql`DELETE FROM comment_likes WHERE user_id = ${userId}`;
-  await sql`DELETE FROM comments WHERE user_id = ${userId}`;
   await sql`DELETE FROM users WHERE id = ${userId}`;
   return { ok: true };
 }

@@ -3,8 +3,6 @@ import path from "path";
 import crypto from "crypto";
 import type {
   User,
-  Comment,
-  Like,
   BlogCategory,
   BlogPost,
   BlogSettings,
@@ -24,8 +22,6 @@ import { getAdminEnv, adminAvatarUrl, ADMIN_ID, ADMIN_CREATED_AT } from "./admin
 // DB Types
 interface DatabaseSchema {
   users: UserWithPassword[];
-  comments: Comment[];
-  likes: Like[];
   blogSettings?: BlogSettings;
   gameProgress: GameProgress[];
   gamification: Gamification[];
@@ -75,8 +71,6 @@ async function readDbFile(): Promise<DatabaseSchema> {
     console.error("Error reading database file:", error);
     return {
       users: [],
-      comments: [],
-      likes: [],
       blogSettings: DEFAULT_BLOG_SETTINGS,
       gameProgress: [],
       gamification: [],
@@ -99,7 +93,7 @@ async function saveDbFile(data: DatabaseSchema): Promise<void> {
 }
 
 // Full read-modify-write operations are serialized through this queue so that
-// concurrent requests (e.g. a like POST racing a register) never clobber each
+// concurrent requests (e.g. a progress save racing a register) never clobber each
 // other's changes â€” each task re-reads the freshest file while holding the lock.
 let dbTaskQueue: Promise<unknown> = Promise.resolve();
 
@@ -124,8 +118,6 @@ function getSeedData(): DatabaseSchema {
   const user2Id = "user-ninja-id";
 
   const users: UserWithPassword[] = [
-    // Spreading `adminId` (rather than repeating the literal) keeps the seeded
-    // comment authors below pointing at whichever id the env actually configured.
     ...(adminEnv.ok
       ? [
           {
@@ -162,67 +154,7 @@ function getSeedData(): DatabaseSchema {
     },
   ];
 
-  const comments: Comment[] = [
-    {
-      id: "comment-1",
-      blogSlug: "building-high-performance-canvas-animations-flutter",
-      userId: user1Id,
-      userName: "Jane Doe",
-      userAvatar: "https://api.dicebear.com/7.x/bottts/svg?seed=jane_dev",
-      content: "This CustomPainter explanation is fantastic! I was having issues with drops in frame rate on canvas rebuilds. Storing path references did the trick.",
-      isDeleted: false,
-      createdAt: new Date("2026-08-19T09:15:00Z").toISOString(),
-    },
-    {
-      id: "comment-2",
-      blogSlug: "building-high-performance-canvas-animations-flutter",
-      userId: adminId,
-      userName: "M. Maaz Arif",
-      userAvatar: "https://api.dicebear.com/7.x/bottts/svg?seed=maaz_admin",
-      content: "Agree. RepaintBoundary is another life-saver for heavy canvas widgets. It isolates repaints so you don't rebuild the entire page context.",
-      parentId: "comment-1",
-      isDeleted: false,
-      createdAt: new Date("2026-08-19T10:30:00Z").toISOString(),
-    },
-    {
-      id: "comment-3",
-      blogSlug: "securing-nextjs-api-routes-against-owasp-top-10",
-      userId: user2Id,
-      userName: "Security Ninja",
-      userAvatar: "https://api.dicebear.com/7.x/bottts/svg?seed=security_ninja",
-      content: "Great overview! Do you have any code snippets for rate limiting using Upstash Redis on App Router edge runtime?",
-      isDeleted: false,
-      createdAt: new Date("2026-08-21T15:20:00Z").toISOString(),
-    },
-    {
-      id: "comment-4",
-      blogSlug: "securing-nextjs-api-routes-against-owasp-top-10",
-      userId: adminId,
-      userName: "M. Maaz Arif",
-      userAvatar: "https://api.dicebear.com/7.x/bottts/svg?seed=maaz_admin",
-      content: "Yes! I will publish a dedicated post with full code examples of the middleware rate-limiting flow soon.",
-      parentId: "comment-3",
-      isDeleted: false,
-      createdAt: new Date("2026-08-21T18:40:00Z").toISOString(),
-    },
-  ];
-
-  const likes: Like[] = [
-    {
-      id: "like-1",
-      blogSlug: "building-high-performance-canvas-animations-flutter",
-      userId: user1Id,
-      createdAt: new Date("2026-08-19T09:16:00Z").toISOString(),
-    },
-    {
-      id: "like-2",
-      blogSlug: "securing-nextjs-api-routes-against-owasp-top-10",
-      userId: user2Id,
-      createdAt: new Date("2026-08-21T15:21:00Z").toISOString(),
-    },
-  ];
-
-  return { users, comments, likes, blogSettings: DEFAULT_BLOG_SETTINGS, gameProgress: [], gamification: [] };
+  return { users, blogSettings: DEFAULT_BLOG_SETTINGS, gameProgress: [], gamification: [] };
 }
 
 // --- DATABASE FUNCTIONS ---
@@ -347,7 +279,7 @@ export async function getGameProgress(
 
 /**
  * Persists (upserts) one user's progress for a game, inside the write lock so
- * a save racing a register/like never clobbers the file.
+ * a save racing a register never clobbers the file.
  */
 export async function saveGameProgress(
   userId: string,
@@ -703,7 +635,7 @@ export async function adjustUserXp(
 
 /**
  * Permanently removes a non-admin user and every record referencing them
- * (game progress, gamification, comments, likes). Admin accounts are protected.
+ * (game progress, gamification). Admin accounts are protected.
  */
 export async function deleteUser(userId: string): Promise<{ ok: boolean }> {
   return withDbLock(async () => {
@@ -715,8 +647,6 @@ export async function deleteUser(userId: string): Promise<{ ok: boolean }> {
     db.users = db.users.filter((u) => u.id !== userId);
     db.gameProgress = (db.gameProgress ?? []).filter((p) => p.userId !== userId);
     db.gamification = (db.gamification ?? []).filter((g) => g.userId !== userId);
-    db.comments = (db.comments ?? []).filter((c) => c.userId !== userId);
-    db.likes = (db.likes ?? []).filter((l) => l.userId !== userId);
     await saveDbFile(db);
     return { ok: true };
   });

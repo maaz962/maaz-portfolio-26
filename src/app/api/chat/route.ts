@@ -62,7 +62,7 @@ CONTACT INFORMATION:
 - LinkedIn: https://www.linkedin.com/in/maaz-arif-webdev/
 
 GAMES (Maaz's "Learn Games" hub at /games is the main focus of his portfolio):
-Maaz built 7 playable coding games. Players must sign in (register/login) to save progress; progress and XP only count while signed in. Each game has likes and a discussion/comments section below it.
+Maaz built 7 playable coding games. Players must sign in (register/login) to save progress; progress and XP only count while signed in.
 
 Recommended order for brand-new beginners: start with HTML Hero (simplest visual), then Grid Garden, Flexbox Zoo, JS Detective, then Animation Arena, then PHP Playground, then Query Quest last (it needs the most reading). This is only a suggestion; nothing is locked and any game can be played first.
 
@@ -113,7 +113,7 @@ GAMIFICATION (shared across all games):
 - Leaderboard shows the top 10 players by total XP (site admins are excluded from it).
 
 OTHER PORTFOLIO FEATURES:
-- Blog section (/blog) with 6 posts (Flutter Canvas Animations, Local-First Web, React 19 Compiler and Server Actions, Optimizing Next.js for Scale, Securing Next.js API Routes, State Management in 2026); readers can like posts and add comments.
+- Blog section (/blog) with 6 posts (Flutter Canvas Animations, Local-First Web, React 19 Compiler and Server Actions, Optimizing Next.js for Scale, Securing Next.js API Routes, State Management in 2026).
 - Password-protected admin dashboard (/admin) with analytics: total visits, unique IPs, total events, top pages, browser/device breakdown, visitor locations and tracked interests.
 - The site anonymously tracks visitor activity (page views, clicks, scroll/time on page) to power that dashboard.
 - Maaz AI (you, this assistant) sits on every page with suggested questions, direct contact shortcuts (WhatsApp, email, LinkedIn) and a 20-question-per-session limit.

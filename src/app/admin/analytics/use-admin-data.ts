@@ -124,7 +124,7 @@ export function useAdminData(): AdminData {
     if (busy || user.isAdmin) return;
     if (
       !window.confirm(
-        `Delete @${user.username} and all of their progress, comments and likes? This cannot be undone.`
+        `Delete @${user.username} and all of their progress? This cannot be undone.`
       )
     ) {
       return;
