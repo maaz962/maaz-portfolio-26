@@ -1,8 +1,21 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import type { VisitorLog, VisitorStats } from "@/types/tracking";
 import type { User, LeaderboardEntry } from "@/types";
+
+/**
+ * A one-shot result message for the toast viewport.
+ *
+ * Keyed by `id` rather than held as a plain string: setting the same message
+ * twice in a row would otherwise be a no-op state change, and the second
+ * failure would stay silent.
+ */
+export interface AdminFeedback {
+  id: number;
+  message: string;
+  variant: "success" | "error";
+}
 
 export interface AdminData {
   stats: VisitorStats | null;
@@ -10,8 +23,11 @@ export interface AdminData {
   users: User[];
   leaderboard: LeaderboardEntry[];
   loading: boolean;
-  error: string;
-  notice: string;
+  /** True once the analytics request has settled (successfully or not). */
+  loaded: boolean;
+  /** True once the leaderboard request has settled (successfully or not). */
+  leaderboardLoaded: boolean;
+  feedback: AdminFeedback | null;
   busy: string | null;
   expandedLog: string | null;
   setExpandedLog: (id: string | null) => void;
@@ -22,9 +38,15 @@ export interface AdminData {
 }
 
 /**
- * All dashboard state and mutations, moved verbatim out of the former
- * `AnalyticsClient` component (which was 555 lines mixing fetching,
- * mutations and rendering).
+ * Owns every piece of state behind the admin Overview page: the analytics
+ * snapshot, the visitor log preview, the user list, the leaderboard, plus the
+ * mutations the panels trigger.
+ *
+ * `loaded` / `leaderboardLoaded` are what separate "still fetching" from
+ * "fetched and genuinely empty" — panels need that distinction to show a
+ * loading skeleton rather than an empty state on first paint. They latch true
+ * and are never reset, so a Refresh re-fetches in the background without
+ * flashing the skeleton over content the admin is already reading.
  */
 export function useAdminData(): AdminData {
   const [stats, setStats] = useState<VisitorStats | null>(null);
@@ -32,21 +54,26 @@ export function useAdminData(): AdminData {
   const [users, setUsers] = useState<User[]>([]);
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(false);
+  const [loaded, setLoaded] = useState(false);
+  const [leaderboardLoaded, setLeaderboardLoaded] = useState(false);
   const [expandedLog, setExpandedLog] = useState<string | null>(null);
-  const [error, setError] = useState("");
-  const [notice, setNotice] = useState("");
+  const [feedback, setFeedback] = useState<AdminFeedback | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
+  const nextFeedbackId = useRef(0);
+
+  const report = useCallback((message: string, variant: AdminFeedback["variant"]) => {
+    setFeedback({ id: nextFeedbackId.current++, message, variant });
+  }, []);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
-    setError("");
     try {
-      // The admin read side of the tracking data now has its own route; the
+      // The admin read side of the tracking data has its own route; the
       // dashboard calls that instead of borrowing the public /api/track path.
       // GET /api/track still re-exports it as a safety net for anything else.
       const res = await fetch("/api/admin/analytics", { cache: "no-store" });
       if (!res.ok) {
-        setError(await getResponseError(res, "Failed to load data"));
+        report(await getResponseError(res, "Failed to load data"), "error");
         return;
       }
       const data = await res.json();
@@ -54,11 +81,12 @@ export function useAdminData(): AdminData {
       setLogs(data.logs);
       setUsers(Array.isArray(data.users) ? data.users : []);
     } catch {
-      setError("Failed to load data");
+      report("Failed to load data", "error");
     } finally {
       setLoading(false);
+      setLoaded(true);
     }
-  }, []);
+  }, [report]);
 
   const fetchLeaderboard = useCallback(async () => {
     try {
@@ -66,15 +94,17 @@ export function useAdminData(): AdminData {
         cache: "no-store",
       });
       if (!res.ok) {
-        setError(await getResponseError(res, "Failed to load leaderboard"));
+        report(await getResponseError(res, "Failed to load leaderboard"), "error");
         return;
       }
       const data = await res.json();
       setLeaderboard(Array.isArray(data.entries) ? data.entries : []);
     } catch {
-      setError("Failed to load leaderboard");
+      report("Failed to load leaderboard", "error");
+    } finally {
+      setLeaderboardLoaded(true);
     }
-  }, []);
+  }, [report]);
 
   useEffect(() => {
     fetchData();
@@ -84,8 +114,6 @@ export function useAdminData(): AdminData {
   const adjustXp = useCallback(async (id: string, delta: number) => {
     if (busy) return;
     setBusy(`${id}:xp`);
-    setError("");
-    setNotice("");
     try {
       const res = await fetch(`/api/admin/users/${id}/xp`, {
         method: "POST",
@@ -94,10 +122,9 @@ export function useAdminData(): AdminData {
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setError(
-          typeof data?.error === "string"
-            ? data.error
-            : "Failed to update XP"
+        report(
+          typeof data?.error === "string" ? data.error : "Failed to update XP",
+          "error"
         );
         return;
       }
@@ -109,16 +136,14 @@ export function useAdminData(): AdminData {
             : entry
         )
       );
-      setNotice(
-        `XP updated by ${delta > 0 ? "+" : ""}${delta}.`
-      );
+      report(`XP updated by ${delta > 0 ? "+" : ""}${delta}.`, "success");
       await fetchLeaderboard();
     } catch {
-      setError("Failed to update XP");
+      report("Failed to update XP", "error");
     } finally {
       setBusy(null);
     }
-  }, [busy, fetchLeaderboard]);
+  }, [busy, fetchLeaderboard, report]);
 
   const removeUser = useCallback(async (user: DeletableUser) => {
     if (busy || user.isAdmin) return;
@@ -130,14 +155,12 @@ export function useAdminData(): AdminData {
       return;
     }
     setBusy(`${user.id}:del`);
-    setError("");
-    setNotice("");
     try {
       const res = await fetch(`/api/admin/users/${user.id}`, {
         method: "DELETE",
       });
       if (!res.ok) {
-        setError(await getResponseError(res, "Failed to delete user"));
+        report(await getResponseError(res, "Failed to delete user"), "error");
         return;
       }
 
@@ -145,14 +168,14 @@ export function useAdminData(): AdminData {
       setLeaderboard((current) =>
         current.filter((entry) => entry.user.id !== user.id)
       );
-      setNotice(`@${user.username} was deleted.`);
+      report(`@${user.username} was deleted.`, "success");
       await Promise.all([fetchLeaderboard(), fetchData()]);
     } catch {
-      setError("Failed to delete user");
+      report("Failed to delete user", "error");
     } finally {
       setBusy(null);
     }
-  }, [busy, fetchLeaderboard, fetchData]);
+  }, [busy, fetchLeaderboard, fetchData, report]);
 
   return {
     stats,
@@ -160,8 +183,9 @@ export function useAdminData(): AdminData {
     users,
     leaderboard,
     loading,
-    error,
-    notice,
+    loaded,
+    leaderboardLoaded,
+    feedback,
     busy,
     expandedLog,
     setExpandedLog,

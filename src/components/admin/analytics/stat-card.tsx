@@ -1,13 +1,34 @@
 "use client";
 
-export function StatCard({ icon: Icon, label, value }: { icon: any; label: string; value: string | number }) {
+import type { LucideIcon } from "lucide-react";
+import { cn } from "@/lib/utils";
+
+export interface StatCardProps {
+  icon: LucideIcon;
+  label: string;
+  value: string | number;
+}
+
+export function StatCard({ icon: Icon, label, value }: StatCardProps) {
+  // Counts read well large; a page path or label does not, so anything that is
+  // not a bare number drops a step and truncates rather than overflowing.
+  const isCount = typeof value === "number";
+
   return (
-    <div className="rounded-2xl border border-border bg-card p-4">
-      <div className="flex items-center gap-2 mb-2">
-        <Icon className="h-4 w-4 text-primary" />
-        <span className="text-[0.65rem] font-semibold uppercase tracking-wider text-muted">{label}</span>
+    <div className="rounded-2xl border border-border bg-card p-5">
+      <div className="mb-2 flex items-center gap-2">
+        <Icon className="h-4 w-4 shrink-0 text-primary" strokeWidth={1.75} />
+        <span className="truncate text-sm text-muted">{label}</span>
       </div>
-      <p className="font-display text-2xl font-semibold text-foreground">{value}</p>
+      <p
+        className={cn(
+          "truncate font-display font-semibold text-foreground",
+          isCount ? "text-3xl" : "text-xl"
+        )}
+        title={isCount ? undefined : String(value)}
+      >
+        {value}
+      </p>
     </div>
   );
 }

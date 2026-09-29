@@ -1,10 +1,15 @@
 "use client";
 
-export function InfoRow({ label, value }: { label: string; value: string }) {
+export interface InfoRowProps {
+  label: string;
+  value: string;
+}
+
+export function InfoRow({ label, value }: InfoRowProps) {
   return (
-    <div>
-      <p className="text-[0.6rem] font-semibold uppercase tracking-wider text-muted/60">{label}</p>
-      <p className="text-xs text-foreground/80 font-mono break-all">{value}</p>
+    <div className="min-w-0">
+      <p className="text-xs font-semibold uppercase tracking-wider text-muted">{label}</p>
+      <p className="text-mono text-sm break-all text-foreground/80">{value}</p>
     </div>
   );
 }
