@@ -116,5 +116,11 @@ export async function GET(req: NextRequest) {
     users = await listUsers();
   } catch {}
 
-  return NextResponse.json({ stats, logs: visitorLogs.slice(-100).reverse(), users });
+  // `logs` is gone from this response. The Overview no longer renders a log
+  // list, and every request was paying to serialize the newest 100 sessions —
+  // with their events and cookies — for a page that only draws stat cards,
+  // charts and the `recentActivity` preview above. The full list is
+  // GET /api/admin/logs, one page at a time. `stats.recentActivity` is
+  // aggregated here and is unaffected.
+  return NextResponse.json({ stats, users });
 }

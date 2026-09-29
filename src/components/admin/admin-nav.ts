@@ -14,8 +14,8 @@ export interface AdminNavItem {
  * Ordering matches the audit's proposed restructure -- read-only analytics
  * first, then audience (users + leaderboard), then raw traffic.
  *
- * `/admin/logs` is the target of the next migration step; until it lands that
- * link 404s. The other three routes exist.
+ * All four routes exist. Overview is a summary; Users, Leaderboard and Logs each
+ * own their own server-paginated list.
  */
 export const adminNavItems: AdminNavItem[] = [
   { label: "Overview", href: "/admin", icon: LayoutDashboard },

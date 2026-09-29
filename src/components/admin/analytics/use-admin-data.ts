@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import type { VisitorLog, VisitorStats } from "@/types/tracking";
+import type { VisitorStats } from "@/types/tracking";
 
 /**
  * A one-shot result message for the toast viewport.
@@ -18,24 +18,25 @@ export interface AdminFeedback {
 
 export interface AdminData {
   stats: VisitorStats | null;
-  logs: VisitorLog[];
   loading: boolean;
   /** True once the analytics request has settled (successfully or not). */
   loaded: boolean;
   feedback: AdminFeedback | null;
-  expandedLog: string | null;
-  setExpandedLog: (id: string | null) => void;
   fetchData: () => Promise<void>;
 }
 
 /**
- * Read-only state for the admin Overview page: the analytics snapshot and the
- * visitor log preview.
+ * Read-only state for the admin Overview page: the analytics snapshot.
  *
- * No mutations live here, and no leaderboard. The leaderboard used to be
- * fetched here as one unbounded list for a section that has since moved to
- * `/admin/leaderboard` with server-side paging; leaving the fetch behind would
- * have kept paying for 1,000 rows the page never renders.
+ * No mutations live here, and neither of the two heavy lists that used to hang
+ * off this hook:
+ *
+ * - the leaderboard is at `/admin/leaderboard` and the visitor logs at
+ *   `/admin/logs`, both paged on the server, so this page fetches a summary
+ *   instead of paying for rows it never renders
+ *
+ * "Recent Events" is unaffected: it reads `stats.recentActivity`, which is
+ * aggregated in the analytics route and is not the paginated log list.
  *
  * `loaded` separates "still fetching" from "fetched and genuinely empty" so
  * panels show a loading skeleton rather than an empty state on first paint. It
@@ -44,10 +45,8 @@ export interface AdminData {
  */
 export function useAdminData(): AdminData {
   const [stats, setStats] = useState<VisitorStats | null>(null);
-  const [logs, setLogs] = useState<VisitorLog[]>([]);
   const [loading, setLoading] = useState(false);
   const [loaded, setLoaded] = useState(false);
-  const [expandedLog, setExpandedLog] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<AdminFeedback | null>(null);
   const nextFeedbackId = useRef(0);
 
@@ -68,7 +67,6 @@ export function useAdminData(): AdminData {
       }
       const data = await res.json();
       setStats(data.stats);
-      setLogs(data.logs);
     } catch {
       report("Failed to load data", "error");
     } finally {
@@ -83,12 +81,9 @@ export function useAdminData(): AdminData {
 
   return {
     stats,
-    logs,
     loading,
     loaded,
     feedback,
-    expandedLog,
-    setExpandedLog,
     fetchData,
   };
 }

@@ -42,3 +42,30 @@ export interface VisitorStats {
   recentActivity: TrackingEvent[];
   interests: { label: string; count: number }[];
 }
+
+/** Sort keys accepted by the admin visitor-log list. */
+export type AdminLogSortKey = "time" | "ip" | "page" | "device" | "browser" | "os";
+
+/** Server-side query for one page of the admin visitor logs. */
+export interface AdminLogQuery {
+  /** 1-based page number. */
+  page: number;
+  pageSize: number;
+  /** Free-text match against the IP address or the page path. */
+  query?: string;
+  /** Exact device-type match, or empty for every device. */
+  device?: string;
+  sort: AdminLogSortKey;
+  direction: "asc" | "desc";
+}
+
+/** One page of visitor logs plus the metadata the pager and toolbar need. */
+export interface AdminLogPage {
+  rows: VisitorLog[];
+  total: number;
+  page: number;
+  pageSize: number;
+  pageCount: number;
+  /** Distinct device types with their row counts, for the filter dropdown. */
+  devices: { name: string; count: number }[];
+}

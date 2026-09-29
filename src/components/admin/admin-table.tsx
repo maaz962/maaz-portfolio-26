@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { Fragment, type ReactNode } from "react";
 import Link from "next/link";
 import { ArrowUpDown, ChevronDown, ChevronLeft, ChevronRight, ChevronUp } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -58,6 +58,8 @@ export function AdminTable<T>({
   loading = false,
   caption,
   rowHref,
+  expandedRowKey = null,
+  renderExpanded,
 }: {
   columns: AdminColumn<T>[];
   rows: T[];
@@ -75,6 +77,13 @@ export function AdminTable<T>({
    * order and the browser's "open in new tab" both behave normally.
    */
   rowHref?: (row: T) => string;
+  /**
+   * Row whose detail panel is open. Controlled by the parent, like `sort`, so
+   * the expansion survives a re-fetch and can be collapsed on navigation.
+   */
+  expandedRowKey?: string | null;
+  /** Detail panel rendered in a full-width row under `expandedRowKey`. */
+  renderExpanded?: (row: T) => ReactNode;
 }) {
   const toggle = (column: AdminColumn<T>) => {
     if (!column.sortable) return;
@@ -150,30 +159,46 @@ export function AdminTable<T>({
                 </td>
               </tr>
             ) : (
-              rows.map((row) => (
-                <tr
-                  key={getRowKey(row)}
-                  className={cn(
-                    "border-b border-border last:border-b-0 transition-colors hover:bg-background-secondary/30",
-                    rowHref && "relative"
-                  )}
-                >
-                  {columns.map((column, columnIndex) => (
-                    <td key={column.key} className={cellClasses(column, "px-4 py-3 align-middle")}>
-                      {rowHref && columnIndex === 0 ? (
-                        <Link
-                          href={rowHref(row)}
-                          className="after:absolute after:inset-0 after:content-['']"
-                        >
-                          {column.render(row)}
-                        </Link>
-                      ) : (
-                        column.render(row)
+              rows.map((row) => {
+                const key = getRowKey(row);
+                const expanded = renderExpanded ? expandedRowKey === key : false;
+                return (
+                  <Fragment key={key}>
+                    <tr
+                      className={cn(
+                        "border-b border-border transition-colors hover:bg-background-secondary/30",
+                        // The last visible row before an open panel keeps its
+                        // separator so the two rows read as one unit.
+                        expanded && renderExpanded ? "border-b-0" : "last:border-b-0",
+                        rowHref && "relative"
                       )}
-                    </td>
-                  ))}
-                </tr>
-              ))
+                      data-expanded={expanded ? "true" : undefined}
+                    >
+                      {columns.map((column, columnIndex) => (
+                        <td key={column.key} className={cellClasses(column, "px-4 py-3 align-middle")}>
+                          {rowHref && columnIndex === 0 ? (
+                            <Link
+                              href={rowHref(row)}
+                              className="after:absolute after:inset-0 after:content-['']"
+                            >
+                              {column.render(row)}
+                            </Link>
+                          ) : (
+                            column.render(row)
+                          )}
+                        </td>
+                      ))}
+                    </tr>
+                    {expanded && renderExpanded && (
+                      <tr className="border-b border-border last:border-b-0 bg-background-secondary/20">
+                        <td colSpan={columns.length} className="px-4 py-4">
+                          {renderExpanded(row)}
+                        </td>
+                      </tr>
+                    )}
+                  </Fragment>
+                );
+              })
             )}
           </tbody>
         </table>

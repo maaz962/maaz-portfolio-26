@@ -14,16 +14,20 @@ import {
 import { useAdminData } from "./use-admin-data";
 import { OverviewSection } from "./overview-section";
 import { EventsSection } from "./events-section";
-import { LogsSection } from "./logs-section";
 
 /**
  * `/admin` — the Overview route.
  *
- * Deliberately a summary now. The leaderboard used to be rendered here as one
- * unbounded list, which made opening the dashboard cost a 1,000-row request and
- * buried the visitor analytics it exists to summarise; it lives at
- * `/admin/leaderboard` now, paged on the server. Nothing on this page is
- * derived from the leaderboard, so removing it changed no numbers here.
+ * Deliberately a summary now. Two heavy lists used to live here:
+ *
+ * - the leaderboard, as one unbounded list, which made opening the dashboard
+ *   cost a 1,000-row request; it is at `/admin/leaderboard`, paged on the server
+ * - the visitor logs, as the newest 100 rows inline in the analytics response;
+ *   they are at `/admin/logs`, paged on the server
+ *
+ * Nothing on this page is derived from either, so removing them changed no
+ * numbers here. "Recent Events" stays because it is a different thing: a
+ * lightweight tail of `stats.recentActivity`, not a paginated log list.
  */
 export function DashboardView() {
   return (
@@ -34,8 +38,7 @@ export function DashboardView() {
 }
 
 function OverviewPage() {
-  const { stats, logs, loading, loaded, feedback, expandedLog, setExpandedLog, fetchData } =
-    useAdminData();
+  const { stats, loading, loaded, feedback, fetchData } = useAdminData();
 
   const { notify } = useToast();
 
@@ -96,7 +99,6 @@ function OverviewPage() {
                 <BarChartSkeleton />
               </div>
               <div className="grid gap-4 lg:grid-cols-2">
-                <PanelSkeleton rows={4} titleWidth="w-40" />
                 <PanelSkeleton rows={2} titleWidth="w-36" />
               </div>
             </>
@@ -106,12 +108,6 @@ function OverviewPage() {
             <EventsSection stats={stats} />
           ) : (
             <PanelSkeleton rows={5} titleWidth="w-32" />
-          )}
-
-          {loaded ? (
-            <LogsSection logs={logs} expandedLog={expandedLog} setExpandedLog={setExpandedLog} />
-          ) : (
-            <PanelSkeleton rows={4} titleWidth="w-36" />
           )}
         </>
       )}
