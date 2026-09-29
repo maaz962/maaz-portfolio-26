@@ -150,7 +150,7 @@ export function AdminTable<T>({
                 </td>
               </tr>
             ) : (
-              rows.map((row, rowIndex) => (
+              rows.map((row) => (
                 <tr
                   key={getRowKey(row)}
                   className={cn(

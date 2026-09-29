@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import type { VisitorLog, VisitorStats } from "@/types/tracking";
-import type { LeaderboardEntry } from "@/types";
 
 /**
  * A one-shot result message for the toast viewport.
@@ -20,40 +19,34 @@ export interface AdminFeedback {
 export interface AdminData {
   stats: VisitorStats | null;
   logs: VisitorLog[];
-  leaderboard: LeaderboardEntry[];
   loading: boolean;
   /** True once the analytics request has settled (successfully or not). */
   loaded: boolean;
-  /** True once the leaderboard request has settled (successfully or not). */
-  leaderboardLoaded: boolean;
   feedback: AdminFeedback | null;
   expandedLog: string | null;
   setExpandedLog: (id: string | null) => void;
   fetchData: () => Promise<void>;
-  fetchLeaderboard: () => Promise<void>;
 }
 
 /**
- * Read-only state for the admin Overview page: the analytics snapshot, the
- * visitor log preview and the leaderboard.
+ * Read-only state for the admin Overview page: the analytics snapshot and the
+ * visitor log preview.
  *
- * No mutations live here any more. XP changes and deletes moved to
- * `/admin/users/[id]`, so every per-user write now happens in exactly one place
- * with one confirmation flow — see `useUserDetail`.
+ * No mutations live here, and no leaderboard. The leaderboard used to be
+ * fetched here as one unbounded list for a section that has since moved to
+ * `/admin/leaderboard` with server-side paging; leaving the fetch behind would
+ * have kept paying for 1,000 rows the page never renders.
  *
- * `loaded` / `leaderboardLoaded` are what separate "still fetching" from
- * "fetched and genuinely empty" — panels need that distinction to show a
- * loading skeleton rather than an empty state on first paint. They latch true
- * and are never reset, so a Refresh re-fetches in the background without
- * flashing the skeleton over content the admin is already reading.
+ * `loaded` separates "still fetching" from "fetched and genuinely empty" so
+ * panels show a loading skeleton rather than an empty state on first paint. It
+ * latches true and is never reset, so Refresh re-fetches in the background
+ * without flashing the skeleton over content the admin is already reading.
  */
 export function useAdminData(): AdminData {
   const [stats, setStats] = useState<VisitorStats | null>(null);
   const [logs, setLogs] = useState<VisitorLog[]>([]);
-  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(false);
   const [loaded, setLoaded] = useState(false);
-  const [leaderboardLoaded, setLeaderboardLoaded] = useState(false);
   const [expandedLog, setExpandedLog] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<AdminFeedback | null>(null);
   const nextFeedbackId = useRef(0);
@@ -84,41 +77,19 @@ export function useAdminData(): AdminData {
     }
   }, [report]);
 
-  const fetchLeaderboard = useCallback(async () => {
-    try {
-      const res = await fetch("/api/games/leaderboard?admin=1", {
-        cache: "no-store",
-      });
-      if (!res.ok) {
-        report(await getResponseError(res, "Failed to load leaderboard"), "error");
-        return;
-      }
-      const data = await res.json();
-      setLeaderboard(Array.isArray(data.entries) ? data.entries : []);
-    } catch {
-      report("Failed to load leaderboard", "error");
-    } finally {
-      setLeaderboardLoaded(true);
-    }
-  }, [report]);
-
   useEffect(() => {
     fetchData();
-    fetchLeaderboard();
-  }, [fetchData, fetchLeaderboard]);
+  }, [fetchData]);
 
   return {
     stats,
     logs,
-    leaderboard,
     loading,
     loaded,
-    leaderboardLoaded,
     feedback,
     expandedLog,
     setExpandedLog,
     fetchData,
-    fetchLeaderboard,
   };
 }
 

@@ -282,3 +282,49 @@ export interface AdminUserDetail {
   games: AdminUserGameProgress[];
   xpHistory: XpAdjustmentRecord[];
 }
+
+/**
+ * One row of the admin leaderboard.
+ *
+ * Differs from `LeaderboardEntry` in one deliberate way: hidden accounts are
+ * present here and flagged, instead of being filtered out. An admin inspecting
+ * the panel needs to see that a player exists and is suppressed, otherwise a
+ * missing row is indistinguishable from a deleted account.
+ */
+export interface AdminLeaderboardRow {
+  /** 1-based public rank, or null when the account is not on the public board. */
+  rank: number | null;
+  user: Pick<User, "id" | "name" | "username" | "avatarUrl">;
+  totalXp: number;
+  level: number;
+  gamesPlayed: number;
+  currentStreak: number;
+  /** Excluded from the public leaderboard, either by flag or hard exclusion. */
+  hidden: boolean;
+}
+
+/** Sort keys accepted by the admin leaderboard. */
+export type AdminLeaderboardSortKey = "rank" | "xp" | "name" | "streak";
+
+/** Server-side query for one page of the admin leaderboard. */
+export interface AdminLeaderboardQuery {
+  /** 1-based page number. */
+  page: number;
+  pageSize: number;
+  /** Free-text match against name or username. */
+  query?: string;
+  sort: AdminLeaderboardSortKey;
+  direction: "asc" | "desc";
+}
+
+/** One page of admin leaderboard rows plus the counts the pager needs. */
+export interface AdminLeaderboardPage {
+  rows: AdminLeaderboardRow[];
+  /** Rows matching the current search, across all pages. */
+  total: number;
+  page: number;
+  pageSize: number;
+  pageCount: number;
+  /** How many of the matched rows are hidden from the public board. */
+  hiddenCount: number;
+}

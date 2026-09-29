@@ -12,6 +12,8 @@ import type {
   XpAdjustmentRecord,
   AdminUserDetail,
   AdminUserGameProgress,
+  AdminLeaderboardPage,
+  AdminLeaderboardQuery,
 } from "@/types";
 import { hashPassword, verifyPassword } from "./password";
 import { games } from "@/data/games";
@@ -24,6 +26,13 @@ import {
   DAILY_HINT_LIMIT,
 } from "./gamification";
 import { getAdminEnv, adminAvatarUrl, ADMIN_ID, ADMIN_CREATED_AT } from "./admin-seed";
+import {
+  buildStandings,
+  matchesPlayerQuery,
+  sortStandings,
+  standingToAdminRow,
+  standingToEntry,
+} from "./leaderboard";
 
 // DB Types
 interface DatabaseSchema {
@@ -49,18 +58,22 @@ const DB_FILE_PATH = path.join(process.cwd(), "src", "data", "blog-db.json");
 
 // Usernames that must never appear on the public leaderboard, regardless of
 // the DB state (defense-in-depth on top of the hiddenFromLeaderboard flag).
-const HIDDEN_USERNAMES = new Set([
-  "test4",
-  "test5",
-  "dua",
-  "dua_zainab",
-  "zainab",
-  "rania",
-  "rania_afzal",
-  "Rania Afzal",
-  "Dua",
-  "@dua_zainab",
-]);
+// Lowercased on construction: the Postgres side compares with LOWER(), and a
+// case-sensitive check here would let "Test4" through on this backend only.
+const HIDDEN_USERNAMES = new Set(
+  [
+    "test4",
+    "test5",
+    "dua",
+    "dua_zainab",
+    "zainab",
+    "rania",
+    "rania_afzal",
+    "Rania Afzal",
+    "Dua",
+    "@dua_zainab",
+  ].map((name) => name.toLowerCase())
+);
 
 // Thread-safe-ish sequential lock queue to prevent race conditions on write
 let writePromise: Promise<void> = Promise.resolve();
@@ -532,69 +545,76 @@ export async function consumeDailyHint(
 /** Top players by total XP (admins excluded â€” they're the site owners). */
 export async function getLeaderboard(limit = 10): Promise<LeaderboardEntry[]> {
   const db = await readDbFile();
-  const scored = db.users
-    .filter((u) => !u.isAdmin && !HIDDEN_USERNAMES.has(u.username))
-    .map((u) => {
-      const gp = (db.gameProgress ?? []).filter((p) => p.userId === u.id);
-      const stored = (db.gamification ?? []).find((g) => g.userId === u.id);
-      const totalXp = gp.reduce((sum, p) => sum + (p.score || 0), 0) + (stored?.xpAdjustment ?? 0);
-      return {
-        id: u.id,
-        name: u.name,
-        username: u.username,
-        avatarUrl: u.avatarUrl,
-        createdAt: u.createdAt,
-        totalXp,
-        gamesPlayed: new Set(gp.map((p) => p.gameSlug)).size,
-        currentStreak: stored?.currentStreak ?? 0,
-        // An explicit admin opt-out is unconditional. It used to stop applying
-        // at 100 XP so QA accounts could not leave the board empty, but the
-        // admin UI calls this "hide from leaderboard" and promises the player
-        // disappears — a flag that leaks at a higher score is worse than no
-        // flag. HIDDEN_USERNAMES is kept above as a separate hard exclusion.
-        hidden: u.hiddenFromLeaderboard,
-      };
-    })
+  return buildStandings({
+    users: db.users,
+    gameProgress: db.gameProgress ?? [],
+    gamification: db.gamification ?? [],
+    hiddenUsernames: HIDDEN_USERNAMES,
+  })
     .filter((s) => !s.hidden)
-    .sort(
-      (a, b) =>
-        b.totalXp - a.totalXp || a.createdAt.localeCompare(b.createdAt)
-    );
-
-  return scored.slice(0, limit).map((s, i) => ({
-    rank: i + 1,
-    user: { id: s.id, name: s.name, username: s.username, avatarUrl: s.avatarUrl },
-    totalXp: s.totalXp,
-    level: levelForXp(s.totalXp),
-    gamesPlayed: s.gamesPlayed,
-    currentStreak: s.currentStreak,
-  }));
+    // `buildStandings` returns rows in registration order with ranks attached;
+    // the board has to be ordered by rank before the limit is applied, or the
+    // "top 10" would be the first 10 people who signed up.
+    .sort((a, b) => (a.rank ?? 0) - (b.rank ?? 0))
+    .slice(0, limit)
+    .map(standingToEntry);
 }
 
 /** 1-based rank among all non-admin players; null for admins / unknown users. */
 export async function getUserRank(userId: string): Promise<number | null> {
   const db = await readDbFile();
-  const target = db.users.find((u) => u.id === userId);
-  if (!target || target.isAdmin) return null;
+  const standing = buildStandings({
+    users: db.users,
+    gameProgress: db.gameProgress ?? [],
+    gamification: db.gamification ?? [],
+    hiddenUsernames: HIDDEN_USERNAMES,
+  }).find((s) => s.user.id === userId);
+  return standing?.rank ?? null;
+}
 
-  const ranked = db.users
-    .filter((u) => !u.isAdmin && !HIDDEN_USERNAMES.has(u.username))
-    .map((u) => {
-      const gp = (db.gameProgress ?? []).filter((p) => p.userId === u.id);
-      const stored = (db.gamification ?? []).find((g) => g.userId === u.id);
-      const xp = gp.reduce((sum, p) => sum + (p.score || 0), 0) + (stored?.xpAdjustment ?? 0);
-      return {
-        id: u.id,
-        xp,
-        createdAt: u.createdAt,
-        hidden: u.hiddenFromLeaderboard,
-      };
-    })
-    .filter((r) => !r.hidden)
-    .sort((a, b) => b.xp - a.xp || a.createdAt.localeCompare(b.createdAt));
+/**
+ * One page of the admin leaderboard.
+ *
+ * Search, sort and paging all happen before the slice is taken, so the response
+ * holds at most `pageSize` rows no matter how many players exist. The file
+ * store still reads the whole JSON file to do it -- that is inherent to the
+ * backend -- but the wire payload and the render cost are bounded, and the
+ * Postgres implementation below pushes the same work into SQL.
+ *
+ * Hidden accounts are included and flagged rather than filtered out: an admin
+ * looking at this panel needs to see that the player exists and is suppressed,
+ * otherwise an absent row is indistinguishable from a deleted account.
+ */
+export async function getAdminLeaderboardPage(
+  query: AdminLeaderboardQuery
+): Promise<AdminLeaderboardPage> {
+  const db = await readDbFile();
 
-  const idx = ranked.findIndex((r) => r.id === userId);
-  return idx > -1 ? idx + 1 : null;
+  const matched = buildStandings({
+    users: db.users,
+    gameProgress: db.gameProgress ?? [],
+    gamification: db.gamification ?? [],
+    hiddenUsernames: HIDDEN_USERNAMES,
+  })
+    .filter((s) => matchesPlayerQuery(s, query.query ?? ""))
+    .map(standingToAdminRow);
+
+  const sorted = sortStandings(matched, query.sort, query.direction);
+  const total = sorted.length;
+  const pageCount = Math.max(1, Math.ceil(total / query.pageSize));
+  // A search can shrink the result set under the page the admin was on; clamp
+  // instead of returning an empty page that looks like "no such player".
+  const page = Math.min(Math.max(1, query.page), pageCount);
+  const start = (page - 1) * query.pageSize;
+
+  return {
+    rows: sorted.slice(start, start + query.pageSize),
+    total,
+    page,
+    pageSize: query.pageSize,
+    pageCount,
+    hiddenCount: sorted.filter((r) => r.hidden).length,
+  };
 }
 
 // --- ADMIN USER MANAGEMENT ---

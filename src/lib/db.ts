@@ -33,6 +33,7 @@ export const getDailyHintUsage = impl.getDailyHintUsage;
 export const consumeDailyHint = impl.consumeDailyHint;
 export const getLeaderboard = impl.getLeaderboard;
 export const getUserRank = impl.getUserRank;
+export const getAdminLeaderboardPage = impl.getAdminLeaderboardPage;
 
 // Password helpers are backend-agnostic; re-export from the shared module.
 export { hashPassword, verifyPassword } from "./password";

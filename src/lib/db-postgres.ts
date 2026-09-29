@@ -7,6 +7,9 @@ import type {
   LeaderboardEntry,
   XpAdjustmentRecord,
   AdminUserDetail,
+  AdminLeaderboardPage,
+  AdminLeaderboardQuery,
+  AdminLeaderboardSortKey,
 } from "@/types";
 import { hashPassword, verifyPassword } from "./password";
 import { getPgConnectionString, usePostgres } from "./pg-connection";
@@ -31,15 +34,20 @@ import { getAdminEnv, adminAvatarUrl, ADMIN_CREATED_AT } from "./admin-seed";
 // we narrow it to Promise<any[]> since the driver always returns arrays of rows.
 type DbTag = (strings: TemplateStringsArray, ...values: any[]) => Promise<any[]>;
 
-/** `neon()`'s real return value also exposes `transaction()`; the local
- * `DbTag` alias narrows it away, so the multi-statement path is declared here
- * rather than casting `sql` to `any` at every call site. */
-type DbTagWithTransaction = DbTag & {
+/** `neon()`'s real return value also exposes `transaction()` and `unsafe()`;
+ * the local `DbTag` alias narrows them away, so they are declared here rather
+ * than casting `sql` to `any` at every call site.
+ *
+ * `unsafe` is used only to interpolate an ORDER BY clause chosen from a
+ * hardcoded whitelist -- a column name cannot be bound as a parameter, and no
+ * request value ever reaches it. */
+type DbTagWithExtras = DbTag & {
   transaction: (queries: any[]) => Promise<any[]>;
+  unsafe: (raw: string) => any;
 };
 
 const conn = getPgConnectionString();
-const sql = (conn ? neon(conn) : null) as unknown as DbTagWithTransaction;
+const sql = (conn ? neon(conn) : null) as unknown as DbTagWithExtras;
 
 // Usernames that must never appear on the public leaderboard regardless of
 // the stored flag (defense-in-depth for accounts created outside this app).
@@ -56,17 +64,21 @@ const HIDDEN_USERNAMES = [
   "@dua_zainab",
 ];
 
+// Pre-lowercased once: the filter compares against LOWER(u.username) so a
+// differently-cased duplicate account can't slip onto the public board.
+const HIDDEN_USERNAMES_LOWERED = HIDDEN_USERNAMES.map((n) => n.toLowerCase());
+
 /**
  * Hard-exclusion predicate for a `users u` FROM clause.
  *
- * Must be `= ANY($1)` and never `NOT IN ($1)`: the neon tagged template sends an
- * interpolated array as a single bound parameter, so `x NOT IN ($1)` compares
- * the column against that array as one value, never matches, and silently
+ * Must be `= ANY($1)`, never `NOT IN ($1)`: the neon tagged template sends an
+ * interpolated array as a single bound parameter, and `x NOT IN ($1)` compares
+ * the column against that array as one value, so it never matches and silently
  * returns every row. That bug let the test accounts sit on the live public
  * leaderboard. `= ANY(...)` is the form Postgres evaluates per element, and an
  * empty list matches nobody rather than everybody.
  */
-const NOT_HARD_EXCLUDED = sql`NOT (LOWER(u.username) = ANY(${HIDDEN_USERNAMES.map((n) => n.toLowerCase())}))`;
+const IS_HARD_EXCLUDED = sql`LOWER(u.username) = ANY(${HIDDEN_USERNAMES_LOWERED})`;
 
 let initPromise: Promise<void> | null = null;
 
@@ -517,25 +529,51 @@ export async function consumeDailyHint(
 }
 
 /** Top players by total XP (admins excluded â€” they're the site owners). */
-export async function getLeaderboard(limit = 10): Promise<LeaderboardEntry[]> {
-  await initDb();
-  const rows = await sql`
+/**
+ * The per-player standing every leaderboard read is built from.
+ *
+ * `public_rank` is assigned in a second CTE rather than with LIMIT/OFFSET so
+ * it is the player's rank across the whole board, not their position inside a
+ * page. Hidden accounts get a NULL rank, which is what makes "on the public
+ * board" and "shown in the admin list" two separate questions.
+ *
+ * The window orders hidden rows last *before* numbering, so the visible players
+ * get 1..N with no gaps. Numbering first and nulling afterwards would leave
+ * holes wherever a hidden account was removed from the public board.
+ */
+const STANDINGS_CTE = sql`
+  WITH standings AS (
     SELECT u.id, u.name, u.username, u.avatar_url, u.created_at,
            (COALESCE(SUM(gp.score), 0) + COALESCE(g.xp_adjustment, 0))::int AS total_xp,
            COUNT(DISTINCT gp.game_slug)::int AS games_played,
-           COALESCE(g.current_streak, 0)::int AS current_streak
+           COALESCE(g.current_streak, 0)::int AS current_streak,
+           (COALESCE(u.hidden_from_leaderboard, false) OR ${IS_HARD_EXCLUDED}) AS hidden
     FROM users u
     LEFT JOIN game_progress gp ON gp.user_id = u.id
     LEFT JOIN gamification g ON g.user_id = u.id
     WHERE u.is_admin = false
-      AND ${NOT_HARD_EXCLUDED}
-    GROUP BY u.id, u.created_at, g.current_streak, g.xp_adjustment
-    HAVING NOT COALESCE(u.hidden_from_leaderboard, false)
-    ORDER BY total_xp DESC, u.created_at ASC
+    GROUP BY u.id, g.current_streak, g.xp_adjustment
+  ),
+  ranked AS (
+    SELECT *, CASE WHEN hidden THEN NULL
+      ELSE ROW_NUMBER() OVER (
+        ORDER BY (hidden IS TRUE) ASC, total_xp DESC, created_at ASC
+      )
+    END::int AS public_rank
+    FROM standings
+  )`;
+
+export async function getLeaderboard(limit = 10): Promise<LeaderboardEntry[]> {
+  await initDb();
+  const rows = await sql`
+    ${STANDINGS_CTE}
+    SELECT * FROM ranked
+    WHERE NOT hidden
+    ORDER BY public_rank ASC
     LIMIT ${limit}
   `;
-  return rows.map((r: any, i: number) => ({
-    rank: i + 1,
+  return rows.map((r: any) => ({
+    rank: r.public_rank,
     user: { id: r.id, name: r.name, username: r.username, avatarUrl: r.avatar_url },
     totalXp: r.total_xp,
     level: levelForXp(r.total_xp),
@@ -547,24 +585,86 @@ export async function getLeaderboard(limit = 10): Promise<LeaderboardEntry[]> {
 /** 1-based rank among all non-admin players; null for admins / unknown users. */
 export async function getUserRank(userId: string): Promise<number | null> {
   await initDb();
-  const rows = await sql`
-    SELECT u.id, u.created_at,
-           (COALESCE(SUM(gp.score), 0) + COALESCE(g.xp_adjustment, 0))::int AS xp
-    FROM users u
-    LEFT JOIN game_progress gp ON gp.user_id = u.id
-    LEFT JOIN gamification g ON g.user_id = u.id
-    WHERE u.is_admin = false
-      AND ${NOT_HARD_EXCLUDED}
-    GROUP BY u.id, u.created_at, g.xp_adjustment
-    HAVING NOT COALESCE(u.hidden_from_leaderboard, false)
+  const [row] = await sql`
+    ${STANDINGS_CTE}
+    SELECT public_rank FROM ranked WHERE id = ${userId} LIMIT 1
   `;
-  const ranked = rows
-    .sort(
-      (a: any, b: any) => b.xp - a.xp || a.created_at.localeCompare(b.created_at)
-    )
-    .map((r: any) => r.id);
-  const idx = ranked.indexOf(userId);
-  return idx > -1 ? idx + 1 : null;
+  return row?.public_rank ?? null;
+}
+
+/**
+ * One page of the admin leaderboard, filtered, sorted and sliced in SQL.
+ *
+ * The sort key is whitelisted rather than interpolated: it reaches here straight
+ * from a query string, and a column name cannot be bound as a parameter.
+ *
+ * Hidden accounts are returned with a flag instead of being filtered out. An
+ * admin inspecting the panel needs to see that a player exists and is
+ * suppressed, otherwise a missing row is indistinguishable from a deleted one.
+ * "Rank" sort mirrors the public board and sinks them; every other key sorts
+ * the whole set, which is the question "where does this player stand?".
+ */
+export async function getAdminLeaderboardPage(
+  query: AdminLeaderboardQuery
+): Promise<AdminLeaderboardPage> {
+  await initDb();
+  const { page, pageSize, sort, direction } = query;
+  const needle = (query.query ?? "").trim().toLowerCase();
+  const like = `%${needle}%`;
+  const dir = direction === "asc" ? "ASC" : "DESC";
+
+  const ORDER_BY: Record<AdminLeaderboardSortKey, string> = {
+    // Hidden accounts last, then by XP. NULLs sort first in Postgres by
+    // default, so they need an explicit guard rather than the bare rank.
+    rank: dir === "ASC"
+      ? "hidden ASC, public_rank ASC NULLS LAST, total_xp DESC, created_at ASC, id ASC"
+      : "hidden DESC, public_rank DESC NULLS FIRST, total_xp DESC, created_at ASC, id ASC",
+    xp: "total_xp " + dir + ", public_rank ASC NULLS LAST, id ASC",
+    name: "LOWER(name) " + dir + ", public_rank ASC NULLS LAST, id ASC",
+    streak: "current_streak " + dir + ", public_rank ASC NULLS LAST, id ASC",
+  };
+
+  const [counts] = await sql`
+    ${STANDINGS_CTE}
+    SELECT COUNT(*)::int AS total,
+           COUNT(*) FILTER (WHERE hidden)::int AS hidden_count
+    FROM ranked
+    WHERE ${needle
+      ? sql`(LOWER(name) LIKE ${like} OR LOWER(username) LIKE ${like})`
+      : sql`TRUE`}
+  `;
+
+  const total = counts?.total ?? 0;
+  const pageCount = Math.max(1, Math.ceil(total / pageSize));
+  const safePage = Math.min(Math.max(1, page), pageCount);
+  const offset = (safePage - 1) * pageSize;
+
+  const rows = await sql`
+    ${STANDINGS_CTE}
+    SELECT * FROM ranked
+    WHERE ${needle
+      ? sql`(LOWER(name) LIKE ${like} OR LOWER(username) LIKE ${like})`
+      : sql`TRUE`}
+    ORDER BY ${sql.unsafe(ORDER_BY[sort])}
+    LIMIT ${pageSize} OFFSET ${offset}
+  `;
+
+  return {
+    rows: rows.map((r: any) => ({
+      rank: r.public_rank ?? null,
+      user: { id: r.id, name: r.name, username: r.username, avatarUrl: r.avatar_url },
+      totalXp: r.total_xp,
+      level: levelForXp(r.total_xp),
+      gamesPlayed: r.games_played,
+      currentStreak: r.current_streak,
+      hidden: r.hidden,
+    })),
+    total,
+    page: safePage,
+    pageSize,
+    pageCount,
+    hiddenCount: counts?.hidden_count ?? 0,
+  };
 }
 
 // --- ADMIN USER MANAGEMENT ---
