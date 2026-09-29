@@ -8,7 +8,11 @@ import type { AdminSort } from "@/components/admin/admin-table";
  * which is why sorting by XP needs no new backend route in this step.
  */
 export interface AdminUser extends User {
-  /** `null` when the leaderboard has no entry (admins, hidden QA accounts). */
+  /**
+   * Every account gets a real total, admin and hidden included, since the
+   * server totals them directly. `null` only means the server could not supply
+   * one, so the column renders as "—" rather than a misleading 0.
+   */
   totalXp: number | null;
 }
 

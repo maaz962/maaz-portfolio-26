@@ -20,42 +20,32 @@ export function useUsersData() {
   }, []);
 
   /**
-   * Reuses the two endpoints the admin already has rather than adding a backend
-   * route for this step: the analytics response carries the user records, and
-   * the admin leaderboard response carries per-user XP.
+   * One request: the analytics response carries both the user records and each
+   * account's own `totalXp`.
+   *
+   * XP used to be derived from a leaderboard fetch, which was wrong twice over:
+   * the `?admin=1` branch it called was removed in an earlier step (so the
+   * column silently fell back to the public top 10), and the standings that
+   * back the board exclude admin accounts and hidden players, so the admin row
+   * and every suppressed account rendered blank. A user with no progress is now
+   * an explicit 0 rather than a null, which also makes the column sortable.
    */
   const fetchUsers = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const [analyticsRes, leaderboardRes] = await Promise.all([
-        fetch("/api/admin/analytics", { cache: "no-store" }),
-        fetch("/api/games/leaderboard?admin=1", { cache: "no-store" }),
-      ]);
-
+      const analyticsRes = await fetch("/api/admin/analytics", { cache: "no-store" });
       if (!analyticsRes.ok) throw new Error("Failed to load users");
 
       const analytics = await analyticsRes.json();
-      const records: User[] = Array.isArray(analytics.users) ? analytics.users : [];
-
-      // A leaderboard failure must not fail the page: XP is a sortable extra,
-      // not the data the page is about.
-      const xpById = new Map<string, number>();
-      if (leaderboardRes.ok) {
-        try {
-          const board = await leaderboardRes.json();
-          for (const entry of Array.isArray(board.entries) ? board.entries : []) {
-            if (entry?.user?.id) xpById.set(entry.user.id, Number(entry.totalXp) || 0);
-          }
-        } catch {
-          /* XP column degrades to "—" */
-        }
-      }
+      const records: (User & { totalXp?: number })[] = Array.isArray(analytics.users)
+        ? analytics.users
+        : [];
 
       setUsers(
         records.map((user) => ({
           ...user,
-          totalXp: xpById.has(user.id) ? xpById.get(user.id)! : null,
+          totalXp: Number.isFinite(user.totalXp) ? Number(user.totalXp) : null,
         }))
       );
     } catch (err) {

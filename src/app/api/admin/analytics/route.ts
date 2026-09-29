@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import type { VisitorLog, VisitorStats, TrackingEvent } from "@/types/tracking";
 import type { User } from "@/types";
 import { getAdminUser } from "@/lib/auth";
-import { listUsers } from "@/lib/db";
+import { getUserXpTotals, listUsers } from "@/lib/db";
 import { listLogs } from "@/lib/tracking-store";
 
 /** Turns a click event (target like "a:https://...", data like text) into a human-readable interest label. */
@@ -116,11 +116,27 @@ export async function GET(req: NextRequest) {
     users = await listUsers();
   } catch {}
 
+  /**
+   * Each user carries their own `totalXp` for the admin user list.
+   *
+   * The users page used to derive this column from a leaderboard response,
+   * which cannot answer it: the standings exclude admin accounts and are
+   * ranked and paged, so the admin row came back blank and any user outside
+   * the visible board looked like they had never played. This totals every
+   * account, so the column is populated for all of them.
+   */
+  let xpTotals: Record<string, number> = {};
+  try {
+    xpTotals = await getUserXpTotals();
+  } catch {}
+
+  const usersWithXp = users.map((user) => ({ ...user, totalXp: xpTotals[user.id] ?? 0 }));
+
   // `logs` is gone from this response. The Overview no longer renders a log
-  // list, and every request was paying to serialize the newest 100 sessions —
-  // with their events and cookies — for a page that only draws stat cards,
+  // list, and every request was paying to serialize the newest 100 sessions —"
+  // with their events and cookies —" for a page that only draws stat cards,
   // charts and the `recentActivity` preview above. The full list is
   // GET /api/admin/logs, one page at a time. `stats.recentActivity` is
   // aggregated here and is unaffected.
-  return NextResponse.json({ stats, users });
+  return NextResponse.json({ stats, users: usersWithXp });
 }

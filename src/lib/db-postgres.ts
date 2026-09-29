@@ -593,6 +593,28 @@ export async function getUserRank(userId: string): Promise<number | null> {
 }
 
 /**
+ * Total XP for every account, keyed by user id.
+ *
+ * Deliberately not built from the leaderboard standings: those exclude admin
+ * accounts (the site owner is not a player) and are ranked and paged, so they
+ * cannot answer "how much XP does this user have?" for the admin user list --
+ * which needs an admin row of its own. A user with no progress still gets an
+ * explicit 0, so "never played" is distinguishable from "unknown".
+ */
+export async function getUserXpTotals(): Promise<Record<string, number>> {
+  await initDb();
+  const rows = await sql`
+    SELECT u.id,
+           (COALESCE(SUM(gp.score), 0) + COALESCE(g.xp_adjustment, 0))::int AS total_xp
+    FROM users u
+    LEFT JOIN game_progress gp ON gp.user_id = u.id
+    LEFT JOIN gamification g ON g.user_id = u.id
+    GROUP BY u.id, g.xp_adjustment
+  `;
+  return Object.fromEntries(rows.map((r: any) => [r.id, Number(r.total_xp) || 0]));
+}
+
+/**
  * One page of the admin leaderboard, filtered, sorted and sliced in SQL.
  *
  * The sort key is whitelisted rather than interpolated: it reaches here straight

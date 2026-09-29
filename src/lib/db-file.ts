@@ -573,6 +573,30 @@ export async function getUserRank(userId: string): Promise<number | null> {
 }
 
 /**
+ * Total XP for every account, keyed by user id.
+ *
+ * Computed straight from the store rather than via `buildStandings`, which
+ * filters admin accounts out and exists to rank players. The admin user list
+ * needs an XP value for the admin row too, and a user with no progress must
+ * still get an explicit 0.
+ */
+export async function getUserXpTotals(): Promise<Record<string, number>> {
+  const db = await readDbFile();
+  const totals: Record<string, number> = {};
+  const byUser = new Map<string, number>();
+  for (const row of db.gameProgress ?? []) {
+    byUser.set(row.userId, (byUser.get(row.userId) ?? 0) + (row.score || 0));
+  }
+  for (const g of db.gamification ?? []) {
+    byUser.set(g.userId, (byUser.get(g.userId) ?? 0) + (g.xpAdjustment ?? 0));
+  }
+  for (const user of db.users) {
+    totals[user.id] = byUser.get(user.id) ?? 0;
+  }
+  return totals;
+}
+
+/**
  * One page of the admin leaderboard.
  *
  * Search, sort and paging all happen before the slice is taken, so the response
