@@ -1,10 +1,9 @@
 import { redirect } from "next/navigation";
 import { getAdminUser } from "@/lib/auth";
-import { DashboardView } from "./analytics/dashboard-view";
+import { DashboardView } from "@/components/admin/analytics/dashboard-view";
 
 export const metadata = {
-  title: "Analytics Dashboard | Admin",
-  robots: { index: false, follow: false },
+  title: "Overview | Admin",
 };
 
 export default async function AdminDashboardPage() {

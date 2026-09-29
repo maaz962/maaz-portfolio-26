@@ -2,9 +2,6 @@ import type { Metadata } from "next";
 import { Inter, JetBrains_Mono, Space_Grotesk } from "next/font/google";
 import { MotionConfig } from "framer-motion";
 import { ThemeProvider } from "@/components/layout/theme-provider";
-import { Footer } from "@/components/layout/footer";
-import { AIAssistant } from "@/components/ui/ai-assistant";
-import { AnalyticsGate } from "@/components/tracking/analytics-gate";
 import { AuthProvider } from "@/lib/auth-context";
 import { profile } from "@/data/profile";
 import "./globals.css";
@@ -131,14 +128,23 @@ export default function RootLayout({
         />
       </head>
       <body className="flex min-h-screen flex-col font-sans">
+        {/*
+          Root layout: document shell + providers ONLY.
+
+          Public site chrome (Footer, AIAssistant, AnalyticsGate) deliberately
+          lives one level down in `app/(site)/layout.tsx`, NOT here. In the App
+          Router every layout wraps all of its descendants, so chrome placed in
+          the root layout is unavoidable on every route -- it would render on
+          /admin and /admin/login too (the cookie-consent banner appearing over
+          the admin login screen, the AI chat FAB covering the leaderboard's
+          delete controls). Anything outside the `(site)` group -- the whole
+          admin area -- therefore gets no public chrome by construction, rather
+          than by a conditional render or a CSS/`hidden` toggle that would still
+          mount and run the components.
+        */}
         <ThemeProvider>
           <AuthProvider>
-            <MotionConfig reducedMotion="user">
-              <div className="flex flex-1 flex-col">{children}</div>
-              <Footer />
-              <AIAssistant />
-              <AnalyticsGate />
-            </MotionConfig>
+            <MotionConfig reducedMotion="user">{children}</MotionConfig>
           </AuthProvider>
         </ThemeProvider>
       </body>
