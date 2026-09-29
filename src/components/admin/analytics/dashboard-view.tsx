@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { RefreshCw, ServerCrash, Shield } from "lucide-react";
 import { buttonStyles } from "@/components/ui/button";
+import { AdminPage, AdminPageHeader } from "@/components/admin/admin-page";
 import { ToastProvider, useToast } from "@/components/admin/toast";
 import {
   BarChartSkeleton,
@@ -14,19 +15,14 @@ import { useAdminData } from "./use-admin-data";
 import { OverviewSection } from "./overview-section";
 import { EventsSection } from "./events-section";
 import { LogsSection } from "./logs-section";
-import { UsersSection } from "./users-section";
 import { LeaderboardSection } from "./leaderboard-section";
 
 /**
  * `/admin` — the Overview route.
  *
- * Layout intent: a read-only analytics snapshot up top, then the user and
- * leaderboard panels that still live on this page and move to their own routes
- * in the next migration steps.
- *
- * Content width is `max-w-content`, the token the public site uses. The Users /
- * Leaderboard / Logs routes land on it too, so no admin page ends up wider or
- * narrower than this one for no reason.
+ * Layout intent: a read-only analytics snapshot up top, then the visitor log
+ * preview and the leaderboard, which still live here and move to their own
+ * routes in the next migration steps. Users already moved to `/admin/users`.
  */
 export function DashboardView() {
   return (
@@ -40,7 +36,6 @@ function OverviewPage() {
   const {
     stats,
     logs,
-    users,
     leaderboard,
     loading,
     loaded,
@@ -69,18 +64,12 @@ function OverviewPage() {
   const analyticsFailed = loaded && !stats;
 
   return (
-    <div className="min-h-screen bg-background p-4 sm:p-6 lg:p-8">
-      <div className="mx-auto max-w-content space-y-5">
-        <header className="flex flex-wrap items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
-              <Shield className="h-5 w-5" strokeWidth={1.75} />
-            </div>
-            <div>
-              <h1 className="font-display text-xl font-semibold text-foreground">Overview</h1>
-              <p className="text-sm text-muted">Portfolio visitor tracking &amp; event logs</p>
-            </div>
-          </div>
+    <AdminPage>
+      <AdminPageHeader
+        icon={Shield}
+        title="Overview"
+        description="Portfolio visitor tracking & event logs"
+        actions={
           <button
             onClick={() => {
               fetchData();
@@ -95,7 +84,8 @@ function OverviewPage() {
             />
             Refresh
           </button>
-        </header>
+        }
+      />
 
         {analyticsFailed ? (
           <ErrorState
@@ -139,12 +129,6 @@ function OverviewPage() {
             ) : (
               <PanelSkeleton rows={4} titleWidth="w-36" />
             )}
-
-            {loaded ? (
-              <UsersSection users={users} busy={busy} removeUser={removeUser} />
-            ) : (
-              <PanelSkeleton rows={4} titleWidth="w-40" />
-            )}
           </>
         )}
 
@@ -158,7 +142,6 @@ function OverviewPage() {
         ) : (
           <PanelSkeleton rows={5} titleWidth="w-44" />
         )}
-      </div>
-    </div>
+    </AdminPage>
   );
 }

@@ -20,7 +20,6 @@ export interface AdminFeedback {
 export interface AdminData {
   stats: VisitorStats | null;
   logs: VisitorLog[];
-  users: User[];
   leaderboard: LeaderboardEntry[];
   loading: boolean;
   /** True once the analytics request has settled (successfully or not). */
@@ -39,8 +38,9 @@ export interface AdminData {
 
 /**
  * Owns every piece of state behind the admin Overview page: the analytics
- * snapshot, the visitor log preview, the user list, the leaderboard, plus the
- * mutations the panels trigger.
+ * snapshot, the visitor log preview and the leaderboard, plus the mutations the
+ * panels trigger. The user list is not here — it moved to `/admin/users`, which
+ * fetches and paginates it on its own.
  *
  * `loaded` / `leaderboardLoaded` are what separate "still fetching" from
  * "fetched and genuinely empty" — panels need that distinction to show a
@@ -51,7 +51,6 @@ export interface AdminData {
 export function useAdminData(): AdminData {
   const [stats, setStats] = useState<VisitorStats | null>(null);
   const [logs, setLogs] = useState<VisitorLog[]>([]);
-  const [users, setUsers] = useState<User[]>([]);
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(false);
   const [loaded, setLoaded] = useState(false);
@@ -79,7 +78,6 @@ export function useAdminData(): AdminData {
       const data = await res.json();
       setStats(data.stats);
       setLogs(data.logs);
-      setUsers(Array.isArray(data.users) ? data.users : []);
     } catch {
       report("Failed to load data", "error");
     } finally {
@@ -164,23 +162,21 @@ export function useAdminData(): AdminData {
         return;
       }
 
-      setUsers((current) => current.filter((item) => item.id !== user.id));
       setLeaderboard((current) =>
         current.filter((entry) => entry.user.id !== user.id)
       );
       report(`@${user.username} was deleted.`, "success");
-      await Promise.all([fetchLeaderboard(), fetchData()]);
+      await fetchLeaderboard();
     } catch {
       report("Failed to delete user", "error");
     } finally {
       setBusy(null);
     }
-  }, [busy, fetchLeaderboard, fetchData, report]);
+  }, [busy, fetchLeaderboard, report]);
 
   return {
     stats,
     logs,
-    users,
     leaderboard,
     loading,
     loaded,
