@@ -25,8 +25,10 @@ export const getGameProgress = impl.getGameProgress;
 export const saveGameProgress = impl.saveGameProgress;
 
 export const getGamification = impl.getGamification;
-export const adjustUserXp = impl.adjustUserXp;
 export const deleteUser = impl.deleteUser;
+export const getAdminUserDetail = impl.getAdminUserDetail;
+export const setUserTotalXp = impl.setUserTotalXp;
+export const setUserHiddenFromLeaderboard = impl.setUserHiddenFromLeaderboard;
 export const getDailyHintUsage = impl.getDailyHintUsage;
 export const consumeDailyHint = impl.consumeDailyHint;
 export const getLeaderboard = impl.getLeaderboard;

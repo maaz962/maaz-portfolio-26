@@ -1,6 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
+import Link from "next/link";
 import { ArrowUpDown, ChevronDown, ChevronLeft, ChevronRight, ChevronUp } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "./skeleton";
@@ -56,6 +57,7 @@ export function AdminTable<T>({
   emptyColSpan,
   loading = false,
   caption,
+  rowHref,
 }: {
   columns: AdminColumn<T>[];
   rows: T[];
@@ -67,6 +69,12 @@ export function AdminTable<T>({
   emptyColSpan: number;
   loading?: boolean;
   caption: string;
+  /**
+   * Makes the whole row a link target by stretching the first cell's link over
+   * it. The row stays a real `<tr>` and the link a real `<a>`, so keyboard
+   * order and the browser's "open in new tab" both behave normally.
+   */
+  rowHref?: (row: T) => string;
 }) {
   const toggle = (column: AdminColumn<T>) => {
     if (!column.sortable) return;
@@ -142,14 +150,26 @@ export function AdminTable<T>({
                 </td>
               </tr>
             ) : (
-              rows.map((row) => (
+              rows.map((row, rowIndex) => (
                 <tr
                   key={getRowKey(row)}
-                  className="border-b border-border last:border-b-0 transition-colors hover:bg-background-secondary/30"
+                  className={cn(
+                    "border-b border-border last:border-b-0 transition-colors hover:bg-background-secondary/30",
+                    rowHref && "relative"
+                  )}
                 >
-                  {columns.map((column) => (
+                  {columns.map((column, columnIndex) => (
                     <td key={column.key} className={cellClasses(column, "px-4 py-3 align-middle")}>
-                      {column.render(row)}
+                      {rowHref && columnIndex === 0 ? (
+                        <Link
+                          href={rowHref(row)}
+                          className="after:absolute after:inset-0 after:content-['']"
+                        >
+                          {column.render(row)}
+                        </Link>
+                      ) : (
+                        column.render(row)
+                      )}
                     </td>
                   ))}
                 </tr>

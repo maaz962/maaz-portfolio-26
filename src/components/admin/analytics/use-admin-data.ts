@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import type { VisitorLog, VisitorStats } from "@/types/tracking";
-import type { User, LeaderboardEntry } from "@/types";
+import type { LeaderboardEntry } from "@/types";
 
 /**
  * A one-shot result message for the toast viewport.
@@ -27,20 +27,19 @@ export interface AdminData {
   /** True once the leaderboard request has settled (successfully or not). */
   leaderboardLoaded: boolean;
   feedback: AdminFeedback | null;
-  busy: string | null;
   expandedLog: string | null;
   setExpandedLog: (id: string | null) => void;
   fetchData: () => Promise<void>;
   fetchLeaderboard: () => Promise<void>;
-  adjustXp: (id: string, delta: number) => Promise<void>;
-  removeUser: (user: DeletableUser) => Promise<void>;
 }
 
 /**
- * Owns every piece of state behind the admin Overview page: the analytics
- * snapshot, the visitor log preview and the leaderboard, plus the mutations the
- * panels trigger. The user list is not here — it moved to `/admin/users`, which
- * fetches and paginates it on its own.
+ * Read-only state for the admin Overview page: the analytics snapshot, the
+ * visitor log preview and the leaderboard.
+ *
+ * No mutations live here any more. XP changes and deletes moved to
+ * `/admin/users/[id]`, so every per-user write now happens in exactly one place
+ * with one confirmation flow — see `useUserDetail`.
  *
  * `loaded` / `leaderboardLoaded` are what separate "still fetching" from
  * "fetched and genuinely empty" — panels need that distinction to show a
@@ -57,7 +56,6 @@ export function useAdminData(): AdminData {
   const [leaderboardLoaded, setLeaderboardLoaded] = useState(false);
   const [expandedLog, setExpandedLog] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<AdminFeedback | null>(null);
-  const [busy, setBusy] = useState<string | null>(null);
   const nextFeedbackId = useRef(0);
 
   const report = useCallback((message: string, variant: AdminFeedback["variant"]) => {
@@ -109,71 +107,6 @@ export function useAdminData(): AdminData {
     fetchLeaderboard();
   }, [fetchData, fetchLeaderboard]);
 
-  const adjustXp = useCallback(async (id: string, delta: number) => {
-    if (busy) return;
-    setBusy(`${id}:xp`);
-    try {
-      const res = await fetch(`/api/admin/users/${id}/xp`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ delta }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        report(
-          typeof data?.error === "string" ? data.error : "Failed to update XP",
-          "error"
-        );
-        return;
-      }
-
-      setLeaderboard((current) =>
-        current.map((entry) =>
-          entry.user.id === id && Number.isInteger(data.totalXp)
-            ? { ...entry, totalXp: data.totalXp }
-            : entry
-        )
-      );
-      report(`XP updated by ${delta > 0 ? "+" : ""}${delta}.`, "success");
-      await fetchLeaderboard();
-    } catch {
-      report("Failed to update XP", "error");
-    } finally {
-      setBusy(null);
-    }
-  }, [busy, fetchLeaderboard, report]);
-
-  const removeUser = useCallback(async (user: DeletableUser) => {
-    if (busy || user.isAdmin) return;
-    if (
-      !window.confirm(
-        `Delete @${user.username} and all of their progress? This cannot be undone.`
-      )
-    ) {
-      return;
-    }
-    setBusy(`${user.id}:del`);
-    try {
-      const res = await fetch(`/api/admin/users/${user.id}`, {
-        method: "DELETE",
-      });
-      if (!res.ok) {
-        report(await getResponseError(res, "Failed to delete user"), "error");
-        return;
-      }
-
-      setLeaderboard((current) =>
-        current.filter((entry) => entry.user.id !== user.id)
-      );
-      report(`@${user.username} was deleted.`, "success");
-      await fetchLeaderboard();
-    } catch {
-      report("Failed to delete user", "error");
-    } finally {
-      setBusy(null);
-    }
-  }, [busy, fetchLeaderboard, report]);
-
   return {
     stats,
     logs,
@@ -182,18 +115,12 @@ export function useAdminData(): AdminData {
     loaded,
     leaderboardLoaded,
     feedback,
-    busy,
     expandedLog,
     setExpandedLog,
     fetchData,
     fetchLeaderboard,
-    adjustXp,
-    removeUser,
   };
 }
-
-export type DeletableUser = Pick<User, "id" | "name" | "username"> &
-  Partial<Pick<User, "isAdmin">>;
 
 async function getResponseError(res: Response, fallback: string): Promise<string> {
   try {

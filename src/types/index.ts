@@ -227,3 +227,58 @@ export interface LeaderboardEntry {
   gamesPlayed: number;
   currentStreak: number;
 }
+
+/**
+ * One admin-applied XP change.
+ *
+ * An admin sets an absolute total rather than a delta, so this records both the
+ * before and after values: the reason explains the change and `previousTotalXp`
+ * is what makes a mistaken grant reversible without arithmetic.
+ */
+export interface XpAdjustmentRecord {
+  id: string;
+  userId: string;
+  /** Absolute XP total after the change was applied. */
+  totalXp: number;
+  /** Absolute XP total before the change, so it can be reversed. */
+  previousTotalXp: number;
+  /** Offset layered on top of the score-derived total. */
+  adjustment: number;
+  reason: string;
+  /** Username of the admin who applied it. */
+  appliedBy: string;
+  createdAt: string;
+}
+
+/** One game's saved progress, resolved against the game catalogue for display. */
+export interface AdminUserGameProgress {
+  gameSlug: string;
+  title: string;
+  score: number;
+  /** Total XP the game is worth when every level is beaten; null if untracked. */
+  maxScore: number | null;
+  currentLevel: number;
+  totalLevels: number;
+  completedLevels: number;
+  updatedAt: string;
+}
+
+/** Everything the admin user-detail page needs about one account, in one read. */
+export interface AdminUserDetail {
+  user: User;
+  totalXp: number;
+  level: number;
+  levelFloor: number;
+  levelNext: number;
+  levelProgressPct: number;
+  /** 1-based public rank, or null for admins / hidden / unranked accounts. */
+  rank: number | null;
+  currentStreak: number;
+  longestStreak: number;
+  lastPlayedAt: string | null;
+  /** Offset layered on top of the score-derived total. */
+  xpAdjustment: number;
+  gamesPlayed: number;
+  games: AdminUserGameProgress[];
+  xpHistory: XpAdjustmentRecord[];
+}

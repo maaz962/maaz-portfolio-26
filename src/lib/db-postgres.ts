@@ -5,10 +5,20 @@ import type {
   GameProgress,
   Gamification,
   LeaderboardEntry,
+  XpAdjustmentRecord,
+  AdminUserDetail,
 } from "@/types";
 import { hashPassword, verifyPassword } from "./password";
 import { getPgConnectionString, usePostgres } from "./pg-connection";
-import { dateKeyFromDaysAgo, levelForXp, scoreForCompleted, DAILY_HINT_LIMIT } from "./gamification";
+import {
+  dateKeyFromDaysAgo,
+  levelForXp,
+  levelStatsForXp,
+  maxScoreForGame,
+  scoreForCompleted,
+  DAILY_HINT_LIMIT,
+} from "./gamification";
+import { games } from "@/data/games";
 import { getAdminEnv, adminAvatarUrl, ADMIN_CREATED_AT } from "./admin-seed";
 
 /**
@@ -21,8 +31,15 @@ import { getAdminEnv, adminAvatarUrl, ADMIN_CREATED_AT } from "./admin-seed";
 // we narrow it to Promise<any[]> since the driver always returns arrays of rows.
 type DbTag = (strings: TemplateStringsArray, ...values: any[]) => Promise<any[]>;
 
+/** `neon()`'s real return value also exposes `transaction()`; the local
+ * `DbTag` alias narrows it away, so the multi-statement path is declared here
+ * rather than casting `sql` to `any` at every call site. */
+type DbTagWithTransaction = DbTag & {
+  transaction: (queries: any[]) => Promise<any[]>;
+};
+
 const conn = getPgConnectionString();
-const sql = (conn ? neon(conn) : null) as unknown as DbTag;
+const sql = (conn ? neon(conn) : null) as unknown as DbTagWithTransaction;
 
 // Usernames that must never appear on the public leaderboard regardless of
 // the stored flag (defense-in-depth for accounts created outside this app).
@@ -95,6 +112,20 @@ async function initDb(): Promise<void> {
     // Admin-applied XP bonus/penalty layered on top of the score-derived total;
     // added idempotently so pre-existing deployments pick it up on next boot.
     await sql`ALTER TABLE gamification ADD COLUMN IF NOT EXISTS xp_adjustment INT NOT NULL DEFAULT 0`;
+    // Audit trail for absolute XP sets. `previous_total_xp` is what makes a
+    // mistaken grant reversible: re-submit that value with a correcting reason.
+    await sql`
+      CREATE TABLE IF NOT EXISTS xp_adjustments (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        total_xp INT NOT NULL,
+        previous_total_xp INT NOT NULL,
+        adjustment INT NOT NULL,
+        reason TEXT NOT NULL,
+        applied_by TEXT NOT NULL,
+        created_at TEXT NOT NULL
+      )
+    `;
     // Idempotent seed of the site owner's admin account â€” mirrors the file-store
     // seed so /admin is reachable on first production deploy too. ON CONFLICT
     // makes it safe on every cold start / redeploy, and crucially it never
@@ -487,10 +518,7 @@ export async function getLeaderboard(limit = 10): Promise<LeaderboardEntry[]> {
     WHERE u.is_admin = false
       AND LOWER(u.username) NOT IN (${HIDDEN_USERNAMES.map((n) => n.toLowerCase())})
     GROUP BY u.id, u.created_at, g.current_streak, g.xp_adjustment
-    HAVING NOT (
-      COALESCE(u.hidden_from_leaderboard, false)
-      AND (COALESCE(SUM(gp.score), 0) + COALESCE(g.xp_adjustment, 0)) < 100
-    )
+    HAVING NOT COALESCE(u.hidden_from_leaderboard, false)
     ORDER BY total_xp DESC, u.created_at ASC
     LIMIT ${limit}
   `;
@@ -516,10 +544,7 @@ export async function getUserRank(userId: string): Promise<number | null> {
     WHERE u.is_admin = false
       AND LOWER(u.username) NOT IN (${HIDDEN_USERNAMES.map((n) => n.toLowerCase())})
     GROUP BY u.id, u.created_at, g.xp_adjustment
-    HAVING NOT (
-      COALESCE(u.hidden_from_leaderboard, false)
-      AND (COALESCE(SUM(gp.score), 0) + COALESCE(g.xp_adjustment, 0)) < 100
-    )
+    HAVING NOT COALESCE(u.hidden_from_leaderboard, false)
   `;
   const ranked = rows
     .sort(
@@ -533,43 +558,9 @@ export async function getUserRank(userId: string): Promise<number | null> {
 // --- ADMIN USER MANAGEMENT ---
 
 /**
- * Applies an XP bonus/penalty to a non-admin user. The adjustment is stored on
- * the gamification row and layered on top of the score-derived total, so it
- * survives future recomputes (new play sessions, hint consumption, etc.).
- */
-export async function adjustUserXp(
-  userId: string,
-  delta: number
-): Promise<Gamification> {
-  await initDb();
-  const [target] = await sql`SELECT is_admin FROM users WHERE id = ${userId} LIMIT 1`;
-  if (!target) throw new Error("User not found");
-  if (target.is_admin) throw new Error("Cannot adjust an admin account");
-
-  const [sumRow] = await sql`
-    SELECT COALESCE(SUM(score), 0)::int AS total_xp,
-           COUNT(DISTINCT game_slug)::int AS games_played
-    FROM game_progress WHERE user_id = ${userId}
-  `;
-  const baseXp = sumRow?.total_xp ?? 0;
-  const gamesPlayed = sumRow?.games_played ?? 0;
-  const hintsJson = JSON.stringify({ date: "", used: 0 });
-
-  await sql`
-    INSERT INTO gamification (user_id, total_xp, games_played, current_streak, longest_streak, last_played_at, hints, xp_adjustment, updated_at)
-    VALUES (${userId}, ${baseXp + delta}, ${gamesPlayed}, 0, 0, NULL, ${hintsJson}, ${delta}, ${nowISO()})
-    ON CONFLICT (user_id)
-    DO UPDATE SET
-      total_xp = ${baseXp} + gamification.xp_adjustment + ${delta},
-      xp_adjustment = gamification.xp_adjustment + ${delta},
-      updated_at = ${nowISO()}
-  `;
-  return getGamification(userId);
-}
-
-/**
  * Permanently removes a non-admin user and every record referencing them
- * (game progress, gamification cascades via FK). Admin accounts are protected.
+ * (game progress, gamification, XP audit trail — the latter cascades via FK).
+ * Admin accounts are protected.
  */
 export async function deleteUser(userId: string): Promise<{ ok: boolean }> {
   await initDb();
@@ -578,7 +569,156 @@ export async function deleteUser(userId: string): Promise<{ ok: boolean }> {
   if (target.is_admin) throw new Error("Cannot delete an admin account");
 
   await sql`DELETE FROM game_progress WHERE user_id = ${userId}`;
+  await sql`DELETE FROM xp_adjustments WHERE user_id = ${userId}`;
   await sql`DELETE FROM gamification WHERE user_id = ${userId}`;
   await sql`DELETE FROM users WHERE id = ${userId}`;
   return { ok: true };
+}
+
+// --- ADMIN USER DETAIL + MUTATIONS ---
+
+function rowToXpAdjustment(row: any): XpAdjustmentRecord {
+  return {
+    id: row.id,
+    userId: row.user_id,
+    totalXp: row.total_xp,
+    previousTotalXp: row.previous_total_xp,
+    adjustment: row.adjustment,
+    reason: row.reason,
+    appliedBy: row.applied_by,
+    createdAt: row.created_at,
+  };
+}
+
+/**
+ * Everything the admin detail page shows about one account: identity, per-game
+ * progress, current XP standing and the XP audit trail.
+ *
+ * `scoreForCompleted` re-derives each game's score from its completed levels
+ * where a points table exists, so a tampered client score cannot inflate the
+ * displayed total.
+ */
+export async function getAdminUserDetail(userId: string): Promise<AdminUserDetail> {
+  await initDb();
+  const [userRow] = await sql`SELECT * FROM users WHERE id = ${userId} LIMIT 1`;
+  if (!userRow) throw new Error("User not found");
+
+  const [sumRow] = await sql`
+    SELECT COALESCE(SUM(score), 0)::int AS base_xp,
+           COUNT(DISTINCT game_slug)::int AS games_played
+    FROM game_progress WHERE user_id = ${userId}
+  `;
+  const [stored] = await sql`SELECT * FROM gamification WHERE user_id = ${userId} LIMIT 1`;
+  const xpAdjustment = Number.isInteger(stored?.xp_adjustment) ? (stored.xp_adjustment as number) : 0;
+  const totalXp = (sumRow?.base_xp ?? 0) + xpAdjustment;
+  const levels = levelStatsForXp(totalXp);
+
+  const progressRows = await sql`
+    SELECT * FROM game_progress WHERE user_id = ${userId}
+  `;
+  const historyRows = await sql`
+    SELECT * FROM xp_adjustments WHERE user_id = ${userId} ORDER BY created_at DESC
+  `;
+
+  return {
+    user: rowToUser(userRow),
+    totalXp,
+    level: levels.level,
+    levelFloor: levels.floor,
+    levelNext: levels.next,
+    levelProgressPct: levels.progressPct,
+    rank: await getUserRank(userId),
+    currentStreak: stored?.current_streak ?? 0,
+    longestStreak: stored?.longest_streak ?? 0,
+    lastPlayedAt: stored?.last_played_at ?? null,
+    xpAdjustment,
+    gamesPlayed: sumRow?.games_played ?? 0,
+    games: progressRows
+      .map((row: any) => {
+        const progress = rowToGameProgress(row);
+        const authoritative = scoreForCompleted(progress.gameSlug, progress.completed);
+        return {
+          gameSlug: progress.gameSlug,
+          title: games.find((g) => g.slug === progress.gameSlug)?.title ?? progress.gameSlug,
+          score: authoritative ?? progress.score,
+          maxScore: maxScoreForGame(progress.gameSlug),
+          currentLevel: progress.currentLevel,
+          totalLevels: progress.totalLevels,
+          completedLevels: Object.values(progress.completed ?? {}).filter(Boolean).length,
+          updatedAt: progress.updatedAt,
+        };
+      })
+      // Sorted on the resolved score, not the stored one, so the order matches
+      // the file backend and the total shown in the same view.
+      .sort((a, b) => b.score - a.score || a.title.localeCompare(b.title)),
+    xpHistory: historyRows.map(rowToXpAdjustment),
+  };
+}
+
+/**
+ * Sets a user's total XP to an absolute value and records why.
+ *
+ * The stored model is a delta, so an absolute request is converted to the
+ * adjustment that yields the requested total; the before/after values are kept
+ * so a mistaken change can be reversed without arithmetic.
+ */
+export async function setUserTotalXp(
+  userId: string,
+  totalXp: number,
+  reason: string,
+  appliedBy: string
+): Promise<AdminUserDetail> {
+  await initDb();
+  const [target] = await sql`SELECT is_admin FROM users WHERE id = ${userId} LIMIT 1`;
+  if (!target) throw new Error("User not found");
+  if (target.is_admin) throw new Error("Cannot adjust an admin account");
+
+  const [sumRow] = await sql`
+    SELECT COALESCE(SUM(score), 0)::int AS base_xp,
+           COUNT(DISTINCT game_slug)::int AS games_played
+    FROM game_progress WHERE user_id = ${userId}
+  `;
+  const baseXp = sumRow?.base_xp ?? 0;
+  const gamesPlayed = sumRow?.games_played ?? 0;
+
+  const [stored] = await sql`SELECT * FROM gamification WHERE user_id = ${userId} LIMIT 1`;
+  const previousTotalXp = baseXp + (Number.isInteger(stored?.xp_adjustment) ? stored.xp_adjustment : 0);
+  const adjustment = totalXp - baseXp;
+
+  const hintsJson = JSON.stringify(
+    stored?.hints && typeof stored.hints === "object" ? stored.hints : { date: "", used: 0 }
+  );
+  // One transaction: an XP change with no audit row is worse than a failed
+  // change, because the audit trail is the only way to spot a bad grant later.
+  await sql.transaction([
+    sql`
+      INSERT INTO gamification (user_id, total_xp, games_played, current_streak, longest_streak, last_played_at, hints, xp_adjustment, updated_at)
+      VALUES (${userId}, ${totalXp}, ${gamesPlayed}, ${Number.isInteger(stored?.current_streak) ? stored.current_streak : 0}, ${Number.isInteger(stored?.longest_streak) ? stored.longest_streak : 0}, ${stored?.last_played_at ?? null}, ${hintsJson}, ${adjustment}, ${nowISO()})
+      ON CONFLICT (user_id) DO UPDATE SET
+        total_xp = ${totalXp},
+        games_played = EXCLUDED.games_played,
+        xp_adjustment = EXCLUDED.xp_adjustment,
+        updated_at = EXCLUDED.updated_at
+    `,
+    sql`
+      INSERT INTO xp_adjustments (id, user_id, total_xp, previous_total_xp, adjustment, reason, applied_by, created_at)
+      VALUES (${crypto.randomUUID()}, ${userId}, ${totalXp}, ${previousTotalXp}, ${adjustment}, ${reason}, ${appliedBy}, ${nowISO()})
+    `,
+  ]);
+
+  return getAdminUserDetail(userId);
+}
+
+/** Shows or hides an account from the public leaderboard. */
+export async function setUserHiddenFromLeaderboard(
+  userId: string,
+  hidden: boolean
+): Promise<{ ok: boolean; hiddenFromLeaderboard: boolean }> {
+  await initDb();
+  const [target] = await sql`SELECT is_admin FROM users WHERE id = ${userId} LIMIT 1`;
+  if (!target) throw new Error("User not found");
+  if (target.is_admin) throw new Error("Cannot change an admin account");
+
+  await sql`UPDATE users SET hidden_from_leaderboard = ${hidden} WHERE id = ${userId}`;
+  return { ok: true, hiddenFromLeaderboard: hidden };
 }

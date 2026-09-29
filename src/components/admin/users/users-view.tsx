@@ -14,9 +14,9 @@ import type { AdminUser } from "./user-list";
 /**
  * `/admin/users` — browse and find registered accounts.
  *
- * Read-only by design this step: the destructive action stays on the
- * leaderboard until the per-user detail page exists (Step 4), so there is one
- * place to confirm an irreversible delete rather than two half-built ones.
+ * Read-only by design: every row links to `/admin/users/[id]`, which is the one
+ * place an account can be changed. Keeping the list free of inline action
+ * buttons means a search result you did not mean to click cannot be altered.
  */
 export function UsersView() {
   return (
@@ -168,6 +168,7 @@ function UsersPage() {
         columns={columns}
         rows={rows}
         getRowKey={(user) => user.id}
+        rowHref={(user) => `/admin/users/${user.id}`}
         sort={sort}
         onSortChange={setSort}
         loading={!loaded}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { RefreshCw, ServerCrash, Shield } from "lucide-react";
 import { buttonStyles } from "@/components/ui/button";
 import { AdminPage, AdminPageHeader } from "@/components/admin/admin-page";
@@ -15,7 +15,7 @@ import { useAdminData } from "./use-admin-data";
 import { OverviewSection } from "./overview-section";
 import { EventsSection } from "./events-section";
 import { LogsSection } from "./logs-section";
-import { LeaderboardSection } from "./leaderboard-section";
+import { DEFAULT_LEADERBOARD_SORT, LeaderboardSection } from "./leaderboard-section";
 
 /**
  * `/admin` — the Overview route.
@@ -41,16 +41,14 @@ function OverviewPage() {
     loaded,
     leaderboardLoaded,
     feedback,
-    busy,
     expandedLog,
     setExpandedLog,
     fetchData,
     fetchLeaderboard,
-    adjustXp,
-    removeUser,
   } = useAdminData();
 
   const { notify } = useToast();
+  const [leaderboardSort, setLeaderboardSort] = useState(DEFAULT_LEADERBOARD_SORT);
 
   // Feedback is surfaced as toasts rather than text pinned above the fold:
   // most actions happen in panels far down the page, where a top banner is
@@ -135,9 +133,8 @@ function OverviewPage() {
         {leaderboardLoaded ? (
           <LeaderboardSection
             leaderboard={leaderboard}
-            busy={busy}
-            adjustXp={adjustXp}
-            removeUser={removeUser}
+            sort={leaderboardSort}
+            onSortChange={setLeaderboardSort}
           />
         ) : (
           <PanelSkeleton rows={5} titleWidth="w-44" />

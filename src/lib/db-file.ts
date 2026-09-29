@@ -9,11 +9,17 @@ import type {
   GameProgress,
   Gamification,
   LeaderboardEntry,
+  XpAdjustmentRecord,
+  AdminUserDetail,
+  AdminUserGameProgress,
 } from "@/types";
 import { hashPassword, verifyPassword } from "./password";
+import { games } from "@/data/games";
 import {
   dateKeyFromDaysAgo,
   levelForXp,
+  levelStatsForXp,
+  maxScoreForGame,
   scoreForCompleted,
   DAILY_HINT_LIMIT,
 } from "./gamification";
@@ -25,6 +31,8 @@ interface DatabaseSchema {
   blogSettings?: BlogSettings;
   gameProgress: GameProgress[];
   gamification: Gamification[];
+  /** Admin-applied XP changes, newest last. Optional for pre-existing files. */
+  xpAdjustments?: XpAdjustmentRecord[];
 }
 
 const DEFAULT_BLOG_SETTINGS: BlogSettings = {
@@ -74,6 +82,7 @@ async function readDbFile(): Promise<DatabaseSchema> {
       blogSettings: DEFAULT_BLOG_SETTINGS,
       gameProgress: [],
       gamification: [],
+      xpAdjustments: [],
     };
   }
 }
@@ -538,9 +547,12 @@ export async function getLeaderboard(limit = 10): Promise<LeaderboardEntry[]> {
         totalXp,
         gamesPlayed: new Set(gp.map((p) => p.gameSlug)).size,
         currentStreak: stored?.currentStreak ?? 0,
-        // QA/test accounts only drop off when they have nothing to show
-        // for it; anyone who earned 100+ XP stays on the board.
-        hidden: u.hiddenFromLeaderboard && totalXp < 100,
+        // An explicit admin opt-out is unconditional. It used to stop applying
+        // at 100 XP so QA accounts could not leave the board empty, but the
+        // admin UI calls this "hide from leaderboard" and promises the player
+        // disappears — a flag that leaks at a higher score is worse than no
+        // flag. HIDDEN_USERNAMES is kept above as a separate hard exclusion.
+        hidden: u.hiddenFromLeaderboard,
       };
     })
     .filter((s) => !s.hidden)
@@ -575,7 +587,7 @@ export async function getUserRank(userId: string): Promise<number | null> {
         id: u.id,
         xp,
         createdAt: u.createdAt,
-        hidden: u.hiddenFromLeaderboard && xp < 100,
+        hidden: u.hiddenFromLeaderboard,
       };
     })
     .filter((r) => !r.hidden)
@@ -588,54 +600,8 @@ export async function getUserRank(userId: string): Promise<number | null> {
 // --- ADMIN USER MANAGEMENT ---
 
 /**
- * Applies an XP bonus/penalty to a non-admin user. The adjustment is stored on
- * the gamification row and layered on top of the score-derived total, so it
- * survives future recomputes (new play sessions, hint consumption, etc.).
- */
-export async function adjustUserXp(
-  userId: string,
-  delta: number
-): Promise<Gamification> {
-  return withDbLock(async () => {
-    const db = await readDbFile();
-    const target = db.users.find((u) => u.id === userId);
-    if (!target) throw new Error("User not found");
-    if (target.isAdmin) throw new Error("Cannot adjust an admin account");
-
-    const baseXp = (db.gameProgress ?? [])
-      .filter((p) => p.userId === userId)
-      .reduce((sum, p) => sum + (p.score || 0), 0);
-    const gamesPlayed = new Set(
-      (db.gameProgress ?? []).filter((p) => p.userId === userId).map((p) => p.gameSlug)
-    ).size;
-
-    const stored = (db.gamification ?? []).find((g) => g.userId === userId);
-    const adjustment = (stored?.xpAdjustment ?? 0) + delta;
-
-    const gamification: Gamification = {
-      userId,
-      totalXp: baseXp + adjustment,
-      gamesPlayed,
-      currentStreak: stored?.currentStreak ?? 0,
-      longestStreak: stored?.longestStreak ?? 0,
-      lastPlayedAt: stored?.lastPlayedAt ?? null,
-      hints: stored?.hints,
-      xpAdjustment: adjustment,
-      updatedAt: new Date().toISOString(),
-    };
-
-    db.gamification = [
-      ...(db.gamification ?? []).filter((g) => g.userId !== userId),
-      gamification,
-    ];
-    await saveDbFile(db);
-    return gamification;
-  });
-}
-
-/**
  * Permanently removes a non-admin user and every record referencing them
- * (game progress, gamification). Admin accounts are protected.
+ * (game progress, gamification, XP audit trail). Admin accounts are protected.
  */
 export async function deleteUser(userId: string): Promise<{ ok: boolean }> {
   return withDbLock(async () => {
@@ -647,8 +613,181 @@ export async function deleteUser(userId: string): Promise<{ ok: boolean }> {
     db.users = db.users.filter((u) => u.id !== userId);
     db.gameProgress = (db.gameProgress ?? []).filter((p) => p.userId !== userId);
     db.gamification = (db.gamification ?? []).filter((g) => g.userId !== userId);
+    db.xpAdjustments = (db.xpAdjustments ?? []).filter((a) => a.userId !== userId);
     await saveDbFile(db);
     return { ok: true };
+  });
+}
+
+// --- ADMIN USER DETAIL + MUTATIONS ---
+
+/** Score-derived XP for one user, i.e. the total before any admin adjustment. */
+function baseXpFor(db: DatabaseSchema, userId: string): number {
+  return (db.gameProgress ?? [])
+    .filter((p) => p.userId === userId)
+    .reduce((sum, p) => sum + (p.score || 0), 0);
+}
+
+/**
+ * Resolves one game's saved row against the catalogue for display.
+ *
+ * `scoreForCompleted` re-derives the score from completed levels where a
+ * points table exists, so a tampered client score cannot inflate the total.
+ */
+function toGameProgress(row: GameProgress): AdminUserGameProgress {
+  const meta = games.find((g) => g.slug === row.gameSlug);
+  const authoritative = scoreForCompleted(row.gameSlug, row.completed ?? {});
+  return {
+    gameSlug: row.gameSlug,
+    title: meta?.title ?? row.gameSlug,
+    score: authoritative ?? (row.score || 0),
+    maxScore: maxScoreForGame(row.gameSlug),
+    currentLevel: row.currentLevel,
+    totalLevels: row.totalLevels,
+    completedLevels: Object.values(row.completed ?? {}).filter(Boolean).length,
+    updatedAt: row.updatedAt,
+  };
+}
+
+/**
+ * Builds the detail payload from an already-read database.
+ *
+ * Split out because `getAdminUserDetail` and `setUserTotalXp` both run inside
+ * `withDbLock`, and re-entering that lock from a task that already holds it
+ * would deadlock the queue behind itself.
+ */
+function buildAdminUserDetail(
+  db: DatabaseSchema,
+  userId: string,
+  rank: number | null
+): AdminUserDetail {
+  const found = db.users.find((u) => u.id === userId);
+  if (!found) throw new Error("User not found");
+  // `found` is a `UserWithPassword`; structurally it still satisfies `User`,
+  // so returning it as-is would ship the scrypt hash inside the API response.
+  const { passwordHash: _passwordHash, ...user } = found;
+
+  const stored = (db.gamification ?? []).find((g) => g.userId === userId);
+  const xpAdjustment = stored?.xpAdjustment ?? 0;
+  const totalXp = baseXpFor(db, userId) + xpAdjustment;
+  const levels = levelStatsForXp(totalXp);
+  const rows = (db.gameProgress ?? []).filter((p) => p.userId === userId);
+
+  return {
+    user,
+    totalXp,
+    level: levels.level,
+    levelFloor: levels.floor,
+    levelNext: levels.next,
+    levelProgressPct: levels.progressPct,
+    rank,
+    currentStreak: stored?.currentStreak ?? 0,
+    longestStreak: stored?.longestStreak ?? 0,
+    lastPlayedAt: stored?.lastPlayedAt ?? null,
+    xpAdjustment,
+    gamesPlayed: new Set(rows.map((p) => p.gameSlug)).size,
+    games: rows
+      .map(toGameProgress)
+      .sort((a, b) => b.score - a.score || a.title.localeCompare(b.title)),
+    xpHistory: (db.xpAdjustments ?? [])
+      .filter((a) => a.userId === userId)
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
+  };
+}
+
+/**
+ * Everything the admin detail page shows about one account: identity, per-game
+ * progress, current XP standing and the XP audit trail.
+ *
+ * Read in a single locked pass so the page can never render a total that
+ * disagrees with the history listed beside it.
+ */
+export async function getAdminUserDetail(userId: string): Promise<AdminUserDetail> {
+  return withDbLock(async () => {
+    const db = await readDbFile();
+    // Admins are never ranked, and a hidden account is only ranked while it
+    // still clears the 100 XP floor the public leaderboard applies.
+    return buildAdminUserDetail(db, userId, await getUserRank(userId));
+  });
+}
+
+/**
+ * Sets a user's total XP to an absolute value and records why.
+ *
+ * The stored model is a delta, so an absolute request is converted to the
+ * adjustment that yields the requested total. Recording the before and after
+ * values is what makes a mistaken change reversible: re-submit the previous
+ * total with a correcting reason.
+ */
+export async function setUserTotalXp(
+  userId: string,
+  totalXp: number,
+  reason: string,
+  appliedBy: string
+): Promise<AdminUserDetail> {
+  return withDbLock(async () => {
+    const db = await readDbFile();
+    const target = db.users.find((u) => u.id === userId);
+    if (!target) throw new Error("User not found");
+    if (target.isAdmin) throw new Error("Cannot adjust an admin account");
+
+    const baseXp = baseXpFor(db, userId);
+    const stored = (db.gamification ?? []).find((g) => g.userId === userId);
+    const previousTotalXp = baseXp + (stored?.xpAdjustment ?? 0);
+    const adjustment = totalXp - baseXp;
+
+    const gamesPlayed = new Set(
+      (db.gameProgress ?? []).filter((p) => p.userId === userId).map((p) => p.gameSlug)
+    ).size;
+
+    db.gamification = [
+      ...(db.gamification ?? []).filter((g) => g.userId !== userId),
+      {
+        userId,
+        totalXp: baseXp + adjustment,
+        gamesPlayed,
+        currentStreak: stored?.currentStreak ?? 0,
+        longestStreak: stored?.longestStreak ?? 0,
+        lastPlayedAt: stored?.lastPlayedAt ?? null,
+        hints: stored?.hints,
+        xpAdjustment: adjustment,
+        updatedAt: new Date().toISOString(),
+      },
+    ];
+
+    db.xpAdjustments = [
+      ...(db.xpAdjustments ?? []),
+      {
+        id: crypto.randomUUID(),
+        userId,
+        totalXp,
+        previousTotalXp,
+        adjustment,
+        reason,
+        appliedBy,
+        createdAt: new Date().toISOString(),
+      },
+    ];
+
+    await saveDbFile(db);
+    return buildAdminUserDetail(db, userId, await getUserRank(userId));
+  });
+}
+
+/** Shows or hides an account from the public leaderboard. */
+export async function setUserHiddenFromLeaderboard(
+  userId: string,
+  hidden: boolean
+): Promise<{ ok: boolean; hiddenFromLeaderboard: boolean }> {
+  return withDbLock(async () => {
+    const db = await readDbFile();
+    const target = db.users.find((u) => u.id === userId);
+    if (!target) throw new Error("User not found");
+    if (target.isAdmin) throw new Error("Cannot change an admin account");
+
+    db.users = db.users.map((u) => (u.id === userId ? { ...u, hiddenFromLeaderboard: hidden } : u));
+    await saveDbFile(db);
+    return { ok: true, hiddenFromLeaderboard: hidden };
   });
 }
 
