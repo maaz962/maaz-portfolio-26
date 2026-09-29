@@ -17,6 +17,7 @@ import { useAuth } from "@/lib/auth-context";
 import { useRouter } from "next/navigation";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
 import { adminNavItems } from "./admin-nav";
+import { ConfirmDialog, useConfirmDialog } from "./confirm-dialog";
 
 const STORAGE_KEY = "mp_admin_sidebar_collapsed";
 
@@ -76,6 +77,23 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
   const handleLogout = async () => {
     await logout();
     router.replace("/admin/login");
+  };
+
+  /**
+   * Logging out is reversible and the session is not data anyone would miss,
+   * but it is still the one control in this panel that can interrupt whatever
+   * the admin was mid-way through. It asks rather than firing.
+   */
+  const { confirm, dialogProps: logoutDialog } = useConfirmDialog();
+
+  const askLogout = () => {
+    confirm({
+      title: "Log out of the admin panel?",
+      description:
+        "You will be sent back to the sign-in page. Anything you have typed but not saved will be lost.",
+      confirmLabel: "Log out",
+      onConfirm: handleLogout,
+    });
   };
 
   const railWidth = collapsed ? WIDTH_COLLAPSED : WIDTH_EXPANDED;
@@ -145,7 +163,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
 
         <AdminNav pathname={pathname} collapsed={collapsed} onNavigate={() => {}} />
 
-        <AdminSidebarFooter collapsed={collapsed} onLogout={handleLogout} user={user} />
+        <AdminSidebarFooter collapsed={collapsed} onLogout={askLogout} user={user} />
       </aside>
 
       {/* ---------- Mobile drawer (< lg) ---------- */}
@@ -177,7 +195,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
 
             <AdminNav pathname={pathname} collapsed={false} onNavigate={() => setDrawerOpen(false)} />
 
-            <AdminSidebarFooter collapsed={false} onLogout={handleLogout} user={user} />
+            <AdminSidebarFooter collapsed={false} onLogout={askLogout} user={user} />
           </div>
         </div>
       )}
@@ -186,6 +204,8 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
       <div className={cn("transition-[padding] duration-200 ease-out", "lg:pl-64", collapsed && "lg:pl-[4.5rem]")}>
         {children}
       </div>
+
+      {logoutDialog && <ConfirmDialog {...logoutDialog} />}
     </div>
   );
 }

@@ -14,6 +14,7 @@ import {
   X,
 } from "lucide-react";
 import { buttonStyles } from "@/components/ui/button";
+import { adminSearchStyles, adminSelectStyles } from "@/components/admin/admin-field";
 import { AdminPage, AdminPageHeader } from "@/components/admin/admin-page";
 import {
   AdminPagination,
@@ -200,7 +201,7 @@ function LogsPage() {
           <button
             onClick={refresh}
             disabled={loading}
-            className={buttonStyles({ variant: "outline", size: "sm", className: "rounded-xl" })}
+              className={buttonStyles({ variant: "outline", size: "sm" })}
           >
             <RefreshCw className={loading ? "h-4 w-4 animate-spin" : "h-4 w-4"} />
             Refresh
@@ -220,7 +221,7 @@ function LogsPage() {
             onChange={(event) => setQuery(event.target.value)}
             placeholder="Search by IP or page path"
             aria-label="Search visitor logs"
-            className="h-11 w-full rounded-xl border border-border bg-card pr-10 pl-10 text-sm text-foreground outline-none transition-colors placeholder:text-muted focus:border-primary/60"
+            className={adminSearchStyles()}
           />
           {searching && (
             <button
@@ -239,9 +240,9 @@ function LogsPage() {
           <select
             value={device}
             onChange={(event) => setDevice(event.target.value)}
-            aria-label="Filter by device type"
-            className="h-11 rounded-xl border border-border bg-card px-3 text-sm text-foreground outline-none focus:border-primary/60"
-          >
+              aria-label="Filter by device type"
+              className={adminSelectStyles()}
+            >
             <option value="">All</option>
             {(data?.devices ?? []).map((d) => (
               <option key={d.name} value={d.name}>

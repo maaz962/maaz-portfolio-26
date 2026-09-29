@@ -3,6 +3,8 @@
 import { Suspense, useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Shield, Lock, AlertCircle, ArrowLeft, Loader2, Eye, EyeOff } from "lucide-react";
+import { buttonStyles } from "@/components/ui/button";
+import { adminFieldStyles, adminLabelStyles } from "@/components/admin/admin-field";
 import type { User } from "@/types";
 
 const ADMIN_HOME = "/admin";
@@ -147,7 +149,7 @@ function AdminLoginForm() {
           ) : (
             <>
               <div className="space-y-1.5">
-                <label htmlFor="identifier" className="text-[0.65rem] font-semibold uppercase tracking-wider text-muted">
+                <label htmlFor="identifier" className={adminLabelStyles()}>
                   Username or Email
                 </label>
                 <input
@@ -158,42 +160,42 @@ function AdminLoginForm() {
                   value={identifier}
                   onChange={(e) => setIdentifier(e.target.value)}
                   placeholder="admin username or email"
-                  className="w-full rounded-xl border border-border bg-background-secondary px-4 py-2.5 text-sm text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
+                  className={adminFieldStyles()}
                 />
               </div>
               <div className="space-y-1.5">
-                <label htmlFor="password" className="text-[0.65rem] font-semibold uppercase tracking-wider text-muted">
+                <label htmlFor="password" className={adminLabelStyles()}>
                   Password
                 </label>
                 <div className="relative">
-                <input
-                  id="password"
-                  type={showPassword ? "text" : "password"}
-                  required
-                  autoComplete="current-password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  className="w-full rounded-xl border border-border bg-background-secondary px-4 py-2.5 pr-11 text-sm text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword((v) => !v)}
-                  aria-label={showPassword ? "Hide password" : "Show password"}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted transition-colors hover:text-foreground"
-                >
-                  {showPassword ? (
-                    <EyeOff className="h-4 w-4" />
-                  ) : (
-                    <Eye className="h-4 w-4" />
-                  )}
-                </button>
-              </div>
+                  <input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    required
+                    autoComplete="current-password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="••••••••"
+                    className={adminFieldStyles({ className: "pr-11" })}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((v) => !v)}
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted transition-colors hover:text-foreground"
+                  >
+                    {showPassword ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
+                  </button>
+                </div>
               </div>
               <button
                 type="submit"
                 disabled={submitting}
-                className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground transition-all hover:brightness-110 disabled:opacity-60"
+                className={buttonStyles({ className: "w-full" })}
               >
                 {submitting ? (
                   <Loader2 className="h-4 w-4 animate-spin" />

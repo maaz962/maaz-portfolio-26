@@ -1,7 +1,7 @@
 import { forwardRef, type ButtonHTMLAttributes } from "react";
 import { cn } from "@/lib/utils";
 
-type ButtonVariant = "primary" | "outline" | "ghost";
+type ButtonVariant = "primary" | "outline" | "ghost" | "danger";
 type ButtonSize = "sm" | "md" | "lg";
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
@@ -15,6 +15,10 @@ const variantStyles: Record<ButtonVariant, string> = {
   outline:
     "border border-border text-foreground hover:border-primary/60 hover:text-primary",
   ghost: "text-foreground/80 hover:text-primary",
+  // Destructive actions only. Deliberately no shadow-glow: the glow is the
+  // "this is the thing to press" affordance and it has no business on a
+  // control that destroys data.
+  danger: "bg-red-600 text-white hover:brightness-110 dark:bg-red-600",
 };
 
 const sizeStyles: Record<ButtonSize, string> = {

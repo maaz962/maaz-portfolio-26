@@ -2,6 +2,7 @@
 
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { AdminCard } from "@/components/admin/admin-card";
 import type { AdminUserDetail } from "@/types";
 
 /**
@@ -23,17 +24,17 @@ export function VisibilityPanel({
 
   if (detail.user.isAdmin) {
     return (
-      <section className="rounded-2xl border border-border bg-card p-5">
+      <AdminCard as="section">
         <h2 className="mb-1 text-base font-semibold text-foreground">Leaderboard visibility</h2>
         <p className="text-sm text-muted">
           Admin accounts never appear on the public leaderboard, so there is nothing to toggle.
         </p>
-      </section>
+      </AdminCard>
     );
   }
 
   return (
-    <section className="rounded-2xl border border-border bg-card p-5">
+    <AdminCard as="section">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="min-w-0">
           <h2 className="flex items-center gap-2 text-base font-semibold text-foreground">
@@ -55,7 +56,7 @@ export function VisibilityPanel({
           variant="outline"
           onClick={() => onChange(!hidden)}
           disabled={saving}
-          className="shrink-0 rounded-xl"
+          className="shrink-0"
         >
           {saving ? (
             <Loader2 className="h-4 w-4 animate-spin" />
@@ -74,6 +75,6 @@ export function VisibilityPanel({
           {hidden ? "Hidden from the public leaderboard" : "Listed on the public leaderboard"}
         </span>
       </p>
-    </section>
+    </AdminCard>
   );
 }

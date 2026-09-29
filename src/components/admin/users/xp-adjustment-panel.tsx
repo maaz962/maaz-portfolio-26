@@ -3,13 +3,14 @@
 import { useState } from "react";
 import { Check, Loader2, Minus, Sparkles, Undo2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { adminFieldStyles, adminLabelStyles } from "@/components/admin/admin-field";
+import { AdminCard } from "@/components/admin/admin-card";
 import type { AdminUserDetail } from "@/types";
 
 /** Mirrors the server-side bound in the PATCH route. */
 const MAX_TOTAL_XP = 1_000_000;
 
-const inputClasses =
-  "h-11 w-full rounded-xl border border-border bg-card px-3.5 text-sm text-foreground outline-none transition-colors placeholder:text-muted focus:border-primary/60";
+const inputClasses = adminFieldStyles();
 
 /**
  * Sets an absolute XP total rather than a delta.
@@ -72,7 +73,7 @@ export function XpAdjustmentPanel({
   };
 
   return (
-    <section className="rounded-2xl border border-border bg-card p-5">
+    <AdminCard as="section">
       <div className="mb-1 flex flex-wrap items-center gap-2">
         <Sparkles className="h-4 w-4 text-primary" strokeWidth={1.75} />
         <h2 className="text-base font-semibold text-foreground">Set total XP</h2>
@@ -145,7 +146,7 @@ export function XpAdjustmentPanel({
       ) : (
         <div className="space-y-3">
           <div>
-            <label htmlFor="total-xp" className="mb-1.5 block text-sm font-medium text-foreground">
+            <label htmlFor="total-xp" className={adminLabelStyles()}>
               New total XP
             </label>
             <input
@@ -175,7 +176,7 @@ export function XpAdjustmentPanel({
           </div>
 
           <div>
-            <label htmlFor="xp-reason" className="mb-1.5 block text-sm font-medium text-foreground">
+            <label htmlFor="xp-reason" className={adminLabelStyles()}>
               Reason <span className="text-red-500">*</span>
             </label>
             <textarea
@@ -187,7 +188,7 @@ export function XpAdjustmentPanel({
                 setError(null);
               }}
               placeholder="e.g. Wrong score reported in level 4 of Word Forge"
-              className="w-full resize-y rounded-xl border border-border bg-card px-3.5 py-2.5 text-sm text-foreground outline-none transition-colors placeholder:text-muted focus:border-primary/60"
+              className={adminFieldStyles({ className: "h-auto resize-y py-2.5" })}
             />
             <p className="mt-1.5 text-xs text-muted">
               Stored with your username and the time so the change can be explained later.
@@ -206,6 +207,6 @@ export function XpAdjustmentPanel({
           </Button>
         </div>
       )}
-    </section>
+    </AdminCard>
   );
 }

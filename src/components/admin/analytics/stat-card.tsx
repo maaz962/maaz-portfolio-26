@@ -1,5 +1,7 @@
 "use client";
 
+import { AdminCard } from "@/components/admin/admin-card";
+
 import type { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -15,7 +17,7 @@ export function StatCard({ icon: Icon, label, value }: StatCardProps) {
   const isCount = typeof value === "number";
 
   return (
-    <div className="rounded-2xl border border-border bg-card p-5">
+    <AdminCard>
       <div className="mb-2 flex items-center gap-2">
         <Icon className="h-4 w-4 shrink-0 text-primary" strokeWidth={1.75} />
         <span className="truncate text-sm text-muted">{label}</span>
@@ -29,6 +31,6 @@ export function StatCard({ icon: Icon, label, value }: StatCardProps) {
       >
         {value}
       </p>
-    </div>
+    </AdminCard>
   );
 }

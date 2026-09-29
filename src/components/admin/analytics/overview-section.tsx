@@ -1,5 +1,7 @@
 "use client";
 
+import { AdminCard } from "@/components/admin/admin-card";
+
 import { MapPin, Sparkles, Users } from "lucide-react";
 import type { VisitorStats } from "@/types/tracking";
 import { EmptyState } from "@/components/admin/empty-state";
@@ -31,7 +33,7 @@ export function OverviewSection({ stats }: OverviewSectionProps) {
           </div>
 
           <div className="grid gap-4 lg:grid-cols-2">
-            <div className="rounded-2xl border border-border bg-card p-5">
+            <AdminCard>
               <h3 className="mb-4 flex items-center gap-2 text-base font-semibold text-foreground">
                 <MapPin className="h-4 w-4 text-primary" strokeWidth={1.75} /> Visitor Locations
               </h3>
@@ -57,9 +59,9 @@ export function OverviewSection({ stats }: OverviewSectionProps) {
                   description="Geo data appears once a visit resolves to a city."
                 />
               )}
-            </div>
+            </AdminCard>
 
-            <div className="rounded-2xl border border-border bg-card p-5">
+            <AdminCard>
               <h3 className="mb-4 flex items-center gap-2 text-base font-semibold text-foreground">
                 <Sparkles className="h-4 w-4 text-primary" strokeWidth={1.75} /> Visitor Interests
               </h3>
@@ -85,7 +87,7 @@ export function OverviewSection({ stats }: OverviewSectionProps) {
                   description="Links, sections and buttons visitors engage with are grouped here."
                 />
               )}
-            </div>
+            </AdminCard>
           </div>
         </>
       ) : (

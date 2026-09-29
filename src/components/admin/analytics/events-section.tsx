@@ -1,5 +1,7 @@
 "use client";
 
+import { AdminCard } from "@/components/admin/admin-card";
+
 import { Activity, Clock } from "lucide-react";
 import type { VisitorStats } from "@/types/tracking";
 import { EmptyState } from "@/components/admin/empty-state";
@@ -29,7 +31,7 @@ function EventBadge({ type }: { type: string }) {
 
 export function EventsSection({ stats }: EventsSectionProps) {
   return (
-    <div className="rounded-2xl border border-border bg-card p-5">
+    <AdminCard>
       <h3 className="mb-4 flex items-center gap-2 text-base font-semibold text-foreground">
         <Clock className="h-4 w-4 text-primary" strokeWidth={1.75} /> Recent Events
       </h3>
@@ -57,6 +59,6 @@ export function EventsSection({ stats }: EventsSectionProps) {
           description="Pageviews, clicks and scroll activity show up here in real time."
         />
       )}
-    </div>
+    </AdminCard>
   );
 }

@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { AlertTriangle, Loader2, Trash2 } from "lucide-react";
 import { buttonStyles } from "@/components/ui/button";
+import { adminFieldStyles, adminLabelStyles } from "@/components/admin/admin-field";
+import { AdminCard } from "@/components/admin/admin-card";
 import type { User } from "@/types";
 
 /**
@@ -28,13 +30,13 @@ export function DangerZone({
 
   if (user.isAdmin) {
     return (
-      <section className="rounded-2xl border border-border bg-card p-5">
+      <AdminCard as="section">
         <h2 className="mb-1 text-base font-semibold text-foreground">Danger zone</h2>
         <p className="text-sm text-muted">
           Admin accounts cannot be deleted from this panel, so the last way into the admin area
           cannot be removed by accident.
         </p>
-      </section>
+      </AdminCard>
     );
   }
 
@@ -47,7 +49,7 @@ export function DangerZone({
   };
 
   return (
-    <section className="rounded-2xl border border-red-500/40 bg-card p-5">
+    <AdminCard as="section" className="border-red-500/40">
       <h2 className="flex items-center gap-2 text-base font-semibold text-red-600 dark:text-red-400">
         <AlertTriangle className="h-4 w-4" strokeWidth={1.75} />
         Danger zone
@@ -66,7 +68,7 @@ export function DangerZone({
       </p>
 
       <div className="mt-4 max-w-sm">
-        <label htmlFor="delete-confirm" className="mb-1.5 block text-sm font-medium text-foreground">
+        <label htmlFor="delete-confirm" className={adminLabelStyles()}>
           Type <span className="text-mono text-foreground">@{user.username}</span> to confirm
         </label>
         <input
@@ -76,7 +78,7 @@ export function DangerZone({
           value={typed}
           onChange={(event) => setTyped(event.target.value)}
           placeholder={`@${user.username}`}
-          className="h-11 w-full rounded-xl border border-border bg-card px-3.5 text-sm text-foreground outline-none transition-colors placeholder:text-muted focus:border-red-500/60"
+          className={adminFieldStyles({ className: "focus:border-red-500/60" })}
         />
       </div>
 
@@ -84,16 +86,11 @@ export function DangerZone({
         type="button"
         onClick={run}
         disabled={!matches || saving}
-        className={buttonStyles({
-          variant: "primary",
-          size: "sm",
-          className:
-            "mt-4 rounded-xl bg-red-600 text-white shadow-none hover:brightness-110 dark:bg-red-600",
-        })}
+        className={buttonStyles({ variant: "danger", size: "sm", className: "mt-4" })}
       >
         {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
         Delete account permanently
       </button>
-    </section>
+    </AdminCard>
   );
 }

@@ -3,6 +3,7 @@
 import { useEffect, useMemo } from "react";
 import { EyeOff, RefreshCw, Search, Trophy, X } from "lucide-react";
 import { buttonStyles } from "@/components/ui/button";
+import { adminSearchStyles } from "@/components/admin/admin-field";
 import { AdminPage, AdminPageHeader } from "@/components/admin/admin-page";
 import {
   AdminPagination,
@@ -152,7 +153,7 @@ function LeaderboardPage() {
           <button
             onClick={refresh}
             disabled={loading}
-            className={buttonStyles({ variant: "outline", size: "sm", className: "rounded-xl" })}
+            className={buttonStyles({ variant: "outline", size: "sm" })}
           >
             <RefreshCw className={loading ? "h-4 w-4 animate-spin" : "h-4 w-4"} />
             Refresh
@@ -172,7 +173,7 @@ function LeaderboardPage() {
             onChange={(event) => setQuery(event.target.value)}
             placeholder="Search by name or username"
             aria-label="Search leaderboard"
-            className="h-11 w-full rounded-xl border border-border bg-card pr-10 pl-10 text-sm text-foreground outline-none transition-colors placeholder:text-muted focus:border-primary/60"
+            className={adminSearchStyles()}
           />
           {searching && (
             <button

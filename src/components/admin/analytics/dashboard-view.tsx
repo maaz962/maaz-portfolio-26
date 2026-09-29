@@ -63,7 +63,7 @@ function OverviewPage() {
           <button
             onClick={fetchData}
             disabled={loading}
-            className={buttonStyles({ variant: "outline", size: "sm", className: "rounded-xl" })}
+              className={buttonStyles({ variant: "outline", size: "sm" })}
           >
             <RefreshCw
               className={loading ? "h-4 w-4 animate-spin" : "h-4 w-4"}

@@ -1,5 +1,7 @@
 "use client";
 
+import { AdminCard } from "@/components/admin/admin-card";
+
 export interface BarChartProps {
   title: string;
   data: { label: string; value: number }[];
@@ -9,7 +11,7 @@ export function BarChart({ title, data }: BarChartProps) {
   const max = Math.max(...data.map((d) => d.value), 1);
 
   return (
-    <div className="rounded-2xl border border-border bg-card p-5">
+    <AdminCard>
       <h3 className="mb-4 text-base font-semibold text-foreground">{title}</h3>
       <div className="space-y-3">
         {data.map((d) => (
@@ -25,6 +27,6 @@ export function BarChart({ title, data }: BarChartProps) {
           </div>
         ))}
       </div>
-    </div>
+    </AdminCard>
   );
 }

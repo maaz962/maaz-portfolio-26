@@ -3,6 +3,7 @@
 import { useEffect, useMemo } from "react";
 import { Search, UserCheck, Users as UsersIcon, X } from "lucide-react";
 import { buttonStyles } from "@/components/ui/button";
+import { adminSearchStyles } from "@/components/admin/admin-field";
 import { Avatar } from "@/components/ui/avatar";
 import { AdminPage, AdminPageHeader } from "@/components/admin/admin-page";
 import { AdminPagination, AdminTable, type AdminColumn } from "@/components/admin/admin-table";
@@ -117,7 +118,7 @@ function UsersPage() {
           <button
             onClick={fetchUsers}
             disabled={loading}
-            className={buttonStyles({ variant: "outline", size: "sm", className: "rounded-xl" })}
+              className={buttonStyles({ variant: "outline", size: "sm" })}
           >
             Refresh
           </button>
@@ -136,7 +137,7 @@ function UsersPage() {
             onChange={(event) => setQuery(event.target.value)}
             placeholder="Search by name, username, or email"
             aria-label="Search users"
-            className="h-11 w-full rounded-xl border border-border bg-card pr-10 pl-10 text-sm text-foreground outline-none transition-colors placeholder:text-muted focus:border-primary/60"
+            className={adminSearchStyles()}
           />
           {searching && (
             <button

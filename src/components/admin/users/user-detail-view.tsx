@@ -6,6 +6,8 @@ import { ChevronRight, History, Sparkles, Trophy, UserX } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar } from "@/components/ui/avatar";
 import { AdminTable, type AdminColumn } from "@/components/admin/admin-table";
+import { AdminPage } from "@/components/admin/admin-page";
+import { AdminCard } from "@/components/admin/admin-card";
 import { EmptyState } from "@/components/admin/empty-state";
 import { StatCard } from "@/components/admin/analytics/stat-card";
 import { InfoRow } from "@/components/admin/analytics/info-row";
@@ -138,25 +140,23 @@ function UserDetailPage({ userId }: { userId: string }) {
 
   if (!detail) {
     return (
-      <div className="min-h-screen bg-background p-4 sm:p-6 lg:p-8">
-        <div className="mx-auto max-w-content">
-          <EmptyState
-            icon={UserX}
-            title="User not found"
-            description="This account may have been deleted, or the link is out of date."
-          />
-        </div>
-      </div>
+      <AdminPage>
+        <EmptyState
+          icon={UserX}
+          title="User not found"
+          description="This account may have been deleted, or the link is out of date."
+        />
+      </AdminPage>
     );
   }
 
   const { user } = detail;
 
   return (
-    <div className="min-h-screen bg-background p-4 sm:p-6 lg:p-8">
-      <div className="mx-auto max-w-content space-y-5">
+    <AdminPage>
+      <div className="space-y-5">
         {/* ---------- Identity header ---------- */}
-        <header className="rounded-2xl border border-border bg-card p-5">
+        <AdminCard as="section">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div className="flex min-w-0 items-center gap-4">
               <Avatar seed={user.id} name={user.name} className="h-12 w-12 shrink-0" />
@@ -188,7 +188,7 @@ function UserDetailPage({ userId }: { userId: string }) {
               Refresh
             </Button>
           </div>
-        </header>
+        </AdminCard>
 
         {/* ---------- Gamification summary ---------- */}
         <section className="grid grid-cols-2 gap-4 sm:grid-cols-4">
@@ -202,7 +202,7 @@ function UserDetailPage({ userId }: { userId: string }) {
           <StatCard icon={Sparkles} label="Streak" value={`${detail.currentStreak}d`} />
         </section>
 
-        <section className="rounded-2xl border border-border bg-card p-5">
+        <AdminCard as="section">
           <h2 className="mb-4 text-base font-semibold text-foreground">Level progress</h2>
           <div className="h-2.5 overflow-hidden rounded-full bg-background-secondary">
             <div
@@ -219,7 +219,7 @@ function UserDetailPage({ userId }: { userId: string }) {
               value={`${detail.xpAdjustment > 0 ? "+" : ""}${detail.xpAdjustment.toLocaleString()} XP`}
             />
           </div>
-        </section>
+        </AdminCard>
 
         {/* ---------- Per-game progress ---------- */}
         <section className="space-y-3">
@@ -277,14 +277,14 @@ function UserDetailPage({ userId }: { userId: string }) {
           }}
         />
       </div>
-    </div>
+    </AdminPage>
   );
 }
 
 function DetailSkeleton() {
   return (
-    <div className="min-h-screen bg-background p-4 sm:p-6 lg:p-8">
-      <div className="mx-auto max-w-content space-y-5">
+    <AdminPage>
+      <div className="space-y-5">
         <div className="h-24 animate-pulse rounded-2xl bg-background-secondary" />
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
           {Array.from({ length: 4 }, (_, i) => (
@@ -293,6 +293,6 @@ function DetailSkeleton() {
         </div>
         <div className="h-40 animate-pulse rounded-2xl bg-background-secondary" />
       </div>
-    </div>
+    </AdminPage>
   );
 }

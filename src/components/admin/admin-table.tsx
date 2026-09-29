@@ -6,6 +6,8 @@ import { ArrowUpDown, ChevronDown, ChevronLeft, ChevronRight, ChevronUp } from "
 import { cn } from "@/lib/utils";
 import { Skeleton } from "./skeleton";
 import { DEFAULT_PAGE_SIZES, pageWindow } from "./pagination";
+import { adminSelectStyles } from "./admin-field";
+import { AdminCard } from "./admin-card";
 
 export type SortDirection = "asc" | "desc";
 
@@ -95,7 +97,7 @@ export function AdminTable<T>({
   };
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-border bg-card">
+    <AdminCard padded={false} className="overflow-hidden">
       <div className="overflow-x-auto">
         <table className="w-full border-collapse text-left">
           <caption className="sr-only">{caption}</caption>
@@ -203,7 +205,7 @@ export function AdminTable<T>({
           </tbody>
         </table>
       </div>
-    </div>
+    </AdminCard>
   );
 }
 
@@ -269,9 +271,9 @@ export function AdminPagination({
           Per page
           <select
             value={pageSize}
-            onChange={(event) => onPageSizeChange(Number(event.target.value))}
-            className="h-9 rounded-lg border border-border bg-background px-2 text-sm text-foreground outline-none focus:border-primary/60"
-          >
+              onChange={(event) => onPageSizeChange(Number(event.target.value))}
+              className={adminSelectStyles({ size: "sm" })}
+            >
             {pageSizes.map((size) => (
               <option key={size} value={size}>
                 {size}

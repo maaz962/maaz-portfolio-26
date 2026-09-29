@@ -3,14 +3,14 @@
 import type { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { buttonStyles } from "@/components/ui/button";
+import { AdminCard } from "@/components/admin/admin-card";
 
 /**
  * Loading primitives for admin panels.
  *
- * These mirror the real card recipes (`rounded-2xl border border-border
- * bg-card p-5`) so the page keeps its shape while data loads instead of
- * rendering blank, which is what every panel used to do while gated on
- * `stats &&` / `length > 0`.
+ * These render the real `AdminCard`, so the page keeps its shape while data
+ * loads instead of rendering blank, which is what every panel used to do while
+ * gated on `stats &&` / `length > 0`.
  */
 
 export function Skeleton({ className }: { className?: string }) {
@@ -24,10 +24,10 @@ export function Skeleton({ className }: { className?: string }) {
 
 export function StatCardSkeleton() {
   return (
-    <div className="rounded-2xl border border-border bg-card p-5">
+    <AdminCard>
       <Skeleton className="h-4 w-24" />
       <Skeleton className="mt-3 h-8 w-20" />
-    </div>
+    </AdminCard>
   );
 }
 
@@ -43,7 +43,7 @@ export function PanelSkeleton({
   titleWidth?: string;
 }) {
   return (
-    <div className="rounded-2xl border border-border bg-card p-5">
+    <AdminCard>
       <Skeleton className={cn("h-4", titleWidth)} />
       <div className="mt-5 space-y-3">
         {Array.from({ length: rows }, (_, i) => (
@@ -56,14 +56,14 @@ export function PanelSkeleton({
           </div>
         ))}
       </div>
-    </div>
+    </AdminCard>
   );
 }
 
 /** Stand-in for the horizontal bar charts (Browsers / Devices / Top Pages). */
 export function BarChartSkeleton() {
   return (
-    <div className="rounded-2xl border border-border bg-card p-5">
+    <AdminCard>
       <Skeleton className="h-4 w-28" />
       <div className="mt-5 space-y-4">
         {Array.from({ length: 5 }, (_, i) => (
@@ -74,7 +74,7 @@ export function BarChartSkeleton() {
           </div>
         ))}
       </div>
-    </div>
+    </AdminCard>
   );
 }
 
@@ -91,7 +91,7 @@ export function ErrorState({
   onRetry?: () => void;
 }) {
   return (
-    <div className="rounded-2xl border border-red-500/25 bg-card p-10 text-center">
+    <AdminCard className="p-10 text-center">
       <Icon className="mx-auto h-8 w-8 text-red-500/70" />
       <p className="mt-3 font-display text-base font-semibold text-foreground">{title}</p>
       <p className="mx-auto mt-1.5 max-w-md text-sm text-muted">{description}</p>
@@ -104,6 +104,6 @@ export function ErrorState({
           Try again
         </button>
       )}
-    </div>
+    </AdminCard>
   );
 }
