@@ -56,6 +56,18 @@ const HIDDEN_USERNAMES = [
   "@dua_zainab",
 ];
 
+/**
+ * Hard-exclusion predicate for a `users u` FROM clause.
+ *
+ * Must be `= ANY($1)` and never `NOT IN ($1)`: the neon tagged template sends an
+ * interpolated array as a single bound parameter, so `x NOT IN ($1)` compares
+ * the column against that array as one value, never matches, and silently
+ * returns every row. That bug let the test accounts sit on the live public
+ * leaderboard. `= ANY(...)` is the form Postgres evaluates per element, and an
+ * empty list matches nobody rather than everybody.
+ */
+const NOT_HARD_EXCLUDED = sql`NOT (LOWER(u.username) = ANY(${HIDDEN_USERNAMES.map((n) => n.toLowerCase())}))`;
+
 let initPromise: Promise<void> | null = null;
 
 async function initDb(): Promise<void> {
@@ -516,7 +528,7 @@ export async function getLeaderboard(limit = 10): Promise<LeaderboardEntry[]> {
     LEFT JOIN game_progress gp ON gp.user_id = u.id
     LEFT JOIN gamification g ON g.user_id = u.id
     WHERE u.is_admin = false
-      AND LOWER(u.username) NOT IN (${HIDDEN_USERNAMES.map((n) => n.toLowerCase())})
+      AND ${NOT_HARD_EXCLUDED}
     GROUP BY u.id, u.created_at, g.current_streak, g.xp_adjustment
     HAVING NOT COALESCE(u.hidden_from_leaderboard, false)
     ORDER BY total_xp DESC, u.created_at ASC
@@ -542,7 +554,7 @@ export async function getUserRank(userId: string): Promise<number | null> {
     LEFT JOIN game_progress gp ON gp.user_id = u.id
     LEFT JOIN gamification g ON g.user_id = u.id
     WHERE u.is_admin = false
-      AND LOWER(u.username) NOT IN (${HIDDEN_USERNAMES.map((n) => n.toLowerCase())})
+      AND ${NOT_HARD_EXCLUDED}
     GROUP BY u.id, u.created_at, g.xp_adjustment
     HAVING NOT COALESCE(u.hidden_from_leaderboard, false)
   `;
