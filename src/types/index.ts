@@ -229,6 +229,35 @@ export interface LeaderboardEntry {
 }
 
 /**
+ * The public leaderboard and the viewer's own position, read together.
+ *
+ * These used to be two independent calls (`getLeaderboard` + `getUserRank`),
+ * which meant the rank in the header and the rows in the list came from two
+ * different computations. When they disagreed the UI had no way to tell which
+ * one was right and rendered a "You are #4" badge above a list with no #4 in
+ * it. One snapshot makes that state unrepresentable: if `myRank` is within
+ * `limit`, `entries` contains that row, and `myEntry` is that same row.
+ */
+export interface LeaderboardSnapshot {
+  /** The visible board, ascending by rank. Shorter than `limit` when fewer
+   *  players are ranked — the client sizes its heading from `entries.length`,
+   *  never from `limit`. */
+  entries: LeaderboardEntry[];
+  /** How many rows the board asked for. Used only for "climb into the top N"
+   *  copy when the viewer is ranked below the cut. */
+  limit: number;
+  /** 1-based public rank of the viewer; null for guests, admins, unknown users
+   *  and accounts hidden from the board. */
+  myRank: number | null;
+  /**
+   * The viewer's own row, sent whether or not it made the visible cut so the
+   * "You are #15" summary can show real level/XP instead of a bare number.
+   * Null whenever `myRank` is null.
+   */
+  myEntry: LeaderboardEntry | null;
+}
+
+/**
  * One admin-applied XP change.
  *
  * An admin sets an absolute total rather than a delta, so this records both the

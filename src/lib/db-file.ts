@@ -9,6 +9,7 @@ import type {
   GameProgress,
   Gamification,
   LeaderboardEntry,
+  LeaderboardSnapshot,
   XpAdjustmentRecord,
   AdminUserDetail,
   AdminUserGameProgress,
@@ -570,6 +571,49 @@ export async function getUserRank(userId: string): Promise<number | null> {
     hiddenUsernames: HIDDEN_USERNAMES,
   }).find((s) => s.user.id === userId);
   return standing?.rank ?? null;
+}
+
+/**
+ * The public board and one player's own standing, from a single read of the
+ * store and a single `buildStandings` pass.
+ *
+ * `getLeaderboard` + `getUserRank` are two file reads and two independent
+ * rankings of the same data. A score saved between them produced a header
+ * claiming a rank the list did not contain, and nothing on the client could
+ * reconcile it. Deriving both from one standings array makes that impossible:
+ * `myEntry` is the very object the board is sliced from, so if `myRank <= limit`
+ * the row is in `entries` by construction.
+ *
+ * The viewer's row is returned even when it falls below the cut, so the
+ * out-of-range summary can show their real level and XP.
+ */
+export async function getLeaderboardSnapshot(
+  limit: number,
+  userId: string | null
+): Promise<LeaderboardSnapshot> {
+  const db = await readDbFile();
+  const standings = buildStandings({
+    users: db.users,
+    gameProgress: db.gameProgress ?? [],
+    gamification: db.gamification ?? [],
+    hiddenUsernames: HIDDEN_USERNAMES,
+  });
+
+  const board = standings
+    .filter((s) => !s.hidden)
+    // `buildStandings` returns rows in registration order with ranks attached;
+    // the board has to be ordered by rank before the limit is applied, or the
+    // "top 10" would be the first 10 people who signed up.
+    .sort((a, b) => (a.rank ?? 0) - (b.rank ?? 0))
+    .slice(0, limit)
+    .map(standingToEntry);
+
+  const mine = userId ? standings.find((s) => s.user.id === userId) : undefined;
+  // A hidden account has a null rank and must stay off the board, so `myEntry`
+  // is null there too rather than a row the UI would have to special-case.
+  const myEntry = mine && mine.rank !== null ? standingToEntry(mine) : null;
+
+  return { entries: board, limit, myRank: myEntry?.rank ?? null, myEntry };
 }
 
 /**

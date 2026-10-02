@@ -5,6 +5,7 @@ import type {
   GameProgress,
   Gamification,
   LeaderboardEntry,
+  LeaderboardSnapshot,
   XpAdjustmentRecord,
   AdminUserDetail,
   AdminLeaderboardPage,
@@ -563,6 +564,17 @@ const STANDINGS_CTE = sql`
     FROM standings
   )`;
 
+function rowToEntry(r: any): LeaderboardEntry {
+  return {
+    rank: r.public_rank,
+    user: { id: r.id, name: r.name, username: r.username, avatarUrl: r.avatar_url },
+    totalXp: r.total_xp,
+    level: levelForXp(r.total_xp),
+    gamesPlayed: r.games_played,
+    currentStreak: r.current_streak,
+  };
+}
+
 export async function getLeaderboard(limit = 10): Promise<LeaderboardEntry[]> {
   await initDb();
   const rows = await sql`
@@ -572,14 +584,7 @@ export async function getLeaderboard(limit = 10): Promise<LeaderboardEntry[]> {
     ORDER BY public_rank ASC
     LIMIT ${limit}
   `;
-  return rows.map((r: any) => ({
-    rank: r.public_rank,
-    user: { id: r.id, name: r.name, username: r.username, avatarUrl: r.avatar_url },
-    totalXp: r.total_xp,
-    level: levelForXp(r.total_xp),
-    gamesPlayed: r.games_played,
-    currentStreak: r.current_streak,
-  }));
+  return rows.map(rowToEntry);
 }
 
 /** 1-based rank among all non-admin players; null for admins / unknown users. */
@@ -590,6 +595,63 @@ export async function getUserRank(userId: string): Promise<number | null> {
     SELECT public_rank FROM ranked WHERE id = ${userId} LIMIT 1
   `;
   return row?.public_rank ?? null;
+}
+
+/**
+ * The public board and one player's own standing, in a single round trip.
+ *
+ * `getLeaderboard` + `getUserRank` were two statements over the same CTE, and
+ * a score saved between them left the header claiming a rank the list did not
+ * contain. `ranked` is materialised once here and both halves are read from
+ * that one snapshot, so the two can never disagree.
+ *
+ * The two halves come back as one tagged result set rather than two awaits:
+ * `Promise.all` over two queries would still be two separate snapshots on
+ * Postgres, which is the bug this replaces. A null `userId` binds as SQL NULL,
+ * so the `mine` half simply matches nothing and guests cost one query, not two.
+ *
+ * The viewer's row is returned even below the cut so the out-of-range summary
+ * can show their real level and XP.
+ */
+export async function getLeaderboardSnapshot(
+  limit: number,
+  userId: string | null
+): Promise<LeaderboardSnapshot> {
+  await initDb();
+  const rows = await sql`
+    ${STANDINGS_CTE},
+    board AS (
+      SELECT * FROM ranked
+      WHERE NOT hidden
+      ORDER BY public_rank ASC
+      LIMIT ${limit}
+    ),
+    mine AS (
+      SELECT * FROM ranked WHERE id = ${userId} LIMIT 1
+    )
+    SELECT 'board' AS source, * FROM board
+    UNION ALL
+    SELECT 'mine' AS source, * FROM mine
+  `;
+
+  const board = rows.filter((r: any) => r.source === "board");
+  const mine = rows.find((r: any) => r.source === "mine");
+
+  // A hidden account has a NULL public_rank and must stay off the board, so
+  // `myEntry` is null there too rather than a row the UI would special-case.
+  const myEntry =
+    mine && !mine.hidden && mine.public_rank != null ? rowToEntry(mine) : null;
+
+  return {
+    // The CTE orders and limits, but UNION ALL does not promise the outer
+    // result keeps that order, so it is re-imposed here.
+    entries: board
+      .sort((a: any, b: any) => a.public_rank - b.public_rank)
+      .map(rowToEntry),
+    limit,
+    myRank: myEntry?.rank ?? null,
+    myEntry,
+  };
 }
 
 /**
