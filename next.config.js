@@ -1,6 +1,33 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  async headers() {
+    return [
+      {
+        // Level data + engine scripts for every game. These are hand-edited and
+        // shipped as plain static files, so a browser can easily hold a stale
+        // copy and silently run old level content. max-age=0 with
+        // must-revalidate lets the browser store the file (cheap revalidation
+        // via ETag returns a 304) but forbids reusing it without asking.
+        source: "/games/:slug/levels.js",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=0, must-revalidate",
+          },
+        ],
+      },
+      {
+        source: "/games/:slug/game.js",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=0, must-revalidate",
+          },
+        ],
+      },
+    ];
+  },
   images: {
     remotePatterns: [
       {
