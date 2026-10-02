@@ -231,7 +231,7 @@ export interface LeaderboardEntry {
 /**
  * The public leaderboard and the viewer's own position, read together.
  *
- * These used to be two independent calls (`getLeaderboard` + `getUserRank`),
+ * These used to be two independent calls (a board read plus a rank read),
  * which meant the rank in the header and the rows in the list came from two
  * different computations. When they disagreed the UI had no way to tell which
  * one was right and rendered a "You are #4" badge above a list with no #4 in

@@ -31,7 +31,6 @@ export const setUserTotalXp = impl.setUserTotalXp;
 export const setUserHiddenFromLeaderboard = impl.setUserHiddenFromLeaderboard;
 export const getDailyHintUsage = impl.getDailyHintUsage;
 export const consumeDailyHint = impl.consumeDailyHint;
-export const getLeaderboard = impl.getLeaderboard;
 export const getUserRank = impl.getUserRank;
 export const getLeaderboardSnapshot = impl.getLeaderboardSnapshot;
 export const getUserXpTotals = impl.getUserXpTotals;

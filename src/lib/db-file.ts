@@ -8,7 +8,6 @@ import type {
   BlogSettings,
   GameProgress,
   Gamification,
-  LeaderboardEntry,
   LeaderboardSnapshot,
   XpAdjustmentRecord,
   AdminUserDetail,
@@ -543,24 +542,6 @@ export async function consumeDailyHint(
   });
 }
 
-/** Top players by total XP (admins excluded â€” they're the site owners). */
-export async function getLeaderboard(limit = 10): Promise<LeaderboardEntry[]> {
-  const db = await readDbFile();
-  return buildStandings({
-    users: db.users,
-    gameProgress: db.gameProgress ?? [],
-    gamification: db.gamification ?? [],
-    hiddenUsernames: HIDDEN_USERNAMES,
-  })
-    .filter((s) => !s.hidden)
-    // `buildStandings` returns rows in registration order with ranks attached;
-    // the board has to be ordered by rank before the limit is applied, or the
-    // "top 10" would be the first 10 people who signed up.
-    .sort((a, b) => (a.rank ?? 0) - (b.rank ?? 0))
-    .slice(0, limit)
-    .map(standingToEntry);
-}
-
 /** 1-based rank among all non-admin players; null for admins / unknown users. */
 export async function getUserRank(userId: string): Promise<number | null> {
   const db = await readDbFile();
@@ -577,12 +558,13 @@ export async function getUserRank(userId: string): Promise<number | null> {
  * The public board and one player's own standing, from a single read of the
  * store and a single `buildStandings` pass.
  *
- * `getLeaderboard` + `getUserRank` are two file reads and two independent
- * rankings of the same data. A score saved between them produced a header
- * claiming a rank the list did not contain, and nothing on the client could
- * reconcile it. Deriving both from one standings array makes that impossible:
- * `myEntry` is the very object the board is sliced from, so if `myRank <= limit`
- * the row is in `entries` by construction.
+ * `getUserRank` used to have a sibling here that read the store and rebuilt
+ * the standings a second time. Two file reads and two independent rankings of
+ * the same data meant a score saved between them produced a header claiming a
+ * rank the list did not contain, and nothing on the client could reconcile it.
+ * Deriving both from one standings array makes that impossible: `myEntry` is
+ * the very object the board is sliced from, so if `myRank <= limit` the row is
+ * in `entries` by construction.
  *
  * The viewer's row is returned even when it falls below the cut, so the
  * out-of-range summary can show their real level and XP.

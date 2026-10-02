@@ -529,7 +529,6 @@ export async function consumeDailyHint(
   return { ok: true, used: nextUsed, left: DAILY_HINT_LIMIT - nextUsed };
 }
 
-/** Top players by total XP (admins excluded â€” they're the site owners). */
 /**
  * The per-player standing every leaderboard read is built from.
  *
@@ -575,18 +574,6 @@ function rowToEntry(r: any): LeaderboardEntry {
   };
 }
 
-export async function getLeaderboard(limit = 10): Promise<LeaderboardEntry[]> {
-  await initDb();
-  const rows = await sql`
-    ${STANDINGS_CTE}
-    SELECT * FROM ranked
-    WHERE NOT hidden
-    ORDER BY public_rank ASC
-    LIMIT ${limit}
-  `;
-  return rows.map(rowToEntry);
-}
-
 /** 1-based rank among all non-admin players; null for admins / unknown users. */
 export async function getUserRank(userId: string): Promise<number | null> {
   await initDb();
@@ -600,10 +587,11 @@ export async function getUserRank(userId: string): Promise<number | null> {
 /**
  * The public board and one player's own standing, in a single round trip.
  *
- * `getLeaderboard` + `getUserRank` were two statements over the same CTE, and
- * a score saved between them left the header claiming a rank the list did not
- * contain. `ranked` is materialised once here and both halves are read from
- * that one snapshot, so the two can never disagree.
+ * The board used to be a second statement over the same CTE, alongside the
+ * one that produced the caller's rank. Two statements meant a score saved
+ * between them left the header claiming a rank the list did not contain.
+ * `ranked` is materialised once here and both halves are read from that one
+ * snapshot, so the two can never disagree.
  *
  * The two halves come back as one tagged result set rather than two awaits:
  * `Promise.all` over two queries would still be two separate snapshots on

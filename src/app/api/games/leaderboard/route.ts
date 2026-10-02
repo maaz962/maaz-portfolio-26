@@ -15,12 +15,11 @@ const BOARD_SIZE = 10;
  * Public: the top players list is visible to guests too; `myRank`/`myEntry` are
  * filled in only when a session exists.
  *
- * The board and the viewer's own row are read as one snapshot rather than as
- * `getLeaderboard` + `getUserRank`. Those were two independent rankings of the
- * same data, and when they disagreed the client rendered "You are #4" above a
- * list that had no #4 in it, with nothing to reconcile against. `myEntry` is
- * the same object the board is sliced from, so a viewer inside the cut is
- * always present in `entries`.
+ * Previously this called `getLeaderboard` + `getUserRank`, two independent
+ * rankings of the same data, and when they disagreed the client rendered
+ * "You are #4" above a list that had no #4 in it, with nothing to reconcile
+ * against. `myEntry` is the same object the board is sliced from, so a viewer
+ * inside the cut is always present in `entries`.
  *
  * This route is public-only. It used to also serve the admin panel behind
  * `?admin=1`, which put an admin-only 1,000-row response on a public URL
