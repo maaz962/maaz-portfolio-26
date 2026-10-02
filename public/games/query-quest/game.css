@@ -1,4 +1,4 @@
-﻿.qq-canvas{position:relative;display:flex;flex-direction:column;gap:1rem;min-height:calc(100vh - 8rem);padding:1rem}
+.qq-canvas{position:relative;display:flex;flex-direction:column;gap:1rem;min-height:calc(100vh - 8rem);padding:1rem}
 .qq-hero{display:flex;align-items:center;gap:0.75rem}
 .qq-hero-badge{display:flex;align-items:center;gap:0.5rem;border:1px solid rgba(56,189,248,0.35);background:rgba(56,189,248,0.08);color:#38bdf8;border-radius:9999px;padding:0.4rem 0.85rem;font-weight:700;font-size:0.8rem}
 .qq-toolbar{display:flex;flex-wrap:wrap;gap:0.5rem;align-items:center}

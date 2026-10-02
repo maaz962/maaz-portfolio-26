@@ -1,4 +1,4 @@
-﻿/* ==========================================================================
+/* ==========================================================================
    PHP PLAYGROUND: Engine (vanilla IIFE, js-detective contract)
    window API:
      __initPhpPlayground                init/reset state (called by hook)

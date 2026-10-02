@@ -1,4 +1,4 @@
-﻿/* ==========================================================================
+/* ==========================================================================
    PHP PLAYGROUND: Level Data (16 levels across 4 difficulty tiers)
    Sets window.__phpPlaygroundLevels for the browser. game.js re-reads it
    lazily and polls until the data arrives, so script order is safe.
