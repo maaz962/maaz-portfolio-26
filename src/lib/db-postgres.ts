@@ -28,7 +28,7 @@ import { getAdminEnv, adminAvatarUrl, ADMIN_CREATED_AT } from "./admin-seed";
 /**
  * Postgres-backed persistent data layer. Used when process.env.DATABASE_URL is
  * set (i.e. on Vercel). Unlike the file-based store, this survives deploys and
- * cold starts â€” game progress and users are never reset.
+ * cold starts — game progress and users are never reset.
  */
 
 // Neon's tagged template returns a wide union type that is awkward to map over;
@@ -151,7 +151,7 @@ async function initDb(): Promise<void> {
         created_at TEXT NOT NULL
       )
     `;
-    // Idempotent seed of the site owner's admin account â€” mirrors the file-store
+    // Idempotent seed of the site owner's admin account — mirrors the file-store
     // seed so /admin is reachable on first production deploy too. ON CONFLICT
     // makes it safe on every cold start / redeploy, and crucially it never
     // OVERWRITES an existing row: rotating the password is an explicit
@@ -387,7 +387,7 @@ export async function saveGameProgress(
   `;
 
   // Keep gamification (XP / streak / shared hint budget) in sync with the
-  // fresh progress write â€” carry the user's spent hints through untouched so a
+  // fresh progress write — carry the user's spent hints through untouched so a
   // save never resets the shared daily hint pool.
   const [sumRow] = await sql`
     SELECT COALESCE(SUM(score), 0)::int AS total_xp,

@@ -116,7 +116,7 @@ async function saveDbFile(data: DatabaseSchema): Promise<void> {
 
 // Full read-modify-write operations are serialized through this queue so that
 // concurrent requests (e.g. a progress save racing a register) never clobber each
-// other's changes â€” each task re-reads the freshest file while holding the lock.
+// other's changes — each task re-reads the freshest file while holding the lock.
 let dbTaskQueue: Promise<unknown> = Promise.resolve();
 
 async function withDbLock<T>(task: () => Promise<T>): Promise<T> {
@@ -217,7 +217,7 @@ export async function registerUser(
     if (usernameExists) throw new Error("Username already taken");
 
     const id = `user-${crypto.randomUUID()}`;
-    // Privileges are only granted via the seeded admin account â€” never
+    // Privileges are only granted via the seeded admin account — never
     // automatically based on email/username, which would be an escalation hole.
     const isAdmin = false;
     const avatarUrl = `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(formattedUsername)}`;
@@ -389,7 +389,7 @@ export async function saveGameProgress(
     }
 
     // Every play session bumps the user's streak / XP (same write lock, so no
-    // nested locking needed here â€” recompute mutates the already-locked db).
+    // nested locking needed here — recompute mutates the already-locked db).
     recomputeGamificationLocked(db, userId);
 
     await saveDbFile(db);
@@ -402,7 +402,7 @@ export async function saveGameProgress(
 /**
  * Recomputes a user's gamification row from their game-progress rows and
  * advances the daily streak. Must only be called while holding the DB write
- * lock (it mutates `db` in place) â€” i.e. from saveGameProgress' locked task.
+ * lock (it mutates `db` in place) — i.e. from saveGameProgress' locked task.
  */
 function recomputeGamificationLocked(
   db: DatabaseSchema,
