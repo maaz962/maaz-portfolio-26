@@ -40,7 +40,27 @@ export function DangerZone({
     );
   }
 
-  const matches = typed.trim() === user.username;
+  /**
+   * The one string the admin has to type, derived once and used for the
+   * instruction, the placeholder AND the comparison.
+   *
+   * These were previously three separate expressions: the label and the
+   * placeholder rendered `@{user.username}` while the check compared against
+   * the bare `user.username`. The button was therefore permanently disabled --
+   * the exact string the UI asked for could never equal the string being
+   * compared -- and, worse, typing the bare username (which nothing told you
+   * to do) was what armed the delete.
+   *
+   * The leading `@` is a display convention used everywhere the site shows a
+   * handle, so it belongs to the confirmation prompt, not to the stored value.
+   *
+   * Comparison stays strict and case-sensitive on purpose: this guards an
+   * irreversible delete, and usernames are stored lowercased, so an exact match
+   * is unambiguous. Only surrounding whitespace is forgiven (`.trim()`), so a
+   * value pasted in with a stray space still counts as deliberate.
+   */
+  const confirmText = `@${user.username}`;
+  const matches = typed.trim() === confirmText;
 
   const run = async () => {
     if (!matches || saving) return;
@@ -56,7 +76,7 @@ export function DangerZone({
       </h2>
 
       <p className="mt-2 text-sm text-muted">
-        Deleting <span className="text-foreground">@{user.username}</span> permanently removes:
+        Deleting <span className="text-foreground">{confirmText}</span> permanently removes:
       </p>
       <ul className="mt-2 list-inside list-disc space-y-1 text-sm text-muted">
         <li>The account and its sign-in access</li>
@@ -69,7 +89,7 @@ export function DangerZone({
 
       <div className="mt-4 max-w-sm">
         <label htmlFor="delete-confirm" className={adminLabelStyles()}>
-          Type <span className="text-mono text-foreground">@{user.username}</span> to confirm
+          Type <span className="text-mono text-foreground">{confirmText}</span> to confirm
         </label>
         <input
           id="delete-confirm"
@@ -77,7 +97,7 @@ export function DangerZone({
           autoComplete="off"
           value={typed}
           onChange={(event) => setTyped(event.target.value)}
-          placeholder={`@${user.username}`}
+          placeholder={confirmText}
           className={adminFieldStyles({ className: "focus:border-red-500/60" })}
         />
       </div>
