@@ -95,6 +95,12 @@ export function DangerZone({
           id="delete-confirm"
           type="text"
           autoComplete="off"
+          // The comparison is case-sensitive, so mobile auto-capitalisation and
+          // autocorrect must be off or a correctly-typed username gets silently
+          // rewritten and the button never enables.
+          autoCapitalize="off"
+          autoCorrect="off"
+          spellCheck={false}
           value={typed}
           onChange={(event) => setTyped(event.target.value)}
           placeholder={confirmText}
