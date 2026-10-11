@@ -50,6 +50,7 @@ export function ConfirmDialog({
   onCancel,
 }: ConfirmDialogProps) {
   const confirmRef = useRef<HTMLButtonElement>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!open) return;
@@ -62,11 +63,28 @@ export function ConfirmDialog({
         return;
       }
       // Keep Tab inside the dialog: it is modal, so focus must not wander to the
-      // page behind it while the overlay is up.
+      // page behind it while the overlay is up. Tab used to call `onCancel`,
+      // which meant a single stray Tab dismissed the dialog instead of cycling
+      // focus — the opposite of what a focus trap should do.
       if (event.key === "Tab") {
-        event.preventDefault();
-        if (busy) return;
-        onCancel();
+        const dialog = dialogRef.current;
+        if (!dialog) return;
+        const focusable = dialog.querySelectorAll<HTMLElement>(
+          'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        );
+        if (focusable.length === 0) return;
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        if (!first || !last) return;
+        const active = document.activeElement as HTMLElement | null;
+        const outside = !active || !dialog.contains(active);
+        if (event.shiftKey && (active === first || outside)) {
+          event.preventDefault();
+          last.focus();
+        } else if (!event.shiftKey && (active === last || outside)) {
+          event.preventDefault();
+          first.focus();
+        }
       }
     };
 
@@ -93,6 +111,7 @@ export function ConfirmDialog({
       />
 
       <div
+        ref={dialogRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby="confirm-dialog-title"
