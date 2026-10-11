@@ -24,6 +24,7 @@ import {
 } from "./gamification";
 import { games } from "@/data/games";
 import { getAdminEnv, adminAvatarUrl, ADMIN_CREATED_AT } from "./admin-seed";
+import { isOnPublicLeaderboard } from "./leaderboard";
 
 /**
  * Postgres-backed persistent data layer. Used when process.env.DATABASE_URL is
@@ -49,37 +50,6 @@ type DbTagWithExtras = DbTag & {
 
 const conn = getPgConnectionString();
 const sql = (conn ? neon(conn) : null) as unknown as DbTagWithExtras;
-
-// Usernames that must never appear on the public leaderboard regardless of
-// the stored flag (defense-in-depth for accounts created outside this app).
-const HIDDEN_USERNAMES = [
-  "test4",
-  "test5",
-  "dua",
-  "dua_zainab",
-  "zainab",
-  "rania",
-  "rania_afzal",
-  "Rania Afzal",
-  "Dua",
-  "@dua_zainab",
-];
-
-// Pre-lowercased once: the filter compares against LOWER(u.username) so a
-// differently-cased duplicate account can't slip onto the public board.
-const HIDDEN_USERNAMES_LOWERED = HIDDEN_USERNAMES.map((n) => n.toLowerCase());
-
-/**
- * Hard-exclusion predicate for a `users u` FROM clause.
- *
- * Must be `= ANY($1)`, never `NOT IN ($1)`: the neon tagged template sends an
- * interpolated array as a single bound parameter, and `x NOT IN ($1)` compares
- * the column against that array as one value, so it never matches and silently
- * returns every row. That bug let the test accounts sit on the live public
- * leaderboard. `= ANY(...)` is the form Postgres evaluates per element, and an
- * empty list matches nobody rather than everybody.
- */
-const IS_HARD_EXCLUDED = sql`LOWER(u.username) = ANY(${HIDDEN_USERNAMES_LOWERED})`;
 
 let initPromise: Promise<void> | null = null;
 
@@ -540,14 +510,23 @@ export async function consumeDailyHint(
  * The window orders hidden rows last *before* numbering, so the visible players
  * get 1..N with no gaps. Numbering first and nulling afterwards would leave
  * holes wherever a hidden account was removed from the public board.
+ *
+ * Built lazily as a function, not a module-level `sql\`...\`` const: `sql` is
+ * `null` when no connection string is configured (local file-store dev), and
+ * invoking the tag at import time threw `TypeError: sql is not a function`
+ * before the file backend could be selected. The `hidden` column is the SQL
+ * form of `isOnPublicLeaderboard`; the hard-coded username list that used to
+ * feed it has been removed because it let an account sit at
+ * `hidden_from_leaderboard = false` while still being suppressed.
  */
-const STANDINGS_CTE = sql`
+function standingsCte() {
+  return sql`
   WITH standings AS (
     SELECT u.id, u.name, u.username, u.avatar_url, u.created_at,
            (COALESCE(SUM(gp.score), 0) + COALESCE(g.xp_adjustment, 0))::int AS total_xp,
            COUNT(DISTINCT gp.game_slug)::int AS games_played,
            COALESCE(g.current_streak, 0)::int AS current_streak,
-           (COALESCE(u.hidden_from_leaderboard, false) OR ${IS_HARD_EXCLUDED}) AS hidden
+           COALESCE(u.hidden_from_leaderboard, false) AS hidden
     FROM users u
     LEFT JOIN game_progress gp ON gp.user_id = u.id
     LEFT JOIN gamification g ON g.user_id = u.id
@@ -562,6 +541,7 @@ const STANDINGS_CTE = sql`
     END::int AS public_rank
     FROM standings
   )`;
+}
 
 function rowToEntry(r: any): LeaderboardEntry {
   return {
@@ -578,7 +558,7 @@ function rowToEntry(r: any): LeaderboardEntry {
 export async function getUserRank(userId: string): Promise<number | null> {
   await initDb();
   const [row] = await sql`
-    ${STANDINGS_CTE}
+    ${standingsCte()}
     SELECT public_rank FROM ranked WHERE id = ${userId} LIMIT 1
   `;
   return row?.public_rank ?? null;
@@ -607,7 +587,7 @@ export async function getLeaderboardSnapshot(
 ): Promise<LeaderboardSnapshot> {
   await initDb();
   const rows = await sql`
-    ${STANDINGS_CTE},
+    ${standingsCte()},
     board AS (
       SELECT * FROM ranked
       WHERE NOT hidden
@@ -686,18 +666,21 @@ export async function getAdminLeaderboardPage(
   const dir = direction === "asc" ? "ASC" : "DESC";
 
   const ORDER_BY: Record<AdminLeaderboardSortKey, string> = {
-    // Hidden accounts last, then by XP. NULLs sort first in Postgres by
-    // default, so they need an explicit guard rather than the bare rank.
+    // Hidden accounts last in BOTH directions, matching the file backend's
+    // `sortStandings` (which always sinks them). Previously the descending
+    // branch used `hidden DESC`, floating hidden accounts to the top and making
+    // the same query disagree with itself depending on the backend. NULLs sort
+    // first in Postgres by default, so the rank column needs an explicit guard.
     rank: dir === "ASC"
       ? "hidden ASC, public_rank ASC NULLS LAST, total_xp DESC, created_at ASC, id ASC"
-      : "hidden DESC, public_rank DESC NULLS FIRST, total_xp DESC, created_at ASC, id ASC",
+      : "hidden ASC, public_rank DESC NULLS LAST, total_xp DESC, created_at ASC, id ASC",
     xp: "total_xp " + dir + ", public_rank ASC NULLS LAST, id ASC",
     name: "LOWER(name) " + dir + ", public_rank ASC NULLS LAST, id ASC",
     streak: "current_streak " + dir + ", public_rank ASC NULLS LAST, id ASC",
   };
 
   const [counts] = await sql`
-    ${STANDINGS_CTE}
+    ${standingsCte()}
     SELECT COUNT(*)::int AS total,
            COUNT(*) FILTER (WHERE hidden)::int AS hidden_count
     FROM ranked
@@ -712,7 +695,7 @@ export async function getAdminLeaderboardPage(
   const offset = (safePage - 1) * pageSize;
 
   const rows = await sql`
-    ${STANDINGS_CTE}
+    ${standingsCte()}
     SELECT * FROM ranked
     WHERE ${needle
       ? sql`(LOWER(name) LIKE ${like} OR LOWER(username) LIKE ${like})`
@@ -812,6 +795,9 @@ export async function getAdminUserDetail(userId: string): Promise<AdminUserDetai
     levelNext: levels.next,
     levelProgressPct: levels.progressPct,
     rank: await getUserRank(userId),
+    // Derived from the shared predicate, not read back off `rank`, so the
+    // admin status line and the public board can never disagree.
+    onPublicLeaderboard: isOnPublicLeaderboard(rowToUser(userRow)),
     currentStreak: stored?.current_streak ?? 0,
     longestStreak: stored?.longest_streak ?? 0,
     lastPlayedAt: stored?.last_played_at ?? null,

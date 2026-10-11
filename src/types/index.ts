@@ -302,6 +302,13 @@ export interface AdminUserDetail {
   levelProgressPct: number;
   /** 1-based public rank, or null for admins / hidden / unranked accounts. */
   rank: number | null;
+  /**
+   * Whether the account is currently on the public leaderboard, resolved by the
+   * same predicate the public query uses. The admin status line reads this
+   * instead of the raw flag so it can never claim "Listed" for an account the
+   * public board omits.
+   */
+  onPublicLeaderboard: boolean;
   currentStreak: number;
   longestStreak: number;
   lastPlayedAt: string | null;
@@ -328,7 +335,7 @@ export interface AdminLeaderboardRow {
   level: number;
   gamesPlayed: number;
   currentStreak: number;
-  /** Excluded from the public leaderboard, either by flag or hard exclusion. */
+  /** Excluded from the public leaderboard by the hidden flag. */
   hidden: boolean;
 }
 

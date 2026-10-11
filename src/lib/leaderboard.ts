@@ -19,11 +19,6 @@ import { levelForXp } from "./gamification";
  *
  * Postgres does the same work in SQL; this module is the file backend's
  * equivalent and defines the semantics both must match.
- *
- * `hiddenUsernames` is expected to be lowercased and is matched against the
- * lowercased username, because the SQL side compares with LOWER() and a
- * case-sensitive comparison here would let "Test4" onto the file store's board
- * while Postgres hid it.
  */
 export interface Standing {
   /** 1-based public rank; null when the account is not on the public board. */
@@ -34,20 +29,39 @@ export interface Standing {
   gamesPlayed: number;
   currentStreak: number;
   createdAt: string;
-  /** Excluded from the public board, by flag or by hard-excluded username. */
+  /** Excluded from the public board by the `hiddenFromLeaderboard` flag. */
   hidden: boolean;
+}
+
+/**
+ * The single source of truth for who belongs on the public leaderboard.
+ *
+ * Admins are never players, and a `hiddenFromLeaderboard` account is suppressed
+ * unconditionally. The public SQL query (`standingsCte()`), the file backend's
+ * `buildStandings` and the admin detail payload all resolve visibility through
+ * this one predicate, so the admin status line can never disagree with what the
+ * public board actually shows.
+ *
+ * There used to be a second, hard-coded list of usernames excluded here as
+ * well. It made the public query and the admin toggle disagree — a hard-listed
+ * account could sit at `hiddenFromLeaderboard = false` and still be absent from
+ * the board — so it was removed in favour of the one flag.
+ */
+export function isOnPublicLeaderboard(user: {
+  isAdmin?: boolean;
+  hiddenFromLeaderboard?: boolean;
+}): boolean {
+  return !user.isAdmin && !Boolean(user.hiddenFromLeaderboard);
 }
 
 export function buildStandings({
   users,
   gameProgress,
   gamification,
-  hiddenUsernames,
 }: {
   users: User[];
   gameProgress: GameProgress[];
   gamification: Gamification[];
-  hiddenUsernames: ReadonlySet<string>;
 }): Standing[] {
   const progressByUser = new Map<string, GameProgress[]>();
   for (const row of gameProgress) {
@@ -65,11 +79,10 @@ export function buildStandings({
       // A hidden flag is unconditional. It used to stop applying at 100 XP so
       // QA accounts could not leave the board empty, but the admin UI calls
       // this "hide from leaderboard" and promises the player disappears — a
-      // flag that leaks at a higher score is worse than no flag. The hard
-      // username exclusion is folded in so the admin view can show *why* an
-      // account is absent from the public board.
-      const hidden =
-        Boolean(u.hiddenFromLeaderboard) || hiddenUsernames.has(u.username.toLowerCase());
+      // flag that leaks at a higher score is worse than no flag. `hidden` is
+      // therefore just the negation of the shared visibility predicate, so it
+      // can never drift from what the public board shows.
+      const hidden = !isOnPublicLeaderboard(u);
       const totalXp =
         rows.reduce((sum, p) => sum + (p.score || 0), 0) + (stored?.xpAdjustment ?? 0);
       return {

@@ -28,6 +28,7 @@ import {
 import { getAdminEnv, adminAvatarUrl, ADMIN_ID, ADMIN_CREATED_AT } from "./admin-seed";
 import {
   buildStandings,
+  isOnPublicLeaderboard,
   matchesPlayerQuery,
   sortStandings,
   standingToAdminRow,
@@ -55,25 +56,6 @@ interface UserWithPassword extends User {
 }
 
 const DB_FILE_PATH = path.join(process.cwd(), "src", "data", "blog-db.json");
-
-// Usernames that must never appear on the public leaderboard, regardless of
-// the DB state (defense-in-depth on top of the hiddenFromLeaderboard flag).
-// Lowercased on construction: the Postgres side compares with LOWER(), and a
-// case-sensitive check here would let "Test4" through on this backend only.
-const HIDDEN_USERNAMES = new Set(
-  [
-    "test4",
-    "test5",
-    "dua",
-    "dua_zainab",
-    "zainab",
-    "rania",
-    "rania_afzal",
-    "Rania Afzal",
-    "Dua",
-    "@dua_zainab",
-  ].map((name) => name.toLowerCase())
-);
 
 // Thread-safe-ish sequential lock queue to prevent race conditions on write
 let writePromise: Promise<void> = Promise.resolve();
@@ -549,7 +531,6 @@ export async function getUserRank(userId: string): Promise<number | null> {
     users: db.users,
     gameProgress: db.gameProgress ?? [],
     gamification: db.gamification ?? [],
-    hiddenUsernames: HIDDEN_USERNAMES,
   }).find((s) => s.user.id === userId);
   return standing?.rank ?? null;
 }
@@ -578,7 +559,6 @@ export async function getLeaderboardSnapshot(
     users: db.users,
     gameProgress: db.gameProgress ?? [],
     gamification: db.gamification ?? [],
-    hiddenUsernames: HIDDEN_USERNAMES,
   });
 
   const board = standings
@@ -644,7 +624,6 @@ export async function getAdminLeaderboardPage(
     users: db.users,
     gameProgress: db.gameProgress ?? [],
     gamification: db.gamification ?? [],
-    hiddenUsernames: HIDDEN_USERNAMES,
   })
     .filter((s) => matchesPlayerQuery(s, query.query ?? ""))
     .map(standingToAdminRow);
@@ -751,6 +730,10 @@ function buildAdminUserDetail(
     levelNext: levels.next,
     levelProgressPct: levels.progressPct,
     rank,
+    // Derived from the same predicate the public query uses, so the status line
+    // in the admin panel cannot claim a player is listed while the board omits
+    // them (or vice versa).
+    onPublicLeaderboard: isOnPublicLeaderboard(user),
     currentStreak: stored?.currentStreak ?? 0,
     longestStreak: stored?.longestStreak ?? 0,
     lastPlayedAt: stored?.lastPlayedAt ?? null,
@@ -775,8 +758,8 @@ function buildAdminUserDetail(
 export async function getAdminUserDetail(userId: string): Promise<AdminUserDetail> {
   return withDbLock(async () => {
     const db = await readDbFile();
-    // Admins are never ranked, and a hidden account is only ranked while it
-    // still clears the 100 XP floor the public leaderboard applies.
+    // Admins are never ranked, and a hidden account is never ranked: `rank`
+    // and `onPublicLeaderboard` both come from the same visibility rule.
     return buildAdminUserDetail(db, userId, await getUserRank(userId));
   });
 }

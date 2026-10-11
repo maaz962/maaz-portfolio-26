@@ -21,6 +21,10 @@ export function VisibilityPanel({
   onChange: (hidden: boolean) => Promise<boolean>;
 }) {
   const hidden = detail.user.hiddenFromLeaderboard;
+  // The authoritative answer, from the same predicate the public query uses.
+  // For a non-admin this always equals `!hidden`, but reading it from the
+  // server means the panel stays honest if the rule ever gains more terms.
+  const listed = detail.onPublicLeaderboard;
 
   if (detail.user.isAdmin) {
     return (
@@ -48,7 +52,7 @@ export function VisibilityPanel({
           <p className="mt-1.5 max-w-prose text-sm text-muted">
             {hidden
               ? "Hidden. This player is excluded from the public leaderboard, though their XP and progress are untouched."
-              : "Visible. This player appears on the public leaderboard whenever they have earned enough XP to clear the ranking floor."}
+              : "Visible. This player appears on the public leaderboard."}
           </p>
         </div>
 
@@ -72,7 +76,7 @@ export function VisibilityPanel({
       <p className="mt-3 text-xs text-muted">
         Status:{" "}
         <span className="text-foreground/80">
-          {hidden ? "Hidden from the public leaderboard" : "Listed on the public leaderboard"}
+          {listed ? "Listed on the public leaderboard" : "Not on the public leaderboard"}
         </span>
       </p>
     </AdminCard>
