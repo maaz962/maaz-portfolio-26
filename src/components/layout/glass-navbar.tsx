@@ -31,12 +31,11 @@ return (
         initial={{ y: -40, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-        className="fixed inset-x-0 z-50 flex justify-center px-4"
-        style={{ top: "var(--nav-top)" }}
+        className="fixed inset-x-0 top-0 z-50 flex justify-center lg:top-[var(--nav-top)] lg:px-4"
       >
         <nav
           aria-label="Primary"
-          className="glass-nav flex h-[var(--nav-h)] w-fit max-w-[1100px] items-center justify-between gap-1.5 rounded-2xl border border-white/10 bg-background/70 px-2 shadow-lg shadow-black/10 backdrop-blur-xl sm:px-3 dark:border-white/10 dark:bg-background/70 dark:shadow-black/20"
+          className="glass-nav flex h-[var(--nav-h)] w-full items-center justify-between gap-1.5 rounded-none border-b border-border bg-background/70 px-4 shadow-lg shadow-black/10 backdrop-blur-xl dark:bg-background/70 dark:shadow-black/20 lg:w-fit lg:max-w-[1100px] lg:rounded-2xl lg:border lg:border-white/10 lg:px-3 lg:dark:border-white/10"
         >
           <a
             href="/#top"
@@ -46,10 +45,9 @@ return (
                 onNavigate("top");
               }
             }}
-            className="text-mono shrink-0 pl-1 text-[15px] font-medium tracking-tight text-foreground transition-colors hover:text-primary"
+            className="text-mono shrink-0 text-[15px] font-medium tracking-tight text-foreground transition-colors hover:text-primary lg:pl-1"
           >
-            <span className="hidden sm:inline">{profile.name}</span>
-            <span className="sm:hidden">{profile.initials}</span>
+            {profile.name}
             <span className="text-primary">.</span>
           </a>
 
@@ -107,12 +105,15 @@ return (
           </div>
 
           <div className="flex items-center gap-1">
-            <ThemeToggle />
+            <span className="hidden lg:block">
+              <ThemeToggle />
+            </span>
             <button
               type="button"
               onClick={() => setOpen((v) => !v)}
               aria-label={open ? "Close menu" : "Open menu"}
               aria-expanded={open}
+              aria-controls="mobile-nav-menu"
               className="flex h-11 w-11 items-center justify-center rounded-full border border-border text-foreground lg:hidden"
             >
               {open ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
@@ -137,6 +138,7 @@ return (
           {open && (
             <motion.nav
               key="mobile-nav"
+              id="mobile-nav-menu"
               aria-label="Mobile"
               initial={{ opacity: 0, y: -8, scale: 0.95 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -176,6 +178,13 @@ return (
                   </a>
                 );
               })}
+
+              <div className="mt-1 flex min-h-11 w-full items-center justify-between border-t border-border px-5 pt-2">
+                <span id="mobile-nav-theme-label" className="text-sm font-medium text-muted">
+                  Theme
+                </span>
+                <ThemeToggle />
+              </div>
             </motion.nav>
           )}
 </AnimatePresence>
