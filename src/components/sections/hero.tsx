@@ -9,6 +9,7 @@ import { AmbientBackground } from "@/components/animations/ambient-background";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { FadeIn } from "@/components/animations/fade-in";
 import { useSectionNavigation } from "@/components/layout/section-navigation-context";
+import { RecentWorkTeaser } from "@/components/sections/recent-work-teaser";
 
 const heroSocialIcons = { GitHub: Github, LinkedIn: Linkedin } as const;
 
@@ -137,6 +138,8 @@ export function Hero() {
           <ProfilePhoto className="mx-auto max-w-xs md:max-w-sm" />
         </FadeIn>
       </Container>
+
+      <RecentWorkTeaser />
     </section>
   );
 }
