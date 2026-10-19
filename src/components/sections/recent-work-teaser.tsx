@@ -1,18 +1,21 @@
 "use client";
 
+import Image from "next/image";
 import { ArrowRight } from "lucide-react";
 import { motion, useReducedMotion } from "framer-motion";
 import { projects } from "@/data/projects";
 import { Container } from "@/components/ui/container";
-import { ProjectVisual } from "@/components/ui/project-visual";
+import { cn } from "@/lib/utils";
 import { useSectionNavigation } from "@/components/layout/section-navigation-context";
 
 const teaserProjects = projects.slice(0, 2);
 
 /**
  * Mobile-only "Recent work" teaser shown under the hero (below lg). Reuses the
- * first two entries from src/data/projects.ts and the shared ProjectVisual so
- * missing screenshots fall back to a neutral placeholder.
+ * first two entries from src/data/projects.ts. Images use explicit width/height
+ * with a sizes attribute; the first card is the mobile LCP element so it loads
+ * eager with priority, the second stays lazy. Missing screenshots fall back to
+ * a neutral placeholder.
  */
 export function RecentWorkTeaser() {
   const navigate = useSectionNavigation();
@@ -55,11 +58,22 @@ export function RecentWorkTeaser() {
               className="block"
             >
               {project.image ? (
-                <ProjectVisual
-                  project={project}
-                  className="h-[120px] w-full rounded-xl"
-                  sizes="(max-width: 1024px) 100vw, 0px"
-                />
+                <div className="relative h-[120px] w-full overflow-hidden rounded-xl bg-background-secondary">
+                  <Image
+                    src={project.image}
+                    alt={project.imageAlt ?? `${project.title} project preview`}
+                    width={800}
+                    height={600}
+                    priority={index === 0}
+                    sizes="(max-width: 480px) calc(100vw - 2rem), (max-width: 1024px) 50vw, 0px"
+                    className={cn(
+                      "transition-transform duration-500",
+                      project.imageFit === "contain"
+                        ? "object-contain"
+                        : "object-cover object-top"
+                    )}
+                  />
+                </div>
               ) : (
                 <div
                   aria-hidden="true"
