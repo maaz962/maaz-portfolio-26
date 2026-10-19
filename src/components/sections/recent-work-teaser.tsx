@@ -65,7 +65,7 @@ export function RecentWorkTeaser() {
                   aria-hidden="true"
                   className="flex h-[120px] w-full items-center justify-center rounded-xl bg-background-secondary"
                 >
-                  <span className="text-mono text-xs text-muted">No preview</span>
+                  <span className="text-mono text-sm text-muted">No preview</span>
                 </div>
               )}
 
