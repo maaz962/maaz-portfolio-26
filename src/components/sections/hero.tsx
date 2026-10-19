@@ -10,6 +10,7 @@ import { StatusBadge } from "@/components/ui/status-badge";
 import { FadeIn } from "@/components/animations/fade-in";
 import { useSectionNavigation } from "@/components/layout/section-navigation-context";
 import { RecentWorkTeaser } from "@/components/sections/recent-work-teaser";
+import { MobileGamesContact } from "@/components/sections/mobile-games-contact";
 
 const heroSocialIcons = { GitHub: Github, LinkedIn: Linkedin } as const;
 
@@ -140,6 +141,7 @@ export function Hero() {
       </Container>
 
       <RecentWorkTeaser />
+      <MobileGamesContact />
     </section>
   );
 }
