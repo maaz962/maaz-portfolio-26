@@ -1,105 +1,24 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
-import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { Gamepad2, Menu, Moon, Sun, X } from "lucide-react";
+import { useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
+import { Gamepad2, Menu, X } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { navLinks } from "@/data/nav";
 import { profile } from "@/data/profile";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
-import { useTheme } from "@/components/layout/theme-provider";
-import { buttonStyles } from "@/components/ui/button";
 
 interface GlassNavbarProps {
   activeSection: string;
   onNavigate?: (id: string) => void;
 }
 
-const sheetMainLinks = [
-  { label: "Home", id: "top" },
-  { label: "Work", id: "projects" },
-  { label: "Services", id: "services" },
-  { label: "About", id: "about" },
-  { label: "Contact", id: "contact" },
-] as const;
-
-const sheetAboutSubLinks = [
-  { label: "Skills", id: "skills" },
-  { label: "Education", id: "education" },
-  { label: "Experience", id: "experience" },
-] as const;
-
 export function GlassNavbar({ activeSection, onNavigate }: GlassNavbarProps) {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
   const isHomePage = pathname === "/";
-  const hamburgerRef = useRef<HTMLButtonElement>(null);
-  const sheetRef = useRef<HTMLDivElement>(null);
-  const wasOpenRef = useRef(false);
-  const prefersReducedMotion = useReducedMotion();
 
-  const closeMenu = useCallback(() => {
-    setOpen(false);
-  }, []);
-
-  useEffect(() => {
-    if (open) {
-      wasOpenRef.current = true;
-      document.body.style.overflow = "hidden";
-      const frame = requestAnimationFrame(() => {
-        sheetRef.current?.focus();
-      });
-      return () => cancelAnimationFrame(frame);
-    }
-    document.body.style.overflow = "";
-    if (wasOpenRef.current) {
-      wasOpenRef.current = false;
-      hamburgerRef.current?.focus();
-    }
-    return () => {
-      document.body.style.overflow = "";
-    };
-  }, [open]);
-
-  useEffect(() => {
-    if (!open) return;
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        closeMenu();
-        return;
-      }
-      if (event.key !== "Tab") return;
-      const sheet = sheetRef.current;
-      if (!sheet) return;
-      const focusables = Array.from(
-        sheet.querySelectorAll<HTMLElement>(
-          'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])'
-        )
-      );
-      const first = focusables[0];
-      const last = focusables[focusables.length - 1];
-      if (!first || !last) return;
-      const active = document.activeElement;
-      if (event.shiftKey) {
-        if (active === first || active === sheet) {
-          event.preventDefault();
-          last.focus();
-        }
-      } else if (active === last) {
-        event.preventDefault();
-        first.focus();
-      }
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [open, closeMenu]);
-
-  const handleSheetNavigate = (id: string) => {
-    if (isHomePage && onNavigate) onNavigate(id);
-    closeMenu();
-  };
-
-  return (
+return (
     <header>
       <a
         href="#main-content"
@@ -112,11 +31,12 @@ export function GlassNavbar({ activeSection, onNavigate }: GlassNavbarProps) {
         initial={{ y: -40, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-        className="fixed inset-x-0 top-0 z-50 flex justify-center lg:top-[var(--nav-top)] lg:px-4"
+        className="fixed inset-x-0 z-50 flex justify-center px-4"
+        style={{ top: "var(--nav-top)" }}
       >
         <nav
           aria-label="Primary"
-          className="glass-nav flex h-[var(--nav-h)] w-full items-center justify-between gap-1.5 rounded-none border-b border-border bg-background/70 px-4 shadow-lg shadow-black/10 backdrop-blur-xl dark:bg-background/70 dark:shadow-black/20 lg:w-fit lg:max-w-[1100px] lg:rounded-2xl lg:border lg:border-white/10 lg:px-3 lg:dark:border-white/10"
+          className="glass-nav flex h-[var(--nav-h)] w-fit max-w-[1100px] items-center justify-between gap-1.5 rounded-2xl border border-white/10 bg-background/70 px-2 shadow-lg shadow-black/10 backdrop-blur-xl sm:px-3 dark:border-white/10 dark:bg-background/70 dark:shadow-black/20"
         >
           <a
             href="/#top"
@@ -126,9 +46,10 @@ export function GlassNavbar({ activeSection, onNavigate }: GlassNavbarProps) {
                 onNavigate("top");
               }
             }}
-            className="text-mono shrink-0 text-[15px] font-medium tracking-tight text-foreground transition-colors hover:text-primary lg:pl-1"
+            className="text-mono shrink-0 pl-1 text-[15px] font-medium tracking-tight text-foreground transition-colors hover:text-primary"
           >
-            {profile.name}
+            <span className="hidden sm:inline">{profile.name}</span>
+            <span className="sm:hidden">{profile.initials}</span>
             <span className="text-primary">.</span>
           </a>
 
@@ -186,133 +107,79 @@ export function GlassNavbar({ activeSection, onNavigate }: GlassNavbarProps) {
           </div>
 
           <div className="flex items-center gap-1">
-            <span className="hidden lg:block">
-              <ThemeToggle />
-            </span>
+            <ThemeToggle />
             <button
-              ref={hamburgerRef}
               type="button"
               onClick={() => setOpen((v) => !v)}
               aria-label={open ? "Close menu" : "Open menu"}
               aria-expanded={open}
-              aria-controls="mobile-nav-menu"
               className="flex h-11 w-11 items-center justify-center rounded-full border border-border text-foreground lg:hidden"
             >
               {open ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
             </button>
           </div>
         </nav>
-      </motion.div>
 
-      <AnimatePresence>
-        {open && (
-          <motion.div
-            key="mobile-sheet"
-            ref={sheetRef}
-            id="mobile-nav-menu"
-            tabIndex={-1}
-            role="dialog"
-            aria-modal="true"
-            aria-label="Menu"
-            initial={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, y: -12 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, y: -12 }}
-            transition={{ duration: prefersReducedMotion ? 0 : 0.2, ease: [0.22, 1, 0.36, 1] }}
-            className="fixed inset-0 z-[45] flex flex-col bg-background outline-none lg:hidden"
-          >
-            <div className="h-[var(--nav-h)] shrink-0" aria-hidden />
+        <AnimatePresence>
+          {open && (
+            <motion.div
+              key="mobile-backdrop"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm lg:hidden"
+              onClick={() => setOpen(false)}
+            />
+          )}
+        </AnimatePresence>
 
-            <nav
+        <AnimatePresence>
+          {open && (
+            <motion.nav
+              key="mobile-nav"
               aria-label="Mobile"
-              className="flex min-h-0 flex-1 flex-col overflow-y-auto"
+              initial={{ opacity: 0, y: -8, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -8, scale: 0.95 }}
+              transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+              className="glass-nav absolute left-4 right-4 top-full z-50 mt-2 flex flex-col items-center gap-1 rounded-2xl border border-white/10 bg-background/85 py-3 shadow-lg shadow-black/10 backdrop-blur-xl lg:hidden dark:border-white/10 dark:bg-background/85 dark:shadow-black/20"
             >
-              <ul className="shrink-0 px-6">
-                {sheetMainLinks.map((link) => {
-                  const isActive = isHomePage && activeSection === link.id;
+              {navLinks.map((link) => {
+                const isHash = link.href.includes("#");
+                const id = isHash ? link.href.replace("/#", "").replace("#", "") : "";
+                const isGames = link.href === "/games";
+                const isActive = isGames
+                  ? pathname === "/games" || pathname.startsWith("/games/")
+                  : isHomePage && activeSection === id;
 
-                  return (
-                    <li key={link.id} className="border-b border-border">
-                      <a
-                        href={`/#${link.id}`}
-                        onClick={(e) => {
-                          e.preventDefault();
-                          handleSheetNavigate(link.id);
-                        }}
-                        aria-current={isActive ? "true" : undefined}
-                        className={`font-display flex min-h-14 w-full items-center text-[25px] font-semibold tracking-tight transition-colors ${
-                          isActive ? "text-accent" : "text-foreground hover:text-primary"
-                        }`}
-                      >
-                        {link.label}
-                      </a>
-
-                      {link.id === "about" && (
-                        <div className="flex flex-wrap gap-x-5 pb-3 pl-1">
-                          {sheetAboutSubLinks.map((sub) => (
-                            <a
-                              key={sub.id}
-                              href={`/#${sub.id}`}
-                              onClick={(e) => {
-                                e.preventDefault();
-                                handleSheetNavigate(sub.id);
-                              }}
-                              className="flex min-h-11 items-center text-sm text-muted transition-colors hover:text-foreground"
-                            >
-                              {sub.label}
-                            </a>
-                          ))}
-                        </div>
-                      )}
-                    </li>
-                  );
-                })}
-              </ul>
-
-              <div className="mt-auto shrink-0 space-y-3 px-6 py-6">
-                <a
-                  href="/#contact"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    handleSheetNavigate("contact");
-                  }}
-                  className={buttonStyles({ size: "lg" }) + " w-full"}
-                >
-                  Hire me
-                </a>
-                <a
-                  href="/games"
-                  onClick={closeMenu}
-                  className={buttonStyles({ variant: "outline", size: "lg" }) + " w-full"}
-                >
-                  <Gamepad2 className="h-4 w-4" strokeWidth={1.75} />
-                  Learn Games
-                </a>
-                <SheetThemeToggle />
-              </div>
-            </nav>
-          </motion.div>
-        )}
-      </AnimatePresence>
+                return (
+                  <a
+                    key={link.href}
+                    href={link.href}
+                    onClick={(e) => {
+                      if (isHomePage && isHash && onNavigate) {
+                        e.preventDefault();
+                        onNavigate(id);
+                      }
+                      setOpen(false);
+                    }}
+                    className={`flex min-h-11 w-full items-center justify-center rounded-full px-5 text-[15px] transition-colors ${
+                      isGames
+                        ? "bg-primary font-semibold text-primary-foreground shadow-glow"
+                        : isActive
+                          ? "bg-primary/15 font-medium text-primary"
+                          : "font-medium text-muted hover:text-foreground"
+                    }`}
+                  >
+                    {isGames && <Gamepad2 className="mr-2 h-4 w-4" strokeWidth={2} />}
+                    {link.label}
+                  </a>
+                );
+              })}
+            </motion.nav>
+          )}
+</AnimatePresence>
+      </motion.div>
     </header>
-  );
-}
-
-function SheetThemeToggle() {
-  const { theme, toggleTheme, mounted } = useTheme();
-
-  return (
-    <button
-      type="button"
-      onClick={toggleTheme}
-      aria-label={mounted ? `Switch to ${theme === "dark" ? "light" : "dark"} theme` : "Toggle theme"}
-      className="flex min-h-11 w-full items-center justify-center gap-2 text-sm text-muted transition-colors hover:text-foreground"
-    >
-      {theme === "dark" ? (
-        <Moon className="h-4 w-4" strokeWidth={1.75} />
-      ) : (
-        <Sun className="h-4 w-4" strokeWidth={1.75} />
-      )}
-      {mounted ? (theme === "dark" ? "Dark mode" : "Light mode") : "Theme"}
-    </button>
   );
 }
