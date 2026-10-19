@@ -26,7 +26,44 @@ export function Hero() {
     >
       <AmbientBackground />
 
-      <Container className="relative grid gap-12 pt-4 pb-16 md:grid-cols-[1.15fr_0.85fr] md:items-center md:pt-8 md:pb-24">
+      {/* Mobile hero (below lg): headline, one line, Hire me, View my work. */}
+      <Container className="relative pt-8 pb-10 lg:hidden">
+        <FadeIn>
+          <h1 className="text-[31px] leading-[1.15] text-foreground">
+            I build websites and mobile apps for businesses.
+          </h1>
+
+          <p className="mt-4 text-base text-muted">
+            Freelance full-stack developer in Lahore. Websites, mobile apps and
+            backends, from first idea to launch.
+          </p>
+
+          <div className="mt-8 flex flex-col">
+            <a
+              href="#contact"
+              onClick={(e) => {
+                e.preventDefault();
+                navigate("contact");
+              }}
+              className={buttonStyles({ size: "lg", className: "h-[52px] w-full" })}
+            >
+              Hire me
+            </a>
+            <a
+              href="#projects"
+              onClick={(e) => {
+                e.preventDefault();
+                navigate("projects");
+              }}
+              className="mt-1 flex min-h-11 items-center justify-center text-sm font-medium text-accent transition-colors hover:text-accent/80"
+            >
+              View my work
+            </a>
+          </div>
+        </FadeIn>
+      </Container>
+
+      <Container className="relative hidden gap-12 pt-4 pb-16 md:grid-cols-[1.15fr_0.85fr] md:items-center md:pt-8 md:pb-24 lg:grid">
         <FadeIn>
           {/* Micro status indicator — small, quiet, no glow abuse. */}
           <StatusBadge label={profile.status} />
