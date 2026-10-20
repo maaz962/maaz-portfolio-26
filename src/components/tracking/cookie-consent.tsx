@@ -45,7 +45,8 @@ export function CookieConsent({ onAccept }: CookieConsentProps) {
             <div>
               <p className="text-sm font-semibold text-foreground">Cookie Notice</p>
               <p className="mt-1 text-xs leading-relaxed text-muted">
-                This site collects basic analytics (page views, clicks, browser info) to improve your experience. No personal data is sold or shared.
+                We use cookies for basic analytics. No personal data is sold or
+                shared.
               </p>
             </div>
           </div>
