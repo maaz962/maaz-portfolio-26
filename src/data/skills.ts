@@ -63,7 +63,20 @@ export const skills: Skill[] = [
   { name: "MySQL", category: "database", proficiency: "development" },
   { name: "MongoDB", category: "database", proficiency: "familiar" },
 
-  { name: "Flutter", category: "mobile", proficiency: "development" },
+  {
+    name: "Flutter",
+    category: "mobile",
+    proficiency: "development",
+    tags: [
+      "Dart",
+      "GetX",
+      "Firebase",
+      "Cloud Firestore",
+      "FCM",
+      "Stripe",
+      "REST APIs",
+    ],
+  },
   { name: "Dart", category: "mobile", proficiency: "development" },
 
   { name: "Git", category: "tools", proficiency: "development" },

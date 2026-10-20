@@ -29,6 +29,8 @@ export interface Skill {
   category: SkillCategory;
   proficiency: SkillProficiency;
   icon?: LucideIcon;
+  /** Sub-skills shown as small chips under the card (e.g. Flutter → GetX, Firebase). */
+  tags?: string[];
 }
 
 /** Filter keys used by the Projects section — only show tabs with matching projects. */

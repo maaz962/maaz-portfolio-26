@@ -92,20 +92,34 @@ export function Skills() {
                   <StaggerFadeIn className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                     {items.map((skill) => (
                       <StaggerItem key={skill.name}>
-                        <div className="flex items-center justify-between gap-3 rounded-xl border border-border bg-card px-4 py-3 shadow-card transition-colors hover:border-primary/35">
-                          <span className="text-sm font-medium text-foreground">
-                            {skill.name}
-                          </span>
-                          <Chip className="shrink-0 gap-1.5">
-                            <span
-                              aria-hidden
-                              className={cn(
-                                "h-1.5 w-1.5 rounded-full",
-                                proficiencyDot[skill.proficiency]
-                              )}
-                            />
-                            {proficiencyLabels[skill.proficiency]}
-                          </Chip>
+                        <div className="rounded-xl border border-border bg-card px-4 py-3 shadow-card transition-colors hover:border-primary/35">
+                          <div className="flex items-center justify-between gap-3">
+                            <span className="text-sm font-medium text-foreground">
+                              {skill.name}
+                            </span>
+                            <Chip className="shrink-0 gap-1.5">
+                              <span
+                                aria-hidden
+                                className={cn(
+                                  "h-1.5 w-1.5 rounded-full",
+                                  proficiencyDot[skill.proficiency]
+                                )}
+                              />
+                              {proficiencyLabels[skill.proficiency]}
+                            </Chip>
+                          </div>
+                          {skill.tags && skill.tags.length > 0 && (
+                            <div className="mt-2.5 flex flex-wrap gap-1.5">
+                              {skill.tags.map((tag) => (
+                                <span
+                                  key={tag}
+                                  className="rounded-full border border-border bg-background-secondary/60 px-2 py-1 text-[11px] font-medium leading-none text-muted"
+                                >
+                                  {tag}
+                                </span>
+                              ))}
+                            </div>
+                          )}
                         </div>
                       </StaggerItem>
                     ))}

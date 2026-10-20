@@ -10,11 +10,13 @@ import {
   GraduationCap,
   House,
   Mail,
+  Moon,
+  Sun,
   User,
   Wrench,
   Briefcase,
 } from "lucide-react";
-import { ThemeToggle } from "@/components/layout/theme-toggle";
+import { useTheme } from "@/components/layout/theme-provider";
 import { cn } from "@/lib/utils";
 
 /**
@@ -53,6 +55,7 @@ export function MobileSectionDock({
   onNavigate,
 }: MobileSectionDockProps) {
   const [moreOpen, setMoreOpen] = useState(false);
+  const { theme, toggleTheme, mounted } = useTheme();
 
   const navigate = (id: string) => {
     setMoreOpen(false);
@@ -109,10 +112,38 @@ export function MobileSectionDock({
                 Learn Games
               </a>
 
-              <div className="mt-1.5 flex items-center justify-between border-t border-border px-4 py-1.5">
-                <span className="text-sm font-medium text-muted">Theme</span>
-                <ThemeToggle />
-              </div>
+              <button
+                type="button"
+                onClick={toggleTheme}
+                aria-label={
+                  mounted
+                    ? `Switch to ${theme === "dark" ? "light" : "dark"} mode`
+                    : "Toggle theme"
+                }
+                className="mt-1.5 flex min-h-11 w-full items-center gap-3 border-t border-border px-4 py-2 text-sm font-medium text-muted transition-colors hover:text-foreground"
+              >
+                <AnimatePresence mode="wait" initial={false}>
+                  <motion.span
+                    key={mounted ? theme : "theme"}
+                    initial={{ opacity: 0, rotate: -90, scale: 0.6 }}
+                    animate={{ opacity: 1, rotate: 0, scale: 1 }}
+                    exit={{ opacity: 0, rotate: 90, scale: 0.6 }}
+                    transition={{ duration: 0.2 }}
+                    className="flex"
+                  >
+                    {theme === "dark" ? (
+                      <Moon className="h-4 w-4" strokeWidth={1.75} />
+                    ) : (
+                      <Sun className="h-4 w-4" strokeWidth={1.75} />
+                    )}
+                  </motion.span>
+                </AnimatePresence>
+                {mounted
+                  ? theme === "dark"
+                    ? "Dark mode"
+                    : "Light mode"
+                  : "Theme"}
+              </button>
             </motion.div>
           )}
         </AnimatePresence>
