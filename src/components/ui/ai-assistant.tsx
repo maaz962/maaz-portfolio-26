@@ -347,7 +347,11 @@ export function AIAssistant() {
           <div
             className="group fixed z-40"
             style={{
-              bottom: "max(1.5rem, env(safe-area-inset-bottom))",
+              /* --ai-fab-bottom is raised by the home SectionViewer on mobile
+                 so the FAB clears the fixed section dock; falls back to the
+                 original offset everywhere else. */
+              bottom:
+                "max(var(--ai-fab-bottom, 1.5rem), env(safe-area-inset-bottom))",
               right: "max(1.5rem, env(safe-area-inset-right))",
             }}
           >

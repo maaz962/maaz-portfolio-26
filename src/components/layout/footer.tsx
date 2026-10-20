@@ -20,7 +20,7 @@ export function Footer() {
     <footer
       className={
         isHomePage
-          ? "bg-background-secondary/20 py-4"
+          ? "bg-background-secondary/20 pb-28 pt-4 lg:pb-4"
           : "border-t border-border bg-background-secondary/20 py-4"
       }
     >

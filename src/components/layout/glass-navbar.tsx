@@ -113,9 +113,10 @@ return (
               onClick={() => setOpen((v) => !v)}
               aria-label={open ? "Close menu" : "Open menu"}
               aria-expanded={open}
-              className="flex h-11 w-11 items-center justify-center rounded-full border border-border text-foreground lg:hidden"
+              className="flex h-11 items-center justify-center gap-1.5 rounded-full border border-border px-3 text-foreground transition-colors hover:text-primary lg:hidden"
             >
               {open ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
+              <span className="text-xs font-semibold">Menu</span>
             </button>
           </div>
         </nav>

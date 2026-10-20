@@ -3,20 +3,10 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { GlassNavbar } from "@/components/layout/glass-navbar";
+import { MobileSectionDock } from "@/components/layout/mobile-section-dock";
+import { SectionPager } from "@/components/layout/section-pager";
 import { SectionNavigationContext } from "@/components/layout/section-navigation-context";
-
-const sectionIds = [
-  "top",
-  "about",
-  "skills",
-  "education",
-  "experience",
-  "projects",
-  "services",
-  "contact",
-] as const;
-
-type SectionId = (typeof sectionIds)[number];
+import { sectionIds, type SectionId } from "@/data/sections";
 
 const pageVariants = {
   initial: { opacity: 0, y: 20 },
@@ -50,6 +40,32 @@ export function SectionViewer({ children }: { children: React.ReactNode }) {
     return () => window.removeEventListener("hashchange", handleHashChange);
   }, []);
 
+  /*
+   * The mobile section dock occupies the bottom of the viewport on this
+   * page only, so lift the AI assistant FAB clear of it via a CSS custom
+   * property (read by ai-assistant.tsx). Removed again on lg+ and on
+   * unmount so /games and /admin keep the original FAB position.
+   */
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 1023px)");
+    const root = document.documentElement;
+
+    const apply = () => {
+      if (mq.matches) {
+        root.style.setProperty("--ai-fab-bottom", "5.75rem");
+      } else {
+        root.style.removeProperty("--ai-fab-bottom");
+      }
+    };
+
+    apply();
+    mq.addEventListener("change", apply);
+    return () => {
+      mq.removeEventListener("change", apply);
+      root.style.removeProperty("--ai-fab-bottom");
+    };
+  }, []);
+
   const sections = Array.isArray(children) ? children : [children];
 
   const sectionMap: Record<string, React.ReactNode> = {};
@@ -61,7 +77,11 @@ export function SectionViewer({ children }: { children: React.ReactNode }) {
     <>
       <GlassNavbar activeSection={activeSection} onNavigate={handleNavigate} />
       <SectionNavigationContext.Provider value={handleNavigate}>
-        <main id="main-content" ref={mainRef} className="main-content">
+        <main
+          id="main-content"
+          ref={mainRef}
+          className="main-content pb-24 lg:pb-0"
+        >
           <AnimatePresence mode="wait">
             <motion.div
               key={activeSection}
@@ -71,9 +91,17 @@ export function SectionViewer({ children }: { children: React.ReactNode }) {
               exit="exit"
             >
               {sectionMap[activeSection] ?? null}
+              <SectionPager
+                activeSection={activeSection}
+                onNavigate={handleNavigate}
+              />
             </motion.div>
           </AnimatePresence>
         </main>
+        <MobileSectionDock
+          activeSection={activeSection}
+          onNavigate={handleNavigate}
+        />
       </SectionNavigationContext.Provider>
     </>
   );
