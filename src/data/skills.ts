@@ -39,10 +39,10 @@ export const skillCategoryMeta: Record<
 };
 
 export const skillCategoryOrder: SkillCategory[] = [
+  "mobile",
   "frontend",
   "backend",
   "database",
-  "mobile",
   "tools",
   "security",
 ];
