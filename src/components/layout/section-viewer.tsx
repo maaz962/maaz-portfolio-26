@@ -4,7 +4,6 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { GlassNavbar } from "@/components/layout/glass-navbar";
 import { MobileSectionDock } from "@/components/layout/mobile-section-dock";
-import { SectionPager } from "@/components/layout/section-pager";
 import { SectionNavigationContext } from "@/components/layout/section-navigation-context";
 import { sectionIds, type SectionId } from "@/data/sections";
 
@@ -75,12 +74,16 @@ export function SectionViewer({ children }: { children: React.ReactNode }) {
 
   return (
     <>
-      <GlassNavbar activeSection={activeSection} onNavigate={handleNavigate} />
+      <GlassNavbar
+        activeSection={activeSection}
+        onNavigate={handleNavigate}
+        mobileHidden
+      />
       <SectionNavigationContext.Provider value={handleNavigate}>
         <main
           id="main-content"
           ref={mainRef}
-          className="main-content pb-24 lg:pb-0"
+          className="main-content no-mobile-nav pb-24 lg:pb-0"
         >
           <AnimatePresence mode="wait">
             <motion.div
@@ -91,10 +94,6 @@ export function SectionViewer({ children }: { children: React.ReactNode }) {
               exit="exit"
             >
               {sectionMap[activeSection] ?? null}
-              <SectionPager
-                activeSection={activeSection}
-                onNavigate={handleNavigate}
-              />
             </motion.div>
           </AnimatePresence>
         </main>

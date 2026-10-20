@@ -11,9 +11,19 @@ import { ThemeToggle } from "@/components/layout/theme-toggle";
 interface GlassNavbarProps {
   activeSection: string;
   onNavigate?: (id: string) => void;
+  /**
+   * Hide the entire floating navbar below lg (home uses the bottom section
+   * dock instead on mobile). Games pages keep it so they always have a way
+   * back to the site sections.
+   */
+  mobileHidden?: boolean;
 }
 
-export function GlassNavbar({ activeSection, onNavigate }: GlassNavbarProps) {
+export function GlassNavbar({
+  activeSection,
+  onNavigate,
+  mobileHidden = false,
+}: GlassNavbarProps) {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
   const isHomePage = pathname === "/";
@@ -31,7 +41,9 @@ return (
         initial={{ y: -40, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-        className="fixed inset-x-0 z-50 flex justify-center px-4"
+        className={`fixed inset-x-0 z-50 justify-center px-4 ${
+          mobileHidden ? "hidden lg:flex" : "flex"
+        }`}
         style={{ top: "var(--nav-top)" }}
       >
         <nav

@@ -88,6 +88,14 @@ section,
   padding-top: var(--nav-reserve);
 }
 
+/* The home page hides the floating navbar below lg (the bottom dock is the
+   mobile navigation), so reclaim the reserved top space on small screens. */
+@media (max-width: 1023px) {
+  .main-content.no-mobile-nav {
+    padding-top: 1rem;
+  }
+}
+
 body {
   background-color: hsl(var(--background));
   color: hsl(var(--foreground));
