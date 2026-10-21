@@ -13,7 +13,6 @@ import {
 import { GameShell } from "@/components/games/game-shell";
 import { LineNumbers } from "@/components/games/line-numbers";
 import { handleEditorKeyDown } from "@/components/games/editor-shortcuts";
-import { MobileActionBar } from "@/components/games/mobile-action-bar";
 import { AuthGate } from "@/components/games/auth-gate";
 import { AuthModal } from "@/components/games/auth-modal";
 import { useGameProgress } from "@/hooks/use-game-progress";
@@ -561,8 +560,6 @@ export default function AnimationArenaPage() {
           </div>
         )}
     </GameShell>
-
-    <MobileActionBar />
 
     <AuthModal
       open={showAuthModal}

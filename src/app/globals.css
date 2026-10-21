@@ -95,8 +95,9 @@ section,
   min-height: 100dvh;
 }
 
-/* The home page hides the floating navbar below lg (the bottom dock is the
-   mobile navigation), so reclaim the reserved top space on small screens. */
+/* Home (the bottom dock is its mobile nav) and the games section (the in-card
+   back pill is the way out) hide the floating navbar below lg, so reclaim the
+   reserved top space on small screens. */
 @media (max-width: 1023px) {
   .main-content.no-mobile-nav {
     padding-top: 1rem;
@@ -337,27 +338,11 @@ h4 {
   }
 }
 
-/* Below lg the floating MobileActionBar is the only control surface for
-   Run/Check/Prev/Next. It delegates clicks to the in-card buttons (by id),
-   so the duplicate in-card row is hidden here. Desktop (lg and up) is
-   untouched: the in-card row stays and the bar stays display:none. */
+/* Phones/tablets below lg: the in-card Run/Check/Prev/Next row is the only
+   control surface (an earlier floating action bar duplicated these controls
+   and read as a bug on small screens). Buttons get a comfortable touch size
+   and the back link becomes a proper pill. Desktop (lg and up) untouched. */
 @media (max-width: 1023.98px) {
-  /* keep bottom content clear of the floating action bar + gesture-nav /
-     home-indicator inset */
-  .game-shell-grid {
-    padding-bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px));
-  }
-
-  .jsd-editor-actions,
-  .hh-editor-actions,
-  .zoo-editor-actions,
-  .grid-editor-actions,
-  .aaa-editor-actions,
-  .qq-editor-actions,
-  .php-editor-actions {
-    display: none;
-  }
-
   /* iOS auto-zooms any focused input below 16px; keep the code editors at
      16px on phones. The jsd highlight overlay must match the textarea
      metrics exactly, so it changes with it. */
@@ -369,94 +354,28 @@ h4 {
   .aaa-editor-textarea {
     font-size: 16px;
   }
-}
 
-/* Mobile action bar: sticky pill above the AI FAB, delegates clicks to the
-   in-card Run/Check/Prev/Next controls so engine state stays authoritative. */
-.game-shell-mobile-bar {
-  position: fixed;
-  /* Insets keep the bar clear of display cutouts (landscape) and, via the
-     bottom calc, the iPhone home indicator + Android gesture area. The
-     right offset reserves space for the AI FAB (right 1.5rem + 48px wide). */
-  left: max(1rem, env(safe-area-inset-left, 0px));
-  right: max(5.5rem, env(safe-area-inset-right, 0px));
-  bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
-  z-index: 45;
-  display: none;
-  align-items: stretch;
-  gap: 0.5rem; /* ≥8px between touch targets */
-  padding: 0.35rem;
-  border-radius: 1rem;
-  border: 1px solid hsl(var(--border));
-  background: hsl(var(--card) / 0.92);
-  box-shadow: 0 0.5rem 1.5rem hsl(0 0% 0% / 0.08);
-  backdrop-filter: blur(12px);
-}
-
-/* Must sit after the base rule above so the override wins. */
-@media (max-width: 1023.98px) {
-  .game-shell-mobile-bar {
-    display: flex;
+  /* The default pills are ~30px tall — these are the only Run/Check/Prev/Next
+     controls on phones now, so size them for thumbs (44px floor). */
+  [class$="-editor-actions"] button {
+    min-height: 44px;
+    padding-left: 1rem;
+    padding-right: 1rem;
+    font-size: 0.8rem;
   }
-}
 
-.game-shell-mobile-bar-btn {
-  display: inline-flex;
-  flex: 1;
-  /* Column keeps Run/Check/Prev/Next on ONE row down to 320px — the
-     horizontal icon+label layout overflowed at that width. */
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 0.15rem;
-  /* Android touch-target floors: 48dp height, 44px width */
-  min-width: 44px;
-  min-height: 48px;
-  padding: 0.4rem 0.15rem;
-  border: none;
-  border-radius: 0.75rem;
-  font-size: 0.65rem;
-  font-weight: 700;
-  color: hsl(var(--foreground));
-  background: transparent;
-  cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
-  touch-action: manipulation; /* no 300ms double-tap delay */
-  transition: background-color 0.15s ease, color 0.15s ease;
-}
-
-.game-shell-mobile-bar-btn span {
-  white-space: nowrap;
-}
-
-.game-shell-mobile-bar-btn:hover {
-  background: hsl(var(--background-secondary));
-}
-
-.game-shell-mobile-bar-btn:active {
-  transform: scale(0.96);
-}
-
-.game-shell-mobile-bar-btn:focus-visible {
-  outline: 2px solid hsl(var(--primary) / 0.5);
-  outline-offset: 1px;
-}
-
-.game-shell-mobile-bar-btn.run {
-  background: hsl(var(--primary));
-  color: hsl(var(--primary-foreground));
-}
-
-.game-shell-mobile-bar-btn.run:hover {
-  background: hsl(var(--primary) / 0.9);
-}
-
-.game-shell-mobile-bar-btn.check {
-  color: hsl(var(--primary));
-}
-
-.game-shell-mobile-bar-btn.nav {
-  color: hsl(var(--muted));
+  /* Solo back navigation out of a game: a pill, not a bare 16px link. */
+  .game-shell-back {
+    width: fit-content;
+    margin-left: 0;
+    margin-right: 0;
+    padding: 0.6rem 0.9rem;
+    border: 1px solid hsl(var(--border));
+    border-radius: 9999px;
+    background: hsl(var(--card) / 0.6);
+    font-size: 0.75rem;
+    font-weight: 500;
+  }
 }
 
 /* ==========================================================================

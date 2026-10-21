@@ -283,9 +283,9 @@ export default function GamesPage() {
 
   return (
     <div className="relative min-h-screen-dvh bg-background">
-      <GlassNavbar activeSection="games" />
+      <GlassNavbar activeSection="games" mobileHidden />
 
-      <main id="main-content" className="main-content mx-auto w-full max-w-content-wide px-[var(--content-pad-inline)] pb-24">
+      <main id="main-content" className="main-content no-mobile-nav mx-auto w-full max-w-content-wide px-[var(--content-pad-inline)] pb-24">
         <div className="mx-auto w-full max-w-[1100px]">
         <Link
           href="/"
