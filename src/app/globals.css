@@ -333,6 +333,31 @@ h4 {
   .game-shell-grid {
     padding-bottom: 5.5rem;
   }
+
+  /* The floating MobileActionBar is the mobile control surface — it
+     delegates clicks to the in-card buttons (by id), so hide the duplicate
+     in-card row here. Desktop keeps the in-card row (bar is display:none). */
+  .jsd-editor-actions,
+  .hh-editor-actions,
+  .zoo-editor-actions,
+  .grid-editor-actions,
+  .aaa-editor-actions,
+  .qq-editor-actions,
+  .php-editor-actions {
+    display: none;
+  }
+
+  /* iOS auto-zooms any focused input below 16px; keep the code editors at
+     16px on phones. The jsd highlight overlay must match the textarea
+     metrics exactly, so it changes with it. */
+  .jsd-editor-textarea,
+  .jsd-editor-highlight,
+  .hh-editor-textarea,
+  .zoo-editor-textarea,
+  .grid-editor-textarea,
+  .aaa-editor-textarea {
+    font-size: 16px;
+  }
 }
 
 /* Mobile action bar: sticky pill above the AI FAB, delegates clicks to the

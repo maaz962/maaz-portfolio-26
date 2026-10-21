@@ -38,11 +38,13 @@ export function GameShell({
 
   return (
     <div className="relative min-h-screen bg-background">
-      <GlassNavbar activeSection="games" />
+      {/* On mobile the floating navbar is hidden: the "All Games" link is the
+          way back, and a game page should be nothing but the game. */}
+      <GlassNavbar activeSection="games" mobileHidden />
 
       <main
         id="main-content"
-        className="main-content mx-auto w-full max-w-content-wide px-[var(--content-pad-inline)] pb-24"
+        className="main-content no-mobile-nav mx-auto w-full max-w-content-wide px-[var(--content-pad-inline)] pb-24"
       >
         <Link
           href="/games"
