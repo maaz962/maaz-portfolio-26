@@ -328,15 +328,18 @@ h4 {
     min-width: 40px;
     min-height: 40px;
   }
+}
 
+/* Below lg the floating MobileActionBar is the only control surface for
+   Run/Check/Prev/Next. It delegates clicks to the in-card buttons (by id),
+   so the duplicate in-card row is hidden here. Desktop (lg and up) is
+   untouched: the in-card row stays and the bar stays display:none. */
+@media (max-width: 1023.98px) {
   /* keep bottom content clear of the floating action bar */
   .game-shell-grid {
     padding-bottom: 5.5rem;
   }
 
-  /* The floating MobileActionBar is the mobile control surface — it
-     delegates clicks to the in-card buttons (by id), so hide the duplicate
-     in-card row here. Desktop keeps the in-card row (bar is display:none). */
   .jsd-editor-actions,
   .hh-editor-actions,
   .zoo-editor-actions,
@@ -379,7 +382,8 @@ h4 {
   backdrop-filter: blur(12px);
 }
 
-@media (max-width: 900px) {
+/* Must sit after the base rule above so the override wins. */
+@media (max-width: 1023.98px) {
   .game-shell-mobile-bar {
     display: flex;
   }
