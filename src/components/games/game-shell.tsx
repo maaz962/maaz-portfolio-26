@@ -37,14 +37,12 @@ export function GameShell({
   const pct = totalLevels > 0 ? Math.round((done / totalLevels) * 100) : 0;
 
   return (
-    <div className="relative min-h-screen bg-background">
-      {/* On mobile the floating navbar is hidden: the "All Games" link is the
-          way back, and a game page should be nothing but the game. */}
-      <GlassNavbar activeSection="games" mobileHidden />
+    <div className="relative min-h-screen-dvh bg-background">
+      <GlassNavbar activeSection="games" />
 
       <main
         id="main-content"
-        className="main-content no-mobile-nav mx-auto w-full max-w-content-wide px-[var(--content-pad-inline)] pb-24"
+        className="main-content mx-auto w-full max-w-content-wide px-[var(--content-pad-inline)] pb-24"
       >
         <Link
           href="/games"

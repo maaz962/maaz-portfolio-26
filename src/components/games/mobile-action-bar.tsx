@@ -10,6 +10,15 @@ const ACTIONS: { id: string; label: string; short: string; icon: typeof Play; cl
   { id: "next-btn", label: "Next level", short: "Next", icon: ChevronRight, cls: "nav" },
 ];
 
+function isTypingTarget(el: Element | null): boolean {
+  return (
+    el instanceof HTMLElement &&
+    (el.tagName === "TEXTAREA" ||
+      el.tagName === "INPUT" ||
+      el.isContentEditable)
+  );
+}
+
 export function MobileActionBar() {
   /*
    * The bar only makes sense once the in-card buttons exist (the game grid
@@ -17,6 +26,13 @@ export function MobileActionBar() {
    * this guard it floated over the sign-in screen with dead buttons.
    */
   const [available, setAvailable] = useState(false);
+  /*
+   * Android/iOS on-screen keyboards cover the bottom of the viewport, where
+   * this bar lives. Hide it while a field/editor holds focus (focusin also
+   * fires for CodeMirror's contenteditable) and bring it back on blur, so it
+   * never sits on top of the keyboard or the editor being typed into.
+   */
+  const [keyboardOpen, setKeyboardOpen] = useState(false);
 
   useEffect(() => {
     if (document.getElementById("run-btn")) {
@@ -34,7 +50,27 @@ export function MobileActionBar() {
     return () => observer.disconnect();
   }, []);
 
-  if (!available) return null;
+  useEffect(() => {
+    const onFocusIn = (e: FocusEvent) => {
+      if (isTypingTarget(e.target as Element)) setKeyboardOpen(true);
+    };
+    const onFocusOut = () => {
+      // Decide after the next focus lands so textarea → textarea moves
+      // (level-to-level) don't flicker the bar back on mid-keyboard.
+      window.setTimeout(() => {
+        setKeyboardOpen(isTypingTarget(document.activeElement));
+      }, 0);
+    };
+
+    document.addEventListener("focusin", onFocusIn);
+    document.addEventListener("focusout", onFocusOut);
+    return () => {
+      document.removeEventListener("focusin", onFocusIn);
+      document.removeEventListener("focusout", onFocusOut);
+    };
+  }, []);
+
+  if (!available || keyboardOpen) return null;
 
   return (
     <nav className="game-shell-mobile-bar" aria-label="Level actions">

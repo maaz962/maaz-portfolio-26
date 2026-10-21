@@ -282,11 +282,10 @@ export default function GamesPage() {
   }).length;
 
   return (
-    <div className="relative min-h-screen bg-background">
-      {/* Mobile has the "Back to Portfolio" pill instead of the navbar. */}
-      <GlassNavbar activeSection="games" mobileHidden />
+    <div className="relative min-h-screen-dvh bg-background">
+      <GlassNavbar activeSection="games" />
 
-      <main id="main-content" className="main-content no-mobile-nav mx-auto w-full max-w-content-wide px-[var(--content-pad-inline)] pb-24">
+      <main id="main-content" className="main-content mx-auto w-full max-w-content-wide px-[var(--content-pad-inline)] pb-24">
         <div className="mx-auto w-full max-w-[1100px]">
         <Link
           href="/"
