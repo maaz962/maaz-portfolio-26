@@ -140,6 +140,11 @@ export function useUserList(users: AdminUser[]) {
   const filtered = useMemo(() => sortUsers(filterUsers(users, query), sort), [users, query, sort]);
 
   const pageCount = pageCountFor(filtered.length, pageSize);
+  // Clamping only at render time leaves `page` stale: clear a narrow search and
+  // the table jumps back to a page the user never asked for. Persist the clamp.
+  useEffect(() => {
+    if (page > pageCount) setPage(pageCount);
+  }, [page, pageCount]);
   const safePage = Math.min(page, pageCount);
   const rows = useMemo(() => paginate(filtered, safePage, pageSize), [filtered, safePage, pageSize]);
 

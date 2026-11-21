@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
-import { getAdminUser } from "@/lib/auth";
+import { getAdminActor } from "@/lib/auth";
+import { can } from "@/lib/roles";
 import { LeaderboardView } from "@/components/admin/leaderboard/leaderboard-view";
 
 export const metadata = {
@@ -7,9 +8,9 @@ export const metadata = {
 };
 
 export default async function AdminLeaderboardPage() {
-  // Server-side authorization: only admins can reach this page.
-  const admin = await getAdminUser();
-  if (!admin) redirect("/admin/login?from=/admin/leaderboard");
+  const actor = await getAdminActor();
+  if (!actor) redirect("/admin/login?from=/admin/leaderboard");
+  if (!can(actor.role, "leaderboard:view")) redirect("/admin");
 
   return <LeaderboardView />;
 }

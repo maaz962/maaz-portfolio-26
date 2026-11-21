@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ShieldCheck } from "lucide-react";
 import { buttonStyles } from "@/components/ui/button";
 import { adminFieldStyles, adminLabelStyles } from "@/components/admin/admin-field";
@@ -39,6 +39,9 @@ export function RolePanel({
 }) {
   const current = roleOf(user);
   const [selected, setSelected] = useState<UserRole>(current);
+  // A refresh or an owner changing this role elsewhere must not leave the
+  // picker showing a role the account no longer has.
+  useEffect(() => setSelected(current), [current]);
   const { confirm, dialogProps } = useConfirmDialog();
   const isSelf = user.id === actorId;
 
@@ -96,9 +99,9 @@ export function RolePanel({
               title: `Change role to ${ROLE_LABELS[selected]}?`,
               description: `This changes what @${user.username} can access in the admin panel immediately. Their signed-in session picks up the new role on the next request.`,
               confirmLabel: "Change role",
-              onConfirm: async () => {
-                await onChange(selected);
-              },
+              // Returning the result lets the dialog stay open with an error
+              // when the write actually failed.
+              onConfirm: () => onChange(selected),
             })
           }
           className={buttonStyles({ variant: "primary", size: "sm" })}

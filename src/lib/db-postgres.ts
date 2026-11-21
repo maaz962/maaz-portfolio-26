@@ -737,6 +737,7 @@ export async function getAdminLeaderboardPage(
       gamesPlayed: r.games_played,
       currentStreak: r.current_streak,
       hidden: r.hidden,
+      createdAt: r.created_at,
     })),
     total,
     page: safePage,

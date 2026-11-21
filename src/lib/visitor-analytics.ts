@@ -68,6 +68,17 @@ function referrerHost(referrer: string): string {
   }
 }
 
+/**
+ * True when the token is a label of the referrer's registrable domain:
+ * `google.co.uk` and `l.facebook.com` match, but `google.com.lookalike.example`
+ * does not. A loose substring match let unrelated hosts inflate a channel.
+ */
+function hostMatchesToken(host: string, token: string): boolean {
+  const escaped = token.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  // Token plus a one- or two-part public suffix (.com / .co.uk).
+  return new RegExp(`(^|\\.)${escaped}(\\.[a-z]{2,3}){1,2}$`).test(host);
+}
+
 /** Maps UTM source first, then the referrer host, into a readable channel. */
 export function sourceOf(log: VisitorLog): string {
   const utmSource = (log.utm?.source ?? "").trim().toLowerCase();
@@ -85,15 +96,7 @@ export function sourceOf(log: VisitorLog): string {
   if (host === "redd.it") return "Reddit";
 
   for (const [token, label] of Object.entries(SOURCE_LABELS)) {
-    // `google.co.uk`, `l.facebook.com`, `t.co`, `www.instagram.com`, ...
-    if (
-      host === token ||
-      host.startsWith(`${token}.`) ||
-      host.endsWith(`.${token}`) ||
-      host.includes(`.${token}.`)
-    ) {
-      return label;
-    }
+    if (hostMatchesToken(host, token)) return label;
   }
   return "Other sites";
 }

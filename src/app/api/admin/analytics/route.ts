@@ -61,13 +61,22 @@ export async function GET(req: NextRequest) {
   const locCount: Record<string, number> = {};
   const locations: { country: string; city: string; count: number }[] = [];
 
+  // `listLogs()` now returns a single oldest-first order from both backends, so
+  // `slice(-50).reverse()` below always means "the 50 newest events".
   visitorLogs.forEach((v) => {
-    pageCount[v.page] = (pageCount[v.page] || 0) + 1;
+    // Legacy rows may be missing fields; never let them create an "undefined"
+    // bucket or crash the whole analytics request.
+    const page = v.page || "Unknown";
+    pageCount[page] = (pageCount[page] || 0) + 1;
     if (v.referrer && v.referrer !== "direct") refCount[v.referrer] = (refCount[v.referrer] || 0) + 1;
-    browserCount[v.browser] = (browserCount[v.browser] || 0) + 1;
-    deviceCount[v.device] = (deviceCount[v.device] || 0) + 1;
+    const browser = v.browser || "Unknown";
+    browserCount[browser] = (browserCount[browser] || 0) + 1;
+    const device = v.device || "Unknown";
+    deviceCount[device] = (deviceCount[device] || 0) + 1;
     if (v.location) {
-      const key = `${v.location.country}|${v.location.city}`;
+      const country = v.location.country || "Unknown";
+      const city = v.location.city || "Unknown";
+      const key = `${country}|${city}`;
       locCount[key] = (locCount[key] || 0) + 1;
     }
   });
@@ -77,7 +86,7 @@ export async function GET(req: NextRequest) {
     locations.push({ country: parts[0] || "Unknown", city: parts[1] || "Unknown", count });
   });
 
-  const allEvents = visitorLogs.flatMap((v) => v.events);
+  const allEvents = visitorLogs.flatMap((v) => (Array.isArray(v.events) ? v.events : []));
 
   // Interest = the things visitors actively engage with: external links they
   // click, interactive elements (buttons/anchors) they tap, and portfolio
@@ -85,10 +94,11 @@ export async function GET(req: NextRequest) {
   const interestCount: Record<string, number> = {};
   allEvents.forEach((evt: TrackingEvent) => {
     if (evt.type === "click") {
-      const target = parseInterestTarget(evt.target, evt.data);
+      const target = parseInterestTarget(evt.target ?? "", evt.data);
       if (target) interestCount[target.label] = (interestCount[target.label] || 0) + 1;
     } else if (evt.type === "pageview") {
-      const section = evt.target.startsWith("#") ? evt.target.slice(1) : "";
+      const evtTarget = evt.target ?? "";
+      const section = evtTarget.startsWith("#") ? evtTarget.slice(1) : "";
       if (section) {
         const key = `Section: ${section}`;
         interestCount[key] = (interestCount[key] || 0) + 1;

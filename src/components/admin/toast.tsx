@@ -140,8 +140,16 @@ function Toast({ toast, onDismiss }: { toast: ToastItem; onDismiss: () => void }
         <button
           type="button"
           onClick={async () => {
-            await toast.action?.onClick();
-            onDismiss();
+            try {
+              await toast.action?.onClick();
+            } catch (error) {
+              // The action itself reports the failure; just make sure a
+              // rejected promise cannot leave the toast stuck or crash the
+              // page with an unhandled rejection.
+              console.error("Toast action failed:", error);
+            } finally {
+              onDismiss();
+            }
           }}
           className={cn(
             "shrink-0 rounded-full border px-2.5 py-1 text-xs font-semibold transition-colors",

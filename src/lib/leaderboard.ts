@@ -131,6 +131,7 @@ export function standingToAdminRow(s: Standing): AdminLeaderboardRow {
     gamesPlayed: s.gamesPlayed,
     currentStreak: s.currentStreak,
     hidden: s.hidden,
+    createdAt: s.createdAt,
   };
 }
 
@@ -143,6 +144,7 @@ export interface SortableStanding {
   totalXp: number;
   currentStreak: number;
   hidden: boolean;
+  createdAt?: string;
   user: { id: string; name: string; username: string };
 }
 
@@ -162,11 +164,28 @@ export function sortStandings<T extends SortableStanding>(
 ): T[] {
   const sign = direction === "asc" ? 1 : -1;
 
+  // Tie-breakers are always ascending and identical to the Postgres ORDER BY
+  // (`public_rank ASC NULLS LAST, id ASC`). Applying `sign` to them used to make
+  // equal-XP rows appear in a different order depending on the backend and on
+  // the selected direction, so paging could skip or duplicate a player.
+  const byRankThenId = (a: T, b: T): number =>
+    (a.rank ?? Number.MAX_SAFE_INTEGER) - (b.rank ?? Number.MAX_SAFE_INTEGER) ||
+    a.user.id.localeCompare(b.user.id);
+
   if (sort === "rank") {
     return [...rows].sort((a, b) => {
+      // Hidden accounts are sunk in BOTH directions, like Postgres `hidden ASC`.
       if (a.hidden !== b.hidden) return a.hidden ? 1 : -1;
-      if (a.hidden) return sign * (b.totalXp - a.totalXp);
-      return sign * ((a.rank ?? 0) - (b.rank ?? 0));
+      if (a.hidden) {
+        // Null ranks land here: Postgres orders them by `total_xp DESC,
+        // created_at ASC, id ASC` regardless of the requested direction.
+        return (
+          b.totalXp - a.totalXp ||
+          (a.createdAt ?? "").localeCompare(b.createdAt ?? "") ||
+          a.user.id.localeCompare(b.user.id)
+        );
+      }
+      return sign * ((a.rank ?? 0) - (b.rank ?? 0)) || byRankThenId(a, b);
     });
   }
 
@@ -177,15 +196,10 @@ export function sortStandings<T extends SortableStanding>(
     if (sort === "name") delta = collator.compare(a.user.name, b.user.name);
     else if (sort === "streak") delta = a.currentStreak - b.currentStreak;
     else delta = a.totalXp - b.totalXp;
-    // Ties fall back to rank and then id so paging is stable: without a total
-    // order, two equal-XP rows can swap between pages and the same player
-    // appears on two of them.
-    if (delta === 0) {
-      delta =
-        (a.rank ?? Number.MAX_SAFE_INTEGER) - (b.rank ?? Number.MAX_SAFE_INTEGER);
-    }
-    if (delta === 0) delta = a.user.id.localeCompare(b.user.id);
-    return sign * delta;
+    // Direction applies to the requested column only; the total order below
+    // keeps pagination stable across requests and backends.
+    if (delta !== 0) return sign * delta;
+    return byRankThenId(a, b);
   });
 }
 

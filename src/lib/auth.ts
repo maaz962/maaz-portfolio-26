@@ -10,24 +10,32 @@ import {
 
 const DEFAULT_SECRET_MIN_LENGTH = 16;
 
+interface SessionLookupOptions {
+  /**
+   * Admin authorization must fail closed. A token's `isAdmin`/`role` claims are
+   * baked in at login and go stale on demote or soft-delete; if the DB lookup
+   * fails we cannot prove the account is still eligible, so we must not let
+   * those claims grant panel access. Player sessions keep the friendly fallback
+   * so a transient DB error never logs someone out of the public site.
+   */
+  requireFresh?: boolean;
+}
+
 /**
  * Resolves the signed-in user from the signed session cookie.
  *
- * The cookie carries a self-contained, signed JWT, so we can resolve the user
- * identity without depending on a fragile DB lookup. Strategy:
+ * Strategy:
  *  1. Read + verify the cookie signature & expiry. If invalid → no session.
- *  2. Ask the DB for the freshest copy of the user (so role/avatar changes
- *     take effect). If that succeeds → return the fresh record.
+ *  2. Ask the DB for the freshest copy of the user (so role/avatar changes and
+ *     Trash state take effect). If that succeeds → return the fresh record.
  *  3. If the DB lookup fails (ephemeral file store after a cold start, a
- *     transient DB error, etc.) → fall back to the verified token claims so
- *     the user is NEVER bounced out of an active session. A session is only
- *     cleared by an explicit logout, never by a transient lookup failure.
+ *     transient DB error, etc.) → fall back to the verified token claims for
+ *     ordinary sessions only. Admin callers pass `requireFresh: true`.
  *
- * Returns null only when there is genuinely no valid session cookie, or when
- * the account has been moved to Trash (a deleted account must not keep a live
- * session).
+ * Returns null when there is no valid cookie, the account is in Trash, or a
+ * fresh record is required but the lookup failed.
  */
-export async function getSessionUser(): Promise<User | null> {
+async function resolveSessionUser(options: SessionLookupOptions): Promise<User | null> {
   const cookieStore = cookies();
   const token = cookieStore.get(SESSION_COOKIE)?.value;
   if (!token) return null;
@@ -40,10 +48,16 @@ export async function getSessionUser(): Promise<User | null> {
     if (!fresh || fresh.deletedAt) return null;
     return fresh;
   } catch {
-    // Transient lookup failure — fall through to token claims.
+    if (options.requireFresh) return null;
+    // Transient lookup failure — fall through to token claims for players.
   }
 
   return claimsToUser(claims);
+}
+
+/** Public/player session resolution (tolerant of transient DB failures). */
+export async function getSessionUser(): Promise<User | null> {
+  return resolveSessionUser({});
 }
 
 /**
@@ -59,7 +73,10 @@ export async function getSessionUser(): Promise<User | null> {
  * a real SESSION_SECRET (this does NOT break regular player sessions).
  */
 export async function getAdminActor(): Promise<{ user: User; role: AdminRole } | null> {
-  const user = await getSessionUser();
+  // Fail closed: never authorize the panel from stale token claims. A deleted
+  // or demoted admin must lose access even if the user lookup is temporarily
+  // unavailable.
+  const user = await resolveSessionUser({ requireFresh: true });
   if (!user) return null;
 
   const role = roleOf(user);

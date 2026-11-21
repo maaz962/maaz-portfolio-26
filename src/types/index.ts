@@ -361,6 +361,8 @@ export interface AdminLeaderboardRow {
   currentStreak: number;
   /** Excluded from the public leaderboard by the hidden flag. */
   hidden: boolean;
+  /** Account creation time, used as the shared tie-breaker on both backends. */
+  createdAt?: string;
 }
 
 /** Sort keys accepted by the admin leaderboard. */

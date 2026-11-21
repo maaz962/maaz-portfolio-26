@@ -13,7 +13,29 @@ import { TRACKING_RETENTION_DAYS } from "./retention";
  */
 
 const TRACK_FILE_PATH = path.join(process.cwd(), "src", "data", "tracking.json");
-const MAX_LOGS = 500;
+
+/**
+ * Hard safety ceiling, NOT the retention policy. A 60-day prune is the real
+ * retention window (see `pruneOldLogs`); this only stops a runaway traffic spike
+ * from growing the store without bound. It is deliberately far above what a
+ * normal 60-day window produces on a portfolio site — an earlier value of 500
+ * silently turned "keep 60 days" into "keep the newest 500 sessions" on busy
+ * days.
+ */
+const MAX_LOGS = 20_000;
+
+/**
+ * Analytics readers (especially "recent activity") assume one chronological
+ * order. The file store appends oldest-first while Postgres `ORDER BY ts DESC`
+ * returns newest-first, so normalize at this boundary instead of hoping every
+ * caller remembers to sort.
+ */
+function byTimestampAsc(a: VisitorLog, b: VisitorLog): number {
+  const ta = Date.parse(a.timestamp);
+  const tb = Date.parse(b.timestamp);
+  if (Number.isFinite(ta) && Number.isFinite(tb) && ta !== tb) return ta - tb;
+  return a.id.localeCompare(b.id);
+}
 
 interface TrackingStore {
   logs: VisitorLog[];
@@ -118,11 +140,13 @@ async function saveFile(data: TrackingStore): Promise<void> {
 export async function listLogs(): Promise<VisitorLog[]> {
   if (usePostgres) {
     await initAnalytics();
+    // Fetch the newest window, then hand callers a consistent oldest-first
+    // array (same order as the file backend and the growth/activity helpers).
     const rows = await sql`SELECT * FROM analytics_logs ORDER BY ts DESC LIMIT ${MAX_LOGS}`;
-    return rows.map(mapRow);
+    return rows.map(mapRow).sort(byTimestampAsc);
   }
   const store = await readFile();
-  return store.logs;
+  return [...store.logs].sort(byTimestampAsc);
 }
 
 /**
@@ -135,18 +159,30 @@ export async function pruneOldLogs(
 ): Promise<{ deleted: number; cutoff: string }> {
   const safeDays = Number.isFinite(days) && days > 0 ? Math.min(days, 3650) : TRACKING_RETENTION_DAYS;
   const cutoff = new Date(Date.now() - safeDays * 24 * 60 * 60 * 1000).toISOString();
+  const cutoffMs = Date.parse(cutoff);
 
   if (usePostgres) {
     await initAnalytics();
+    // `ts` is TEXT. Malformed/legacy values do not compare correctly against
+    // an ISO cutoff, so treat anything that is not `YYYY-MM-DDTHH:MM:SS...`
+    // as out-of-retention as well (same rule as the file backend below).
     const removed = await sql`
-      DELETE FROM analytics_logs WHERE ts < ${cutoff} RETURNING id
+      DELETE FROM analytics_logs
+      WHERE ts NOT LIKE '____-__-__T%' OR ts < ${cutoff}
+      RETURNING id
     `;
     return { deleted: removed.length, cutoff };
   }
 
   const deleted = await withStoreLock(async () => {
     const store = await readFile();
-    const kept = store.logs.filter((log) => log.timestamp >= cutoff);
+    // Compare parsed instants, not ISO strings: a legacy row written with
+    // Date#toString() sorts after every ISO string and would never be pruned.
+    // Rows whose date cannot be parsed cannot be proven inside the window.
+    const kept = store.logs.filter((log) => {
+      const ts = Date.parse(log.timestamp);
+      return Number.isFinite(ts) && ts >= cutoffMs;
+    });
     const count = store.logs.length - kept.length;
     if (count > 0) {
       store.logs = kept;

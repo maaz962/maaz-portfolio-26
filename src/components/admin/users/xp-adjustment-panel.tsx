@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Check, Loader2, Minus, Sparkles, Undo2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { adminFieldStyles, adminLabelStyles } from "@/components/admin/admin-field";
@@ -33,6 +33,15 @@ export function XpAdjustmentPanel({
   const [reason, setReason] = useState("");
   const [review, setReview] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // The detail view refreshes after an apply and can also change from outside
+  // this panel. Reset the draft only when the source value actually moves so a
+  // half-typed number is not clobbered on every render.
+  useEffect(() => {
+    setValue(String(detail.totalXp));
+    setReview(false);
+    setError(null);
+  }, [detail.totalXp]);
 
   const parsed = Number(value);
   const isWhole = Number.isInteger(parsed);

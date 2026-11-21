@@ -13,11 +13,16 @@ import { InfoRow } from "@/components/admin/analytics/info-row";
  * separately styled card.
  */
 export function LogDetail({ log }: { log: VisitorLog }) {
+  // Legacy rows can predate these fields (or carry them as null from Postgres).
+  // Never let expanding a row crash the whole logs table.
+  const cookies = log.cookies ?? {};
+  const events = log.events ?? [];
+
   return (
     <div className="space-y-4">
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <InfoRow label="IP Address" value={log.ip} />
-        <InfoRow label="User Agent" value={log.userAgent.slice(0, 80)} />
+        <InfoRow label="IP Address" value={log.ip || "Unknown"} />
+        <InfoRow label="User Agent" value={(log.userAgent || "Unknown").slice(0, 80)} />
         <InfoRow label="Language" value={log.language} />
         <InfoRow label="Timezone" value={log.timezone} />
         <InfoRow label="Screen" value={log.screenResolution} />
@@ -38,31 +43,31 @@ export function LogDetail({ log }: { log: VisitorLog }) {
         />
       </div>
 
-      {Object.keys(log.cookies).length > 0 && (
+      {Object.keys(cookies).length > 0 && (
         <div>
           <p className="mb-1.5 text-xs font-semibold uppercase tracking-wider text-muted">
             Cookies
           </p>
           <div className="flex flex-wrap gap-1.5">
-            {Object.entries(log.cookies).map(([k, v]) => (
+            {Object.entries(cookies).map(([k, v]) => (
               <span
                 key={k}
                 className="text-mono rounded-md border border-border bg-background-secondary px-2 py-0.5 text-xs text-muted"
               >
-                {k}={v.slice(0, 30)}
+                {k}={String(v ?? "").slice(0, 30)}
               </span>
             ))}
           </div>
         </div>
       )}
 
-      {log.events.length > 0 ? (
+      {events.length > 0 ? (
         <div>
           <p className="mb-1.5 text-xs font-semibold uppercase tracking-wider text-muted">
-            Events ({log.events.length})
+            Events ({events.length})
           </p>
           <div className="max-h-40 space-y-1 overflow-y-auto">
-            {log.events.map((evt, i) => (
+            {events.map((evt, i) => (
               <div key={i} className="flex flex-wrap items-center gap-2 text-xs">
                 <EventTypeBadge type={evt.type} />
                 <span className="text-foreground/70">{evt.target}</span>

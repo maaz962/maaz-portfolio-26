@@ -34,6 +34,8 @@ export interface ConfirmDialogProps {
   /** `danger` paints the confirm button with the destructive variant. */
   tone?: "default" | "danger";
   busy?: boolean;
+  /** Set when the last confirmation attempt failed, so it can be surfaced. */
+  error?: string | null;
   onConfirm: () => void;
   onCancel: () => void;
 }
@@ -46,6 +48,7 @@ export function ConfirmDialog({
   cancelLabel = "Cancel",
   tone = "default",
   busy = false,
+  error,
   onConfirm,
   onCancel,
 }: ConfirmDialogProps) {
@@ -137,6 +140,12 @@ export function ConfirmDialog({
           </div>
         </div>
 
+        {error && (
+          <p role="alert" className="mt-4 text-sm text-red-600 dark:text-red-400">
+            {error}
+          </p>
+        )}
+
         <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
           <button
             type="button"
@@ -168,19 +177,27 @@ export function ConfirmDialog({
  * Small state helper so a caller can drive a `ConfirmDialog` from one
  * `useState` instead of hand-rolling `open`/`busy` pairs at every call site.
  */
-export function useConfirmDialog() {
-  const [request, setRequest] = useState<{
-    title: string;
-    description: string;
-    confirmLabel?: string;
-    tone?: "default" | "danger";
-    onConfirm: () => void | Promise<void>;
-  } | null>(null);
-  const [busy, setBusy] = useState(false);
+interface ConfirmRequest {
+  title: string;
+  description: string;
+  confirmLabel?: string;
+  tone?: "default" | "danger";
+  /** Resolve `false` to keep the dialog open (e.g. a failed write). */
+  onConfirm: () => void | boolean | Promise<void | boolean>;
+}
 
-  const confirm = (next: typeof request) => setRequest(next);
+export function useConfirmDialog() {
+  const [request, setRequest] = useState<ConfirmRequest | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const confirm = (next: ConfirmRequest) => {
+    setError(null);
+    setRequest(next);
+  };
   const close = () => {
     if (busy) return;
+    setError(null);
     setRequest(null);
   };
 
@@ -192,14 +209,21 @@ export function useConfirmDialog() {
         confirmLabel: request.confirmLabel,
         tone: request.tone,
         busy,
+        error,
         onCancel: close,
         onConfirm: async () => {
           setBusy(true);
+          setError(null);
           try {
-            await request.onConfirm();
+            const result = await request.onConfirm();
+            // `false` means "do not close" — callers use it for failed writes.
+            if (result !== false) setRequest(null);
+          } catch (err) {
+            // Previously a rejected promise closed the dialog and surfaced
+            // nothing. Keep it open and show what went wrong instead.
+            setError(err instanceof Error ? err.message : "Something went wrong. Please try again.");
           } finally {
             setBusy(false);
-            setRequest(null);
           }
         },
       } as const)
