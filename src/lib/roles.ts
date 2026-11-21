@@ -27,6 +27,8 @@ export type Permission =
   | "analytics:view"
   /** Visitor logs. */
   | "logs:view"
+  /** Delete old visitor logs from the database. */
+  | "logs:purge"
   /** Leaderboard. */
   | "leaderboard:view"
   /** User list and user detail, including Trash. */
@@ -47,8 +49,8 @@ const READ_ONLY: Permission[] = [
 ];
 
 export const ROLE_PERMISSIONS: Record<AdminRole, readonly Permission[]> = {
-  owner: [...READ_ONLY, "users:manage", "roles:manage", "users:purge"],
-  admin: [...READ_ONLY, "users:manage", "users:purge"],
+  owner: [...READ_ONLY, "users:manage", "roles:manage", "users:purge", "logs:purge"],
+  admin: [...READ_ONLY, "users:manage", "users:purge", "logs:purge"],
   editor: READ_ONLY,
   viewer: READ_ONLY,
 };

@@ -22,6 +22,15 @@ export function LogDetail({ log }: { log: VisitorLog }) {
         <InfoRow label="Timezone" value={log.timezone} />
         <InfoRow label="Screen" value={log.screenResolution} />
         <InfoRow label="Referrer" value={log.referrer} />
+        {log.visitorId && <InfoRow label="Visitor ID" value={log.visitorId.slice(0, 36)} />}
+        {log.utm && Object.keys(log.utm).length > 0 && (
+          <InfoRow
+            label="UTM"
+            value={Object.entries(log.utm)
+              .map(([key, value]) => `${key}=${value}`)
+              .join(" · ")}
+          />
+        )}
         <InfoRow label="ISP" value={log.location?.isp || "Unknown"} />
         <InfoRow
           label="Coordinates"

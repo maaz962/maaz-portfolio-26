@@ -8,15 +8,18 @@ import {
   ArrowLeft,
   LogOut,
   Menu,
+  Moon,
   PanelLeftClose,
   PanelLeftOpen,
   Shield,
+  Sun,
   X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { roleOf } from "@/lib/roles";
 import { RoleBadge } from "@/components/admin/role-badge";
 import { useAuth } from "@/lib/auth-context";
+import { useTheme } from "@/components/layout/theme-provider";
 import { useRouter } from "next/navigation";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
 import { adminNavItems } from "./admin-nav";
@@ -272,6 +275,15 @@ function AdminSidebarFooter({
   onLogout: () => void;
   user: { name: string; username: string; role?: UserRole; isAdmin: boolean } | null;
 }) {
+  // One handler for the whole footer row: the old markup nested the icon-only
+  // ThemeToggle button inside the "Toggle theme" link, so clicking the text hit
+  // the link (no action) while only the tiny icon actually switched themes.
+  const { theme, toggleTheme, mounted } = useTheme();
+  const ThemeIcon = mounted && theme === "dark" ? Moon : Sun;
+  const themeLabel = mounted
+    ? `Switch to ${theme === "dark" ? "light" : "dark"} theme`
+    : "Toggle theme";
+
   return (
     <div className="shrink-0 space-y-1 border-t border-border p-3">
       {!collapsed && user && (
@@ -288,7 +300,9 @@ function AdminSidebarFooter({
           <IconAction label="View public site" href="/">
             <ArrowLeft className="h-4 w-4" strokeWidth={1.75} />
           </IconAction>
-          <ThemeToggle />
+          <IconAction label={themeLabel} onClick={toggleTheme}>
+            <ThemeIcon className="h-4 w-4" strokeWidth={1.75} />
+          </IconAction>
           <IconAction label="Log out" onClick={onLogout} danger>
             <LogOut className="h-4 w-4" strokeWidth={1.75} />
           </IconAction>
@@ -298,7 +312,11 @@ function AdminSidebarFooter({
           <FooterLink href="/" icon={<ArrowLeft className="h-4 w-4" strokeWidth={1.75} />}>
             View public site
           </FooterLink>
-          <FooterLink href="#" icon={<ThemeToggle />}>
+          <FooterLink
+            href="#"
+            icon={<ThemeIcon className="h-4 w-4" strokeWidth={1.75} />}
+            onClick={toggleTheme}
+          >
             Toggle theme
           </FooterLink>
           <FooterLink

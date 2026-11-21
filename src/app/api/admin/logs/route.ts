@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAdminActor } from "@/lib/auth";
-import { getAdminLogsPage } from "@/lib/tracking-store";
+import { getAdminLogsPage, pruneOldLogs } from "@/lib/tracking-store";
 import { can } from "@/lib/roles";
+import { TRACKING_RETENTION_DAYS } from "@/lib/retention";
 import type { AdminLogQuery, AdminLogSortKey } from "@/types/tracking";
 
 /**
@@ -71,6 +72,48 @@ export async function GET(req: NextRequest) {
   } catch (error: any) {
     return NextResponse.json(
       { error: error?.message ?? "Failed to load logs" },
+      { status: 500, headers: NO_STORE }
+    );
+  }
+}
+
+/**
+ * DELETE /api/admin/logs?days=60
+ * Physically removes old sessions from the tracking store (file or Postgres).
+ * Owner/admin only: unlike the automatic 60-day cleanup, this is an explicit
+ * admin command and therefore goes through the same role permission model.
+ */
+export async function DELETE(req: NextRequest) {
+  const actor = await getAdminActor();
+  if (!actor) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401, headers: NO_STORE });
+  }
+  if (!can(actor.role, "logs:purge")) {
+    return NextResponse.json(
+      { error: "Your role cannot delete visitor logs" },
+      { status: 403, headers: NO_STORE }
+    );
+  }
+
+  const rawDays = Number(req.nextUrl.searchParams.get("days"));
+  const days =
+    Number.isFinite(rawDays) && rawDays > 0
+      ? Math.min(Math.floor(rawDays), 3650)
+      : TRACKING_RETENTION_DAYS;
+
+  try {
+    const result = await pruneOldLogs(days);
+    return NextResponse.json(
+      {
+        ok: true,
+        ...result,
+        message: `Deleted ${result.deleted} session${result.deleted === 1 ? "" : "s"} older than ${days} days`,
+      },
+      { headers: NO_STORE }
+    );
+  } catch (error: any) {
+    return NextResponse.json(
+      { error: error?.message ?? "Failed to delete old logs" },
       { status: 500, headers: NO_STORE }
     );
   }

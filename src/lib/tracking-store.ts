@@ -3,6 +3,7 @@ import path from "path";
 import { neon } from "@neondatabase/serverless";
 import type { AdminLogPage, AdminLogQuery, AdminLogSortKey, VisitorLog } from "@/types/tracking";
 import { getPgConnectionString, usePostgres } from "./pg-connection";
+import { TRACKING_RETENTION_DAYS } from "./retention";
 
 /**
  * Persistent visitor-analytics store (dual-mode like the main DB).
@@ -19,6 +20,25 @@ interface TrackingStore {
 }
 
 let writePromise: Promise<void> = Promise.resolve();
+/**
+ * Read-modify-write operations on the JSON file are serialized. `writePromise`
+ * alone only orders writes; without this lock a prune and a tracker POST could
+ * both read the same file and the second save would resurrect deleted rows.
+ */
+let storeTaskQueue: Promise<unknown> = Promise.resolve();
+
+function withStoreLock<T>(task: () => Promise<T>): Promise<T> {
+  const run = storeTaskQueue.then(task);
+  storeTaskQueue = run.then(
+    () => undefined,
+    () => undefined
+  );
+  return run;
+}
+
+/** Automatic pruning is checked at most once an hour per server instance. */
+const PRUNE_CHECK_INTERVAL_MS = 60 * 60 * 1000;
+let lastPruneCheck = 0;
 
 // Neon's tagged template returns a wide union type; narrow to Promise<any[]>.
 type DbTag = (strings: TemplateStringsArray, ...values: any[]) => Promise<any[]>;
@@ -36,6 +56,8 @@ async function initAnalytics(): Promise<void> {
     await sql`
       CREATE TABLE IF NOT EXISTS analytics_logs (
         id TEXT PRIMARY KEY,
+        visitor_id TEXT,
+        utm JSONB,
         ip TEXT,
         user_agent TEXT,
         browser TEXT,
@@ -52,7 +74,14 @@ async function initAnalytics(): Promise<void> {
         ts TEXT NOT NULL
       )
     `;
-  })();
+      // Deployments created before visitor ids/UTM existed need the columns
+      // added in place; CREATE TABLE IF NOT EXISTS will not do it on its own.
+      await sql`ALTER TABLE analytics_logs ADD COLUMN IF NOT EXISTS visitor_id TEXT`;
+      await sql`ALTER TABLE analytics_logs ADD COLUMN IF NOT EXISTS utm JSONB`;
+      // Indexes keep the 60-day delete and the logs pager cheap as rows grow.
+      await sql`CREATE INDEX IF NOT EXISTS analytics_logs_ts_idx ON analytics_logs (ts DESC)`;
+      await sql`CREATE INDEX IF NOT EXISTS analytics_logs_visitor_idx ON analytics_logs (visitor_id)`;
+    })();
   return initPromise;
 }
 
@@ -94,6 +123,51 @@ export async function listLogs(): Promise<VisitorLog[]> {
   }
   const store = await readFile();
   return store.logs;
+}
+
+/**
+ * Deletes sessions older than `days` from the actual store (not just the
+ * response). Called by the manual admin button and, on a throttle, by the
+ * tracker itself so Vercel/Postgres never carry unbounded history.
+ */
+export async function pruneOldLogs(
+  days: number = TRACKING_RETENTION_DAYS
+): Promise<{ deleted: number; cutoff: string }> {
+  const safeDays = Number.isFinite(days) && days > 0 ? Math.min(days, 3650) : TRACKING_RETENTION_DAYS;
+  const cutoff = new Date(Date.now() - safeDays * 24 * 60 * 60 * 1000).toISOString();
+
+  if (usePostgres) {
+    await initAnalytics();
+    const removed = await sql`
+      DELETE FROM analytics_logs WHERE ts < ${cutoff} RETURNING id
+    `;
+    return { deleted: removed.length, cutoff };
+  }
+
+  const deleted = await withStoreLock(async () => {
+    const store = await readFile();
+    const kept = store.logs.filter((log) => log.timestamp >= cutoff);
+    const count = store.logs.length - kept.length;
+    if (count > 0) {
+      store.logs = kept;
+      await saveFile(store);
+    }
+    return count;
+  });
+  return { deleted, cutoff };
+}
+
+/** Runs the 60-day cleanup at most once an hour, off the hot tracking path. */
+async function autoPruneOldLogs(): Promise<void> {
+  const now = Date.now();
+  if (now - lastPruneCheck < PRUNE_CHECK_INTERVAL_MS) return;
+  lastPruneCheck = now;
+  try {
+    await pruneOldLogs(TRACKING_RETENTION_DAYS);
+  } catch (error) {
+    // A cleanup failure must never lose the incoming visitor event.
+    console.error("Analytics auto-prune failed:", error);
+  }
 }
 
 /**
@@ -246,13 +320,18 @@ export async function getAdminLogsPage(query: AdminLogQuery): Promise<AdminLogPa
 }
 
 export async function appendLog(log: VisitorLog): Promise<void> {
+  // Old rows are removed before the new one is written, so a quiet site still
+  // sheds its 60-day tail on the next real visit.
+  await autoPruneOldLogs();
+
   if (usePostgres) {
     await initAnalytics();
     await sql`
       INSERT INTO analytics_logs
-        (id, ip, user_agent, browser, os, device, language, timezone, screen_resolution, referrer, page, location, cookies, events, ts)
+        (id, visitor_id, utm, ip, user_agent, browser, os, device, language, timezone, screen_resolution, referrer, page, location, cookies, events, ts)
       VALUES
-        (${log.id}, ${log.ip}, ${log.userAgent}, ${log.browser}, ${log.os}, ${log.device},
+        (${log.id}, ${log.visitorId ?? null}, ${JSON.stringify(log.utm ?? {})},
+         ${log.ip}, ${log.userAgent}, ${log.browser}, ${log.os}, ${log.device},
          ${log.language}, ${log.timezone}, ${log.screenResolution}, ${log.referrer}, ${log.page},
          ${JSON.stringify(log.location ?? null)}, ${JSON.stringify(log.cookies ?? {})},
          ${JSON.stringify(log.events ?? [])}, ${log.timestamp})
@@ -267,15 +346,19 @@ export async function appendLog(log: VisitorLog): Promise<void> {
     return;
   }
 
-  const store = await readFile();
-  store.logs.push(log);
-  if (store.logs.length > MAX_LOGS) store.logs.splice(0, store.logs.length - MAX_LOGS);
-  await saveFile(store);
+  await withStoreLock(async () => {
+    const store = await readFile();
+    store.logs.push(log);
+    if (store.logs.length > MAX_LOGS) store.logs.splice(0, store.logs.length - MAX_LOGS);
+    await saveFile(store);
+  });
 }
 
 function mapRow(row: any): VisitorLog {
   return {
     id: row.id,
+    visitorId: row.visitor_id ?? undefined,
+    utm: row.utm ?? undefined,
     ip: row.ip,
     userAgent: row.user_agent,
     browser: row.browser,

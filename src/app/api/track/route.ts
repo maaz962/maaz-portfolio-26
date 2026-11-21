@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import type { VisitorLog } from "@/types/tracking";
+import type { UtmParams, VisitorLog } from "@/types/tracking";
 import { appendLog } from "@/lib/tracking-store";
 
 /**
@@ -14,6 +14,18 @@ export { GET } from "@/app/api/admin/analytics/route";
 
 function generateId(): string {
   return Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+}
+
+/** Only the five standard UTM keys are stored; everything else is ignored. */
+function sanitizeUtm(value: unknown): UtmParams | undefined {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return undefined;
+  const source = value as Record<string, unknown>;
+  const utm: UtmParams = {};
+  for (const key of ["source", "medium", "campaign", "term", "content"] as const) {
+    const raw = source[key];
+    if (typeof raw === "string" && raw.trim()) utm[key] = raw.trim().slice(0, 100);
+  }
+  return Object.keys(utm).length > 0 ? utm : undefined;
 }
 
 function parseUserAgent(ua: string): { browser: string; os: string; device: string } {
@@ -82,8 +94,15 @@ export async function POST(req: NextRequest) {
     const { browser, os, device } = parseUserAgent(ua);
     const location = await geolocate(ip);
 
+    const visitorId =
+      typeof body.visitorId === "string" && body.visitorId.trim()
+        ? body.visitorId.trim().slice(0, 64)
+        : undefined;
+
     const log: VisitorLog = {
       id: generateId(),
+      visitorId,
+      utm: sanitizeUtm(body.utm),
       ip,
       userAgent: ua,
       browser,

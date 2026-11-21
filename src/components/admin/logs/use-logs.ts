@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { AdminLogPage, AdminLogSortKey } from "@/types/tracking";
 import type { AdminSort } from "@/components/admin/admin-table";
+import { TRACKING_RETENTION_DAYS } from "@/lib/retention";
 
 /** One-shot result message for the toast viewport. */
 export interface LogsFeedback {
@@ -16,6 +17,8 @@ export interface LogsState {
   loading: boolean;
   /** True once the first request has settled, successfully or not. */
   loaded: boolean;
+  /** True while an explicit old-log cleanup request is in flight. */
+  pruning: boolean;
   feedback: LogsFeedback | null;
   query: string;
   device: string;
@@ -30,6 +33,8 @@ export interface LogsState {
   setPageSize: (size: number) => void;
   setExpandedId: (id: string | null) => void;
   refresh: () => void;
+  /** Deletes rows older than `days` from the store; returns the count, or null on failure. */
+  pruneOld: (days?: number) => Promise<number | null>;
 }
 
 const DEBOUNCE_MS = 250;
@@ -45,6 +50,7 @@ export function useLogs(): LogsState {
   const [data, setData] = useState<AdminLogPage | null>(null);
   const [loading, setLoading] = useState(false);
   const [loaded, setLoaded] = useState(false);
+  const [pruning, setPruning] = useState(false);
   const [feedback, setFeedback] = useState<LogsFeedback | null>(null);
 
   const [query, setQueryState] = useState("");
@@ -60,6 +66,30 @@ export function useLogs(): LogsState {
   const report = useCallback((message: string, variant: LogsFeedback["variant"]) => {
     setFeedback({ id: nextId.current++, message, variant });
   }, []);
+
+  /** Explicit cleanup. The server already enforces the role and bounds `days`. */
+  const pruneOld = useCallback(
+    async (days: number = TRACKING_RETENTION_DAYS): Promise<number | null> => {
+      setPruning(true);
+      try {
+        const res = await fetch(`/api/admin/logs?days=${days}`, { method: "DELETE" });
+        const body = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          throw new Error(typeof body?.error === "string" ? body.error : "Failed to delete old logs");
+        }
+        const deleted = Number(body?.deleted);
+        // A cleanup can remove the page currently on screen, so re-read it.
+        setNonce((n) => n + 1);
+        return Number.isFinite(deleted) ? deleted : 0;
+      } catch (error) {
+        report(error instanceof Error ? error.message : "Failed to delete old logs", "error");
+        return null;
+      } finally {
+        setPruning(false);
+      }
+    },
+    [report]
+  );
 
   // Typing should not fire a request per keystroke.
   useEffect(() => {
@@ -128,6 +158,7 @@ export function useLogs(): LogsState {
     data,
     loading,
     loaded,
+    pruning,
     feedback,
     query,
     device,
@@ -142,6 +173,7 @@ export function useLogs(): LogsState {
     setPageSize,
     setExpandedId,
     refresh: () => setNonce((n) => n + 1),
+    pruneOld,
   };
 }
 

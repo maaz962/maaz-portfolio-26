@@ -1,7 +1,15 @@
 "use client";
 
 import { useEffect } from "react";
-import { BarChart3, Globe2, RefreshCw, ServerCrash } from "lucide-react";
+import {
+  BarChart3,
+  Globe2,
+  MousePointerClick,
+  RefreshCw,
+  ServerCrash,
+  TrendingDown,
+  Users,
+} from "lucide-react";
 import { buttonStyles } from "@/components/ui/button";
 import { AdminPage, AdminPageHeader } from "@/components/admin/admin-page";
 import { AdminCard } from "@/components/admin/admin-card";
@@ -17,13 +25,15 @@ import { useAdminData } from "./use-admin-data";
 import { BarChart } from "./bar-chart";
 import { StatCard } from "./stat-card";
 import { GrowthChart } from "./growth-chart";
+import { SourceBreakdown } from "./source-breakdown";
 
 /**
  * `/admin/analytics` — the deep-dive page.
  *
- * Growth charts are on the Overview (the "how are we doing?" question). This
- * page answers "where did they come from and what did they use?", so it owns
- * the breakdowns that used to be stacked under the KPIs on the dashboard.
+ * Growth KPIs are on the Overview (the "how are we doing?" question). This page
+ * answers "where did they come from, where are they, and what did they use?",
+ * so it owns the breakdowns that used to be stacked under the KPIs on the
+ * dashboard.
  */
 export function AnalyticsView() {
   return (
@@ -89,11 +99,19 @@ function AnalyticsPage() {
       ) : (
         <div className="space-y-5">
           <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-            <StatCard icon={Globe2} label="Visits" value={stats.totalVisitors} />
-            <StatCard icon={BarChart3} label="Unique IPs" value={stats.uniqueIPs} />
-            <StatCard icon={BarChart3} label="Events" value={stats.totalEvents} />
-            <StatCard icon={Globe2} label="Referrers" value={stats.topReferrers.length} />
+            <StatCard icon={Users} label="Visitors" value={stats.totalVisitors} />
+            <StatCard icon={MousePointerClick} label="Sessions" value={stats.totalSessions} />
+            <StatCard
+              icon={TrendingDown}
+              label="Bounce rate"
+              value={`${stats.bounceRate}%`}
+              hint={`${stats.bouncedSessions} one-page sessions`}
+            />
+            <StatCard icon={Globe2} label="Channels" value={stats.sources.length} />
           </div>
+
+          {/* Where the traffic came from, including the UTM tags that created it. */}
+          <SourceBreakdown sources={stats.sources} utmCampaigns={stats.utmCampaigns} />
 
           {/* Growth is repeated here in compact form so the breakdown page can
               be read without bouncing back to the Overview. The data is from
@@ -121,15 +139,20 @@ function AnalyticsPage() {
 
           <div className="grid gap-4 lg:grid-cols-2">
             <AdminCard>
-              <h3 className="mb-4 text-base font-semibold text-foreground">Top Referrers</h3>
+              <div className="mb-4 flex items-center justify-between gap-3">
+                <h3 className="text-base font-semibold text-foreground">Top Referrers</h3>
+                <span className="text-mono text-xs text-muted">{stats.topReferrers.length}</span>
+              </div>
               {stats.topReferrers.length > 0 ? (
-                <div className="space-y-2">
-                  {stats.topReferrers.slice(0, 10).map((ref) => (
+                // Scroll rather than slice: new referrers were invisible while
+                // only the first ten were rendered.
+                <div className="max-h-72 space-y-2 overflow-y-auto pr-1">
+                  {stats.topReferrers.map((ref) => (
                     <div
                       key={ref.referrer}
                       className="flex items-center justify-between gap-3 rounded-lg bg-background-secondary/50 px-3 py-2.5"
                     >
-                      <span className="truncate text-sm text-foreground" title={ref.referrer}>
+                      <span className="min-w-0 truncate text-sm text-foreground" title={ref.referrer}>
                         {ref.referrer}
                       </span>
                       <span className="text-mono text-sm text-muted">{ref.count}</span>
@@ -147,15 +170,20 @@ function AnalyticsPage() {
             </AdminCard>
 
             <AdminCard>
-              <h3 className="mb-4 text-base font-semibold text-foreground">Visitor Locations</h3>
+              <div className="mb-4 flex items-center justify-between gap-3">
+                <h3 className="text-base font-semibold text-foreground">Visitor Locations</h3>
+                <span className="text-mono text-xs text-muted">{stats.locations.length}</span>
+              </div>
               {stats.locations.length > 0 ? (
-                <div className="space-y-2">
-                  {stats.locations.slice(0, 10).map((loc, i) => (
+                // Every location is rendered; the box scrolls so newly seen
+                // cities are not pushed out of a fixed top-ten list.
+                <div className="max-h-72 space-y-2 overflow-y-auto pr-1">
+                  {stats.locations.map((loc, i) => (
                     <div
-                      key={i}
+                      key={`${loc.city}-${loc.country}-${i}`}
                       className="flex items-center justify-between gap-3 rounded-lg bg-background-secondary/50 px-3 py-2.5"
                     >
-                      <span className="truncate text-sm text-foreground">
+                      <span className="min-w-0 truncate text-sm text-foreground">
                         {loc.city}, {loc.country}
                       </span>
                       <span className="text-mono text-sm text-muted">{loc.count}</span>
@@ -174,10 +202,13 @@ function AnalyticsPage() {
           </div>
 
           <AdminCard>
-            <h3 className="mb-4 text-base font-semibold text-foreground">Visitor Interests</h3>
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <h3 className="text-base font-semibold text-foreground">Visitor Interests</h3>
+              <span className="text-mono text-xs text-muted">{stats.interests.length}</span>
+            </div>
             {stats.interests.length > 0 ? (
-              <div className="flex flex-wrap gap-2">
-                {stats.interests.slice(0, 20).map((interest, i) => (
+              <div className="flex max-h-72 flex-wrap gap-2 overflow-y-auto pr-1">
+                {stats.interests.map((interest, i) => (
                   <span
                     key={i}
                     className="inline-flex items-center gap-2 rounded-full border border-border bg-background-secondary/50 px-3 py-1.5 text-sm text-foreground"

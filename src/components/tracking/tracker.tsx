@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useCallback } from "react";
-import type { TrackingEvent } from "@/types/tracking";
+import type { TrackingEvent, UtmParams } from "@/types/tracking";
 
 function getBrowserFingerprint() {
   return {
@@ -22,6 +22,36 @@ function getCookies(): Record<string, string> {
     if (key) cookies[key] = val.join("=");
   });
   return cookies;
+}
+
+const VISITOR_ID_KEY = "mp_visitor_id";
+
+/** A stable browser id, so a returning visit is not mistaken for a new one. */
+function getVisitorId(): string {
+  try {
+    const existing = window.localStorage.getItem(VISITOR_ID_KEY);
+    if (existing) return existing;
+    const created =
+      typeof crypto.randomUUID === "function"
+        ? crypto.randomUUID()
+        : `v-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    window.localStorage.setItem(VISITOR_ID_KEY, created);
+    return created;
+  } catch {
+    // Private mode / blocked storage: the API falls back to IP + user agent.
+    return "";
+  }
+}
+
+/** UTM tags live in the landing URL and are the same for the whole session. */
+function getUtm(): UtmParams | undefined {
+  const params = new URLSearchParams(window.location.search);
+  const utm: UtmParams = {};
+  for (const key of ["source", "medium", "campaign", "term", "content"] as const) {
+    const value = params.get(`utm_${key}`);
+    if (value) utm[key] = value.slice(0, 100);
+  }
+  return Object.keys(utm).length > 0 ? utm : undefined;
 }
 
 export function Tracker() {
@@ -57,6 +87,8 @@ export function Tracker() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           page: window.location.hash || "#top",
+          visitorId: getVisitorId(),
+          utm: getUtm(),
           language: fingerprint.language,
           timezone: fingerprint.timezone,
           screenResolution: fingerprint.screenResolution,
@@ -167,6 +199,8 @@ export function Tracker() {
           [
             JSON.stringify({
               page: window.location.hash || "#top",
+              visitorId: getVisitorId(),
+              utm: getUtm(),
               language: navigator.language,
               timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
               screenResolution: `${screen.width}x${screen.height}`,

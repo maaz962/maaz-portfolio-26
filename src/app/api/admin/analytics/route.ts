@@ -5,6 +5,7 @@ import { getAdminActor } from "@/lib/auth";
 import { getUserXpTotals, listUsers } from "@/lib/db";
 import { buildGrowthSeries } from "@/lib/growth";
 import { can, roleOf } from "@/lib/roles";
+import { computeVisitorMetrics } from "@/lib/visitor-analytics";
 import { listLogs } from "@/lib/tracking-store";
 
 /** Turns a click event (target like "a:https://...", data like text) into a human-readable interest label. */
@@ -48,7 +49,10 @@ export async function GET(req: NextRequest) {
 
   const visitorLogs = await listLogs();
 
-  const uniqueIPs = new Set(visitorLogs.map((v) => v.ip)).size;
+  // One pass over the retained sessions produces the visitor KPIs, channel
+  // breakdown and bounce rate. Derived here so every admin page reads the same
+  // definitions and the browser never has to re-implement them.
+  const visitors = computeVisitorMetrics(visitorLogs);
 
   const pageCount: Record<string, number> = {};
   const refCount: Record<string, number> = {};
@@ -113,8 +117,16 @@ export async function GET(req: NextRequest) {
   const growth = buildGrowthSeries({ logs: visitorLogs, users });
 
   const stats: VisitorStats = {
-    totalVisitors: visitorLogs.length,
-    uniqueIPs,
+    totalVisitors: visitors.totalVisitors,
+    totalSessions: visitors.totalSessions,
+    newVisitors: visitors.newVisitors,
+    returningVisitors: visitors.returningVisitors,
+    onlineNow: visitors.onlineNow,
+    bounceRate: visitors.bounceRate,
+    bouncedSessions: visitors.bouncedSessions,
+    uniqueIPs: visitors.uniqueIPs,
+    sources: visitors.sources,
+    utmCampaigns: visitors.utmCampaigns,
     totalEvents: allEvents.length,
     totalUsers: users.length,
     topPages: Object.entries(pageCount)

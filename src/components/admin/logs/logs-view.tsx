@@ -5,12 +5,14 @@ import {
   ChevronDown,
   ChevronRight,
   Globe,
+  Loader2,
   Monitor,
   RefreshCw,
   ScrollText,
   Search,
   Smartphone,
   Tablet,
+  Trash2,
   X,
 } from "lucide-react";
 import { buttonStyles } from "@/components/ui/button";
@@ -24,6 +26,9 @@ import {
 } from "@/components/admin/admin-table";
 import { EmptyState } from "@/components/admin/empty-state";
 import { ToastProvider, useToast } from "@/components/admin/toast";
+import { ConfirmDialog, useConfirmDialog } from "@/components/admin/confirm-dialog";
+import { can, type AdminRole } from "@/lib/roles";
+import { TRACKING_RETENTION_DAYS } from "@/lib/retention";
 import { LogDetail } from "./log-detail";
 import { useLogs } from "./use-logs";
 import type { VisitorLog } from "@/types/tracking";
@@ -37,10 +42,10 @@ import type { VisitorLog } from "@/types/tracking";
  * page per request. Expanding a row still shows the same detail it always did —
  * it just lives inside the AdminTable's detail row.
  */
-export function LogsView() {
+export function LogsView({ actorRole }: { actorRole: AdminRole }) {
   return (
     <ToastProvider>
-      <LogsPage />
+      <LogsPage actorRole={actorRole} />
     </ToastProvider>
   );
 }
@@ -51,11 +56,12 @@ function DeviceIcon({ device }: { device: string }) {
   return <Monitor className="h-3.5 w-3.5" strokeWidth={1.75} />;
 }
 
-function LogsPage() {
+function LogsPage({ actorRole }: { actorRole: AdminRole }) {
   const {
     data,
     loading,
     loaded,
+    pruning,
     feedback,
     query,
     device,
@@ -70,9 +76,12 @@ function LogsPage() {
     setPageSize,
     setExpandedId,
     refresh,
+    pruneOld,
   } = useLogs();
 
   const { notify } = useToast();
+  const { confirm, dialogProps } = useConfirmDialog();
+  const canPurge = can(actorRole, "logs:purge");
 
   useEffect(() => {
     if (feedback) notify(feedback.message, feedback.variant);
@@ -198,14 +207,49 @@ function LogsPage() {
         title="Visitor Logs"
         description="Every tracked session, with full request and event detail"
         actions={
-          <button
-            onClick={refresh}
-            disabled={loading}
+          <>
+            <button
+              type="button"
+              onClick={refresh}
+              disabled={loading || pruning}
               className={buttonStyles({ variant: "outline", size: "sm" })}
-          >
-            <RefreshCw className={loading ? "h-4 w-4 animate-spin" : "h-4 w-4"} />
-            Refresh
-          </button>
+            >
+              <RefreshCw className={loading ? "h-4 w-4 animate-spin" : "h-4 w-4"} />
+              Refresh
+            </button>
+            {canPurge && (
+              <button
+                type="button"
+                disabled={loading || pruning}
+                onClick={() =>
+                  confirm({
+                    title: `Delete logs older than ${TRACKING_RETENTION_DAYS} days?`,
+                    description:
+                      "Old sessions will be removed from the database immediately, not just hidden from this list. Recent sessions and your account data are untouched.",
+                    confirmLabel: "Delete old logs",
+                    tone: "danger",
+                    onConfirm: async () => {
+                      const deleted = await pruneOld(TRACKING_RETENTION_DAYS);
+                      if (deleted === null) return;
+                      notify(
+                        deleted === 0
+                          ? "No sessions older than the retention window"
+                          : `Deleted ${deleted} old session${deleted === 1 ? "" : "s"} from the database`
+                      );
+                    },
+                  })
+                }
+                className={buttonStyles({ variant: "danger", size: "sm" })}
+              >
+                {pruning ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Trash2 className="h-4 w-4" />
+                )}
+                Delete {TRACKING_RETENTION_DAYS}+ day data
+              </button>
+            )}
+          </>
         }
       />
 
@@ -294,6 +338,8 @@ function LogsPage() {
         onPageChange={setPage}
         onPageSizeChange={setPageSize}
       />
+
+      {dialogProps && <ConfirmDialog {...dialogProps} />}
     </AdminPage>
   );
 }
