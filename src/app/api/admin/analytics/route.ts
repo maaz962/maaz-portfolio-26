@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import type { VisitorLog, VisitorStats, TrackingEvent } from "@/types/tracking";
 import type { User } from "@/types";
-import { getAdminUser } from "@/lib/auth";
+import { getAdminActor } from "@/lib/auth";
 import { getUserXpTotals, listUsers } from "@/lib/db";
+import { buildGrowthSeries } from "@/lib/growth";
+import { can, roleOf } from "@/lib/roles";
 import { listLogs } from "@/lib/tracking-store";
 
 /** Turns a click event (target like "a:https://...", data like text) into a human-readable interest label. */
@@ -35,9 +37,13 @@ function parseInterestTarget(target: string, data?: string): { label: string } |
 }
 
 export async function GET(req: NextRequest) {
-  const admin = await getAdminUser();
-  if (!admin) {
+  const actor = await getAdminActor();
+  if (!actor) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  // Every admin role can read analytics; this is the read-only permission.
+  if (!can(actor.role, "analytics:view")) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
   const visitorLogs = await listLogs();
@@ -90,10 +96,27 @@ export async function GET(req: NextRequest) {
     .sort((a, b) => b.count - a.count)
     .slice(0, 20);
 
+  // One read covers the active list and Trash. `listUsers(true)` includes
+  // soft-deleted accounts so the Users page can offer Undo/Restore without a
+  // second request; every public read still uses the default and never sees
+  // them.
+  let records: User[] = [];
+  try {
+    records = await listUsers(true);
+  } catch {}
+
+  const users = records.filter((user) => !user.deletedAt);
+  const deletedUsers = records
+    .filter((user) => user.deletedAt)
+    .sort((a, b) => (b.deletedAt ?? "").localeCompare(a.deletedAt ?? ""));
+
+  const growth = buildGrowthSeries({ logs: visitorLogs, users });
+
   const stats: VisitorStats = {
     totalVisitors: visitorLogs.length,
     uniqueIPs,
     totalEvents: allEvents.length,
+    totalUsers: users.length,
     topPages: Object.entries(pageCount)
       .map(([page, count]) => ({ page, count }))
       .sort((a, b) => b.count - a.count),
@@ -109,12 +132,9 @@ export async function GET(req: NextRequest) {
     locations: locations.sort((a, b) => b.count - a.count),
     recentActivity: allEvents.slice(-50).reverse(),
     interests,
+    dailyGrowth: growth.daily,
+    monthlyGrowth: growth.monthly,
   };
-
-  let users: User[] = [];
-  try {
-    users = await listUsers();
-  } catch {}
 
   /**
    * Each user carries their own `totalXp` for the admin user list.
@@ -130,13 +150,27 @@ export async function GET(req: NextRequest) {
     xpTotals = await getUserXpTotals();
   } catch {}
 
-  const usersWithXp = users.map((user) => ({ ...user, totalXp: xpTotals[user.id] ?? 0 }));
+  const usersWithXp = users.map((user) => ({
+    ...user,
+    role: roleOf(user),
+    totalXp: xpTotals[user.id] ?? 0,
+  }));
+
+  // Deleted accounts are not given an XP figure: Trash is for identification
+  // and restore, and a number beside "deleted" invites comparing it to the
+  // live board.
+  const deletedWithRole = deletedUsers.map((user) => ({ ...user, role: roleOf(user) }));
 
   // `logs` is gone from this response. The Overview no longer renders a log
-  // list, and every request was paying to serialize the newest 100 sessions —"
-  // with their events and cookies —" for a page that only draws stat cards,
+  // list, and every request was paying to serialize the newest 100 sessions —
+  // with their events and cookies — for a page that only draws stat cards,
   // charts and the `recentActivity` preview above. The full list is
   // GET /api/admin/logs, one page at a time. `stats.recentActivity` is
   // aggregated here and is unaffected.
-  return NextResponse.json({ stats, users: usersWithXp });
+  return NextResponse.json({
+    stats,
+    users: usersWithXp,
+    deletedUsers: deletedWithRole,
+    viewer: { id: actor.user.id, role: actor.role },
+  });
 }

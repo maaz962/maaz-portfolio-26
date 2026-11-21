@@ -26,7 +26,7 @@ export interface AdminData {
 }
 
 /**
- * Read-only state for the admin Overview page: the analytics snapshot.
+ * Read-only state for the admin Overview and Analytics pages: the analytics snapshot.
  *
  * No mutations live here, and neither of the two heavy lists that used to hang
  * off this hook:

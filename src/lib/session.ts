@@ -1,5 +1,5 @@
 import crypto from "crypto";
-import type { User } from "@/types";
+import type { User, UserRole } from "@/types";
 import { SESSION_COOKIE, getSessionSecret } from "@/lib/session-constants";
 
 /**
@@ -31,6 +31,8 @@ export interface SessionClaims {
   username: string;
   email: string;
   isAdmin: boolean;
+  /** Panel role. Absent on tokens issued before roles existed. */
+  role?: UserRole;
   avatarUrl: string;
   createdAt: string;
   iat: number;
@@ -67,6 +69,7 @@ export function createSessionToken(user: User): string {
       username: user.username,
       email: user.email,
       isAdmin: user.isAdmin,
+      role: user.role ?? (user.isAdmin ? "owner" : "player"),
       avatarUrl: user.avatarUrl,
       createdAt: user.createdAt,
       iat: now,
@@ -124,6 +127,7 @@ export function claimsToUser(claims: SessionClaims): User {
     username: claims.username,
     email: claims.email,
     isAdmin: claims.isAdmin,
+    role: claims.role ?? (claims.isAdmin ? "owner" : "player"),
     avatarUrl: claims.avatarUrl,
     createdAt: claims.createdAt,
   };

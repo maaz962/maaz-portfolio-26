@@ -11,7 +11,7 @@ export const metadata: Metadata = {
  *
  * This layout only arranges chrome; it deliberately does NOT gate access.
  * `/admin/login` sits outside this group, and the middleware + each page's
- * `getAdminUser()` check are what actually protect the area -- adding a second
+ * `getAdminActor()` check are what actually protect the area -- adding a second
  * gate here would make `/admin/login` unreachable if it were ever nested.
  *
  * No public site chrome (Footer / AIAssistant / AnalyticsGate) is mounted:

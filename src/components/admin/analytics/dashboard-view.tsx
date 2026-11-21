@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect } from "react";
-import { RefreshCw, ServerCrash, Shield } from "lucide-react";
+import Link from "next/link";
+import { ArrowUpRight, RefreshCw, ServerCrash, Shield } from "lucide-react";
 import { buttonStyles } from "@/components/ui/button";
 import { AdminPage, AdminPageHeader } from "@/components/admin/admin-page";
 import { ToastProvider, useToast } from "@/components/admin/toast";
@@ -58,19 +59,29 @@ function OverviewPage() {
       <AdminPageHeader
         icon={Shield}
         title="Overview"
-        description="Portfolio visitor tracking & event logs"
+        description="Portfolio growth at a glance"
         actions={
-          <button
-            onClick={fetchData}
-            disabled={loading}
+          <>
+            <Link
+              href="/admin/analytics"
               className={buttonStyles({ variant: "outline", size: "sm" })}
-          >
-            <RefreshCw
-              className={loading ? "h-4 w-4 animate-spin" : "h-4 w-4"}
-              strokeWidth={1.75}
-            />
-            Refresh
-          </button>
+            >
+              Full analytics
+              <ArrowUpRight className="h-3.5 w-3.5" strokeWidth={1.75} />
+            </Link>
+            <button
+              type="button"
+              onClick={fetchData}
+              disabled={loading}
+              className={buttonStyles({ variant: "primary", size: "sm" })}
+            >
+              <RefreshCw
+                className={loading ? "h-4 w-4 animate-spin" : "h-4 w-4"}
+                strokeWidth={1.75}
+              />
+              Refresh
+            </button>
+          </>
         }
       />
 
@@ -87,19 +98,15 @@ function OverviewPage() {
             <OverviewSection stats={stats} />
           ) : (
             <>
-              <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+              <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
                 <StatCardSkeleton />
                 <StatCardSkeleton />
                 <StatCardSkeleton />
                 <StatCardSkeleton />
               </div>
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="grid gap-4 xl:grid-cols-2">
                 <BarChartSkeleton />
                 <BarChartSkeleton />
-                <BarChartSkeleton />
-              </div>
-              <div className="grid gap-4 lg:grid-cols-2">
-                <PanelSkeleton rows={2} titleWidth="w-36" />
               </div>
             </>
           )}

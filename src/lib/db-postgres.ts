@@ -2,6 +2,7 @@ import { neon } from "@neondatabase/serverless";
 import crypto from "crypto";
 import type {
   User,
+  UserRole,
   GameProgress,
   Gamification,
   LeaderboardEntry,
@@ -25,6 +26,7 @@ import {
 import { games } from "@/data/games";
 import { getAdminEnv, adminAvatarUrl, ADMIN_CREATED_AT } from "./admin-seed";
 import { isOnPublicLeaderboard } from "./leaderboard";
+import { isKnownRole, roleOf } from "./roles";
 
 /**
  * Postgres-backed persistent data layer. Used when process.env.DATABASE_URL is
@@ -74,6 +76,12 @@ async function initDb(): Promise<void> {
     // added idempotently. DEFAULT false keeps every existing account visible
     // (only accounts explicitly flagged true are hidden).
     await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS hidden_from_leaderboard BOOLEAN NOT NULL DEFAULT false`;
+    // Panel roles. Existing deployments get the column with a safe default, and
+    // every account that was already an admin is promoted to `owner` exactly
+    // once (the WHERE clause makes this a no-op afterwards).
+    await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS role TEXT NOT NULL DEFAULT 'player'`;
+    await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS deleted_at TEXT`;
+    await sql`UPDATE users SET role = 'owner' WHERE is_admin = true AND role = 'player'`;
     await sql`
       CREATE TABLE IF NOT EXISTS game_progress (
         user_id TEXT NOT NULL,
@@ -135,13 +143,14 @@ async function initDb(): Promise<void> {
     if (adminEnv.ok) {
       const { id, name, username, email, passwordHash } = adminEnv.config;
       await sql`
-        INSERT INTO users (id, name, username, email, is_admin, avatar_url, created_at, password_hash)
+        INSERT INTO users (id, name, username, email, is_admin, role, avatar_url, created_at, password_hash)
         VALUES (
           ${id},
           ${name},
           ${username},
           ${email},
           true,
+          'owner',
           ${adminAvatarUrl(username)},
           ${ADMIN_CREATED_AT},
           ${passwordHash}
@@ -160,15 +169,19 @@ function nowISO(): string {
 }
 
 function rowToUser(row: any): User {
+  const isAdmin = Boolean(row.is_admin);
+  const role = isKnownRole(row.role) ? row.role : roleOf({ isAdmin });
   return {
     id: row.id,
     name: row.name,
     username: row.username,
     email: row.email,
-    isAdmin: row.is_admin,
+    isAdmin,
+    role,
     avatarUrl: row.avatar_url,
     createdAt: row.created_at,
     hiddenFromLeaderboard: row.hidden_from_leaderboard ?? false,
+    deletedAt: row.deleted_at ?? null,
   };
 }
 
@@ -195,14 +208,23 @@ function rowToGameProgress(row: any): GameProgress {
 
 export async function findUserById(id: string): Promise<User | null> {
   await initDb();
-  const rows = await sql`SELECT * FROM users WHERE id = ${id} LIMIT 1`;
+  const rows = await sql`SELECT * FROM users WHERE id = ${id} AND deleted_at IS NULL LIMIT 1`;
   if (!rows[0]) return null;
   return rowToUser(rows[0]);
 }
 
-export async function listUsers(): Promise<User[]> {
+/**
+ * All registered users, newest first.
+ *
+ * `includeDeleted` is only used by the admin Trash view. Every public read
+ * (leaderboard, sessions, analytics) uses the default and never sees a deleted
+ * account.
+ */
+export async function listUsers(includeDeleted = false): Promise<User[]> {
   await initDb();
-  const rows = await sql`SELECT * FROM users ORDER BY created_at DESC`;
+  const rows = includeDeleted
+    ? await sql`SELECT * FROM users ORDER BY created_at DESC`
+    : await sql`SELECT * FROM users WHERE deleted_at IS NULL ORDER BY created_at DESC`;
   return rows.map(rowToUser);
 }
 
@@ -220,8 +242,8 @@ export async function registerUser(
 
   try {
     const rows = await sql`
-      INSERT INTO users (id, name, username, email, is_admin, avatar_url, created_at, password_hash)
-      VALUES (${id}, ${name.trim()}, ${formattedUsername}, ${formattedEmail}, false, ${avatarUrl}, ${nowISO()}, ${hashPassword(password)})
+      INSERT INTO users (id, name, username, email, is_admin, role, avatar_url, created_at, password_hash)
+      VALUES (${id}, ${name.trim()}, ${formattedUsername}, ${formattedEmail}, false, 'player', ${avatarUrl}, ${nowISO()}, ${hashPassword(password)})
       RETURNING *
     `;
     return rowToUser(rows[0]);
@@ -244,7 +266,8 @@ export async function validateCredentials(
   const lowerInput = emailOrUsername.toLowerCase().trim();
   const rows = await sql`
     SELECT * FROM users
-    WHERE email = ${lowerInput} OR username = ${lowerInput}
+    WHERE (email = ${lowerInput} OR username = ${lowerInput})
+      AND deleted_at IS NULL
     LIMIT 1
   `;
   if (!rows[0]) return null;
@@ -530,7 +553,7 @@ function standingsCte() {
     FROM users u
     LEFT JOIN game_progress gp ON gp.user_id = u.id
     LEFT JOIN gamification g ON g.user_id = u.id
-    WHERE u.is_admin = false
+    WHERE u.is_admin = false AND u.deleted_at IS NULL
     GROUP BY u.id, g.current_streak, g.xp_adjustment
   ),
   ranked AS (
@@ -639,6 +662,7 @@ export async function getUserXpTotals(): Promise<Record<string, number>> {
     FROM users u
     LEFT JOIN game_progress gp ON gp.user_id = u.id
     LEFT JOIN gamification g ON g.user_id = u.id
+    WHERE u.deleted_at IS NULL
     GROUP BY u.id, g.xp_adjustment
   `;
   return Object.fromEntries(rows.map((r: any) => [r.id, Number(r.total_xp) || 0]));
@@ -725,21 +749,77 @@ export async function getAdminLeaderboardPage(
 // --- ADMIN USER MANAGEMENT ---
 
 /**
- * Permanently removes a non-admin user and every record referencing them
- * (game progress, gamification, XP audit trail — the latter cascades via FK).
- * Admin accounts are protected.
+ * Moves a non-admin account to Trash (soft delete).
+ *
+ * The account's rows are untouched so `restoreUser` can bring it back with its
+ * XP history intact. `deleted_at` makes it disappear from sessions, the public
+ * leaderboard and every admin list except Trash.
  */
-export async function deleteUser(userId: string): Promise<{ ok: boolean }> {
+export async function deleteUser(userId: string): Promise<{ ok: boolean; deletedAt: string }> {
   await initDb();
-  const [target] = await sql`SELECT is_admin FROM users WHERE id = ${userId} LIMIT 1`;
+  const [target] = await sql`
+    SELECT is_admin, deleted_at FROM users WHERE id = ${userId} LIMIT 1
+  `;
+  if (!target) throw new Error("User not found");
+  if (target.deleted_at) throw new Error("Account is already in Trash");
+  if (target.is_admin) throw new Error("Cannot delete an admin account");
+
+  const deletedAt = nowISO();
+  await sql`UPDATE users SET deleted_at = ${deletedAt} WHERE id = ${userId}`;
+  return { ok: true, deletedAt };
+}
+
+/** Restores a soft-deleted account from Trash. */
+export async function restoreUser(userId: string): Promise<User> {
+  await initDb();
+  const [target] = await sql`SELECT * FROM users WHERE id = ${userId} LIMIT 1`;
+  if (!target) throw new Error("User not found");
+  if (!target.deleted_at) throw new Error("Account is not in Trash");
+
+  const rows = await sql`
+    UPDATE users SET deleted_at = NULL WHERE id = ${userId} RETURNING *
+  `;
+  return rowToUser(rows[0]);
+}
+
+/**
+ * Permanently erases an account that is already in Trash, along with every row
+ * that references it. Only offered from Trash, so an accidental click on the
+ * active list can never reach this.
+ */
+export async function purgeUser(userId: string): Promise<{ ok: boolean }> {
+  await initDb();
+  const [target] = await sql`
+    SELECT is_admin, deleted_at FROM users WHERE id = ${userId} LIMIT 1
+  `;
   if (!target) throw new Error("User not found");
   if (target.is_admin) throw new Error("Cannot delete an admin account");
+  if (!target.deleted_at) throw new Error("Move the account to Trash before erasing it");
 
   await sql`DELETE FROM game_progress WHERE user_id = ${userId}`;
   await sql`DELETE FROM xp_adjustments WHERE user_id = ${userId}`;
   await sql`DELETE FROM gamification WHERE user_id = ${userId}`;
   await sql`DELETE FROM users WHERE id = ${userId}`;
   return { ok: true };
+}
+
+/** Grants or revokes a panel role. `is_admin` is kept in sync for public reads. */
+export async function setUserRole(userId: string, role: UserRole): Promise<User> {
+  if (!isKnownRole(role)) throw new Error("Unknown role");
+  await initDb();
+  const [target] = await sql`
+    SELECT deleted_at FROM users WHERE id = ${userId} LIMIT 1
+  `;
+  if (!target) throw new Error("User not found");
+  if (target.deleted_at) throw new Error("Restore the account before changing its role");
+
+  const rows = await sql`
+    UPDATE users
+    SET role = ${role}, is_admin = ${role !== "player"}
+    WHERE id = ${userId}
+    RETURNING *
+  `;
+  return rowToUser(rows[0]);
 }
 
 // --- ADMIN USER DETAIL + MUTATIONS ---
@@ -767,7 +847,9 @@ function rowToXpAdjustment(row: any): XpAdjustmentRecord {
  */
 export async function getAdminUserDetail(userId: string): Promise<AdminUserDetail> {
   await initDb();
-  const [userRow] = await sql`SELECT * FROM users WHERE id = ${userId} LIMIT 1`;
+  const [userRow] = await sql`
+    SELECT * FROM users WHERE id = ${userId} AND deleted_at IS NULL LIMIT 1
+  `;
   if (!userRow) throw new Error("User not found");
 
   const [sumRow] = await sql`
@@ -839,8 +921,10 @@ export async function setUserTotalXp(
   appliedBy: string
 ): Promise<AdminUserDetail> {
   await initDb();
-  const [target] = await sql`SELECT is_admin FROM users WHERE id = ${userId} LIMIT 1`;
-  if (!target) throw new Error("User not found");
+  const [target] = await sql`
+    SELECT is_admin, deleted_at FROM users WHERE id = ${userId} LIMIT 1
+  `;
+  if (!target || target.deleted_at) throw new Error("User not found");
   if (target.is_admin) throw new Error("Cannot adjust an admin account");
 
   const [sumRow] = await sql`
@@ -885,8 +969,10 @@ export async function setUserHiddenFromLeaderboard(
   hidden: boolean
 ): Promise<{ ok: boolean; hiddenFromLeaderboard: boolean }> {
   await initDb();
-  const [target] = await sql`SELECT is_admin FROM users WHERE id = ${userId} LIMIT 1`;
-  if (!target) throw new Error("User not found");
+  const [target] = await sql`
+    SELECT is_admin, deleted_at FROM users WHERE id = ${userId} LIMIT 1
+  `;
+  if (!target || target.deleted_at) throw new Error("User not found");
   if (target.is_admin) throw new Error("Cannot change an admin account");
 
   await sql`UPDATE users SET hidden_from_leaderboard = ${hidden} WHERE id = ${userId}`;

@@ -133,16 +133,38 @@ export interface BlogSettings {
   hiddenSlugs: string[];
 }
 
+/**
+ * Roles understood by the admin panel.
+ *
+ * - `owner`  — the site owner. Everything, including granting roles and purging.
+ * - `admin`  — full day-to-day control (XP, visibility, delete/restore).
+ * - `editor` — read-only dashboard access; cannot change accounts.
+ * - `viewer` — read-only dashboard access (kept distinct for future audit
+ *              scopes, and so shared logins can be labelled honestly).
+ * - `player` — a normal site account, no panel access at all.
+ */
+export type UserRole = "owner" | "admin" | "editor" | "viewer" | "player";
+
 export interface User {
   id: string;
   name: string;
   username: string;
   email: string;
   isAdmin: boolean;
+  /**
+   * Panel role. Optional in the type (and derived from `isAdmin` when absent)
+   * so sessions issued before roles existed keep working.
+   */
+  role?: UserRole;
   avatarUrl: string;
   createdAt: string;
   /** Hide QA/test accounts from the public leaderboard & ranks. */
   hiddenFromLeaderboard?: boolean;
+  /**
+   * Soft-delete marker. A deleted account is moved to Admin → Users → Trash and
+   * can be restored; it is never returned by public reads while set.
+   */
+  deletedAt?: string | null;
 }
 
 /** Per-user progress for a single game, so the user can resume where they left off. */

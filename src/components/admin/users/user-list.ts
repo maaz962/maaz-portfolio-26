@@ -48,9 +48,9 @@ export function sortUsers(users: AdminUser[], sort: AdminSort | null): AdminUser
       case "joined":
         return a.createdAt.localeCompare(b.createdAt) * direction;
       case "xp":
-        // Unknown XP (admins, hidden QA accounts) sorts to the outside of the
-        // list rather than pretending to be zero: last when descending, first
-        // when ascending.
+        // A missing total (the server could not supply one) sorts to the outside
+        // of the list rather than pretending to be zero: last when descending,
+        // first when ascending.
         if (a.totalXp === null && b.totalXp === null) return 0;
         if (a.totalXp === null) return -direction;
         if (b.totalXp === null) return direction;

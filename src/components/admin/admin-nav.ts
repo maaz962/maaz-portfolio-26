@@ -1,4 +1,4 @@
-import { LayoutDashboard, Users, Trophy, ScrollText } from "lucide-react";
+import { LayoutDashboard, BarChart3, Users, Trophy, ScrollText } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
 export interface AdminNavItem {
@@ -8,17 +8,16 @@ export interface AdminNavItem {
 }
 
 /**
- * Flat admin navigation. Deliberately one list, no grouping headers: the
- * panel has four sections and a second axis of hierarchy would be noise.
+ * Admin navigation. One flat list, no grouping headers: the panel has five
+ * sections and a second axis of hierarchy would be noise.
  *
- * Ordering matches the audit's proposed restructure -- read-only analytics
- * first, then audience (users + leaderboard), then raw traffic.
- *
- * All four routes exist. Overview is a summary; Users, Leaderboard and Logs each
- * own their own server-paginated list.
+ * Each section owns one job: Overview is the KPI/growth summary, Analytics is
+ * the detailed breakdown, Users/Leaderboard/Logs each own their own
+ * server-paginated list. Nothing is duplicated across pages.
  */
 export const adminNavItems: AdminNavItem[] = [
   { label: "Overview", href: "/admin", icon: LayoutDashboard },
+  { label: "Analytics", href: "/admin/analytics", icon: BarChart3 },
   { label: "Users", href: "/admin/users", icon: Users },
   { label: "Leaderboard", href: "/admin/leaderboard", icon: Trophy },
   { label: "Logs", href: "/admin/logs", icon: ScrollText },

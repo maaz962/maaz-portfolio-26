@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { AdminUserDetail } from "@/types";
+import type { AdminUserDetail, UserRole } from "@/types";
 
 /** One-shot result message for the toast viewport. */
 export interface DetailFeedback {
@@ -20,6 +20,7 @@ export interface UserDetailState {
   reload: () => Promise<void>;
   setTotalXp: (totalXp: number, reason: string) => Promise<boolean>;
   setHidden: (hidden: boolean) => Promise<boolean>;
+  setRole: (role: UserRole) => Promise<boolean>;
   remove: () => Promise<boolean>;
 }
 
@@ -100,6 +101,20 @@ export function useUserDetail(userId: string): UserDetailState {
     [patch]
   );
 
+  /**
+   * Roles change `isAdmin` on the server, so the whole detail object is
+   * re-read after the write. The role endpoint returns the updated user, not
+   * the detail payload used by this page.
+   */
+  const setRole = useCallback(
+    async (role: UserRole): Promise<boolean> => {
+      const ok = await patch({ role }, "Failed to update role");
+      if (ok) await reload();
+      return ok;
+    },
+    [patch, reload]
+  );
+
   const remove = useCallback(async (): Promise<boolean> => {
     setSaving(true);
     try {
@@ -118,5 +133,16 @@ export function useUserDetail(userId: string): UserDetailState {
     }
   }, [report, userId]);
 
-  return { detail, loading, loaded, saving, feedback, reload, setTotalXp, setHidden, remove };
+  return {
+    detail,
+    loading,
+    loaded,
+    saving,
+    feedback,
+    reload,
+    setTotalXp,
+    setHidden,
+    setRole,
+    remove,
+  };
 }

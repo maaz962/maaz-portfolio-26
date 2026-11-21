@@ -34,6 +34,8 @@ export interface VisitorStats {
   totalVisitors: number;
   uniqueIPs: number;
   totalEvents: number;
+  /** Number of accounts (deleted accounts excluded). */
+  totalUsers: number;
   topPages: { page: string; count: number }[];
   topReferrers: { referrer: string; count: number }[];
   browsers: { name: string; count: number }[];
@@ -41,6 +43,24 @@ export interface VisitorStats {
   locations: { country: string; city: string; count: number }[];
   recentActivity: TrackingEvent[];
   interests: { label: string; count: number }[];
+  /** Visits + signups per UTC day, oldest first. Every bucket is present. */
+  dailyGrowth: GrowthPoint[];
+  /** Visits + signups per UTC month, oldest first. Every bucket is present. */
+  monthlyGrowth: GrowthPoint[];
+}
+
+/**
+ * One bucket of the growth charts.
+ *
+ * `key` is the machine grouping key (`YYYY-MM-DD` or `YYYY-MM`) and `label` the
+ * short axis label. Both series ship together so a single chart can compare
+ * traffic growth with account growth without a second request.
+ */
+export interface GrowthPoint {
+  key: string;
+  label: string;
+  visits: number;
+  signups: number;
 }
 
 /** Sort keys accepted by the admin visitor-log list. */

@@ -2,19 +2,22 @@
 
 import { useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronRight, History, Sparkles, Trophy, UserX } from "lucide-react";
+import { ChevronRight, History, LockKeyhole, Sparkles, Trophy, UserX } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar } from "@/components/ui/avatar";
 import { AdminTable, type AdminColumn } from "@/components/admin/admin-table";
 import { AdminPage } from "@/components/admin/admin-page";
 import { AdminCard } from "@/components/admin/admin-card";
 import { EmptyState } from "@/components/admin/empty-state";
+import { RoleBadge } from "@/components/admin/role-badge";
 import { StatCard } from "@/components/admin/analytics/stat-card";
 import { InfoRow } from "@/components/admin/analytics/info-row";
 import { ToastProvider, useToast } from "@/components/admin/toast";
+import { can, roleOf, type AdminRole } from "@/lib/roles";
 import { useUserDetail } from "./use-user-detail";
 import { XpAdjustmentPanel } from "./xp-adjustment-panel";
 import { VisibilityPanel } from "./visibility-panel";
+import { RolePanel } from "./role-panel";
 import { DangerZone } from "./danger-zone";
 import type { AdminUserGameProgress, XpAdjustmentRecord } from "@/types";
 
@@ -26,24 +29,55 @@ import type { AdminUserGameProgress, XpAdjustmentRecord } from "@/types";
  * points with different confirmation behaviour. They share one flow here, and
  * every XP write records who made it and why.
  */
-export function UserDetailView({ userId }: { userId: string }) {
+export function UserDetailView({
+  userId,
+  actorId,
+  actorRole,
+}: {
+  userId: string;
+  actorId: string;
+  actorRole: AdminRole;
+}) {
   return (
     <ToastProvider>
-      <UserDetailPage userId={userId} />
+      <UserDetailPage userId={userId} actorId={actorId} actorRole={actorRole} />
     </ToastProvider>
   );
 }
 
-function UserDetailPage({ userId }: { userId: string }) {
+function UserDetailPage({
+  userId,
+  actorId,
+  actorRole,
+}: {
+  userId: string;
+  actorId: string;
+  actorRole: AdminRole;
+}) {
   const router = useRouter();
-  const { detail, loading, loaded, saving, feedback, reload, setTotalXp, setHidden, remove } =
-    useUserDetail(userId);
+  const {
+    detail,
+    loading,
+    loaded,
+    saving,
+    feedback,
+    reload,
+    setTotalXp,
+    setHidden,
+    setRole,
+    remove,
+  } = useUserDetail(userId);
 
   const { notify } = useToast();
 
   useEffect(() => {
     if (feedback) notify(feedback.message, feedback.variant);
   }, [feedback, notify]);
+
+  // A viewer/editor can audit an account but cannot change it. The API also
+  // enforces this; hiding the controls here avoids offering a button that only
+  // fails after a round trip.
+  const canManage = can(actorRole, "users:manage");
 
   const gameColumns = useMemo<AdminColumn<AdminUserGameProgress>[]>(
     () => [
@@ -165,11 +199,7 @@ function UserDetailPage({ userId }: { userId: string }) {
                   <h1 className="font-display truncate text-xl font-semibold text-foreground">
                     {user.name}
                   </h1>
-                  {user.isAdmin && (
-                    <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
-                      Admin
-                    </span>
-                  )}
+                  <RoleBadge role={roleOf(user)} />
                   {user.hiddenFromLeaderboard && !user.isAdmin && (
                     <span className="rounded-full bg-muted/10 px-2 py-0.5 text-xs font-medium text-muted">
                       Hidden
@@ -242,9 +272,32 @@ function UserDetailPage({ userId }: { userId: string }) {
           />
         </section>
 
-        {/* ---------- Mutations ---------- */}
-        <XpAdjustmentPanel detail={detail} saving={saving} onApply={setTotalXp} />
-        <VisibilityPanel detail={detail} saving={saving} onChange={setHidden} />
+        {/* ---------- Roles & mutations ---------- */}
+        <RolePanel
+          user={user}
+          actorId={actorId}
+          actorRole={actorRole}
+          saving={saving}
+          onChange={setRole}
+        />
+
+        {canManage ? (
+          <>
+            <XpAdjustmentPanel detail={detail} saving={saving} onApply={setTotalXp} />
+            <VisibilityPanel detail={detail} saving={saving} onChange={setHidden} />
+          </>
+        ) : (
+          <AdminCard as="section">
+            <h2 className="flex items-center gap-2 text-base font-semibold text-foreground">
+              <LockKeyhole className="h-4 w-4 text-primary" strokeWidth={1.75} />
+              Read-only account
+            </h2>
+            <p className="mt-2 text-sm text-muted">
+              Your role can review this account and its XP history, but only an admin or owner can
+              change XP, leaderboard visibility or account access.
+            </p>
+          </AdminCard>
+        )}
 
         {/* ---------- XP audit trail ---------- */}
         <section className="space-y-3">
@@ -267,15 +320,18 @@ function UserDetailPage({ userId }: { userId: string }) {
           />
         </section>
 
-        <DangerZone
-          user={user}
-          saving={saving}
-          onConfirm={remove}
-          onDeleted={() => {
-            router.replace("/admin/users");
-            router.refresh();
-          }}
-        />
+        {canManage && (
+          <DangerZone
+            user={user}
+            saving={saving}
+            onConfirm={remove}
+            onDeleted={() => {
+              // The API soft-deletes, so the Users page can name the account in
+              // its Undo banner after the redirect.
+              router.replace(`/admin/users?undo=${userId}`);
+            }}
+          />
+        )}
       </div>
     </AdminPage>
   );

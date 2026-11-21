@@ -50,8 +50,9 @@ export interface Standing {
 export function isOnPublicLeaderboard(user: {
   isAdmin?: boolean;
   hiddenFromLeaderboard?: boolean;
+  deletedAt?: string | null;
 }): boolean {
-  return !user.isAdmin && !Boolean(user.hiddenFromLeaderboard);
+  return !user.isAdmin && !user.deletedAt && !Boolean(user.hiddenFromLeaderboard);
 }
 
 export function buildStandings({
@@ -72,7 +73,7 @@ export function buildStandings({
   const gamificationByUser = new Map(gamification.map((g) => [g.userId, g]));
 
   const standings = users
-    .filter((u) => !u.isAdmin)
+    .filter((u) => !u.isAdmin && !u.deletedAt)
     .map((u) => {
       const rows = progressByUser.get(u.id) ?? [];
       const stored = gamificationByUser.get(u.id);

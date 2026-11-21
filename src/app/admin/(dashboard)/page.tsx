@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
-import { getAdminUser } from "@/lib/auth";
+import { getAdminActor } from "@/lib/auth";
+import { can } from "@/lib/roles";
 import { DashboardView } from "@/components/admin/analytics/dashboard-view";
 
 export const metadata = {
@@ -7,9 +8,10 @@ export const metadata = {
 };
 
 export default async function AdminDashboardPage() {
-  // Server-side authorization: only admins can reach this page.
-  const admin = await getAdminUser();
-  if (!admin) redirect("/admin/login?from=/admin");
+  // Server-side authorization: a valid admin role is required.
+  const actor = await getAdminActor();
+  if (!actor) redirect("/admin/login?from=/admin");
+  if (!can(actor.role, "dashboard:view")) redirect("/admin/login?from=/admin");
 
   return <DashboardView />;
 }

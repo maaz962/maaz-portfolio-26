@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import type { UserRole } from "@/types";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -13,6 +14,8 @@ import {
   X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { roleOf } from "@/lib/roles";
+import { RoleBadge } from "@/components/admin/role-badge";
 import { useAuth } from "@/lib/auth-context";
 import { useRouter } from "next/navigation";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
@@ -267,14 +270,17 @@ function AdminSidebarFooter({
 }: {
   collapsed: boolean;
   onLogout: () => void;
-  user: { name: string; username: string } | null;
+  user: { name: string; username: string; role?: UserRole; isAdmin: boolean } | null;
 }) {
   return (
     <div className="shrink-0 space-y-1 border-t border-border p-3">
       {!collapsed && user && (
-        <p className="truncate px-3 pb-1 pt-1 text-xs text-muted">
-          Signed in as <span className="text-foreground">@{user.username}</span>
-        </p>
+        <div className="flex items-center justify-between gap-2 px-3 pb-1 pt-1">
+          <p className="min-w-0 truncate text-xs text-muted">
+            Signed in as <span className="text-foreground">@{user.username}</span>
+          </p>
+          <RoleBadge role={roleOf(user)} />
+        </div>
       )}
 
       {collapsed ? (

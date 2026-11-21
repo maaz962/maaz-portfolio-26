@@ -26,6 +26,9 @@ export const saveGameProgress = impl.saveGameProgress;
 
 export const getGamification = impl.getGamification;
 export const deleteUser = impl.deleteUser;
+export const restoreUser = impl.restoreUser;
+export const purgeUser = impl.purgeUser;
+export const setUserRole = impl.setUserRole;
 export const getAdminUserDetail = impl.getAdminUserDetail;
 export const setUserTotalXp = impl.setUserTotalXp;
 export const setUserHiddenFromLeaderboard = impl.setUserHiddenFromLeaderboard;

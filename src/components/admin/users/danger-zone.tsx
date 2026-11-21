@@ -8,12 +8,13 @@ import { AdminCard } from "@/components/admin/admin-card";
 import type { User } from "@/types";
 
 /**
- * Permanent deletion.
+ * Delete with a typed guard AND a safety net.
  *
  * `window.confirm` was the old guard, which reads the account to delete right
  * back at you and can be dismissed by reflex. Typing the exact username forces
- * a deliberate match, and the consequences are spelled out before the input so
- * nobody discovers them afterwards.
+ * a deliberate match. The action itself is a soft delete: the account lands in
+ * Admin → Users → Trash with an Undo banner, and its games/XP stay intact until
+ * an owner explicitly erases it.
  */
 export function DangerZone({
   user,
@@ -76,15 +77,16 @@ export function DangerZone({
       </h2>
 
       <p className="mt-2 text-sm text-muted">
-        Deleting <span className="text-foreground">{confirmText}</span> permanently removes:
+        Deleting <span className="text-foreground">{confirmText}</span> will:
       </p>
       <ul className="mt-2 list-inside list-disc space-y-1 text-sm text-muted">
-        <li>The account and its sign-in access</li>
-        <li>Every saved game and level score</li>
-        <li>Streaks, levels, and the XP history below</li>
+        <li>Sign the account out and remove it from the public leaderboard</li>
+        <li>Move it to Admin → Users → Trash, where it can be restored</li>
+        <li>Keep its saved games, streaks and XP history intact</li>
       </ul>
       <p className="mt-2 text-sm text-muted">
-        This cannot be undone. Hiding the player from the leaderboard is the reversible option.
+        You will get an <span className="font-medium text-foreground">Undo</span> button
+        immediately afterwards. Permanent erasure is a separate, owner-only action in Trash.
       </p>
 
       <div className="mt-4 max-w-sm">
@@ -115,7 +117,7 @@ export function DangerZone({
         className={buttonStyles({ variant: "danger", size: "sm", className: "mt-4" })}
       >
         {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
-        Delete account permanently
+        Delete account
       </button>
     </AdminCard>
   );

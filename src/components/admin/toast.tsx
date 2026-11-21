@@ -15,18 +15,30 @@ import { cn } from "@/lib/utils";
 
 export type ToastVariant = "success" | "error";
 
+/**
+ * An optional single action (used by Undo). Kept deliberately tiny — toasts
+ * are for one-tap reversals, not for forms or multi-step flows.
+ */
+export interface ToastAction {
+  label: string;
+  onClick: () => void | Promise<void>;
+}
+
 interface ToastItem {
   id: number;
   variant: ToastVariant;
   message: string;
+  action?: ToastAction;
 }
 
 /** Success fades out sooner than errors, which need longer to be read. */
 const DURATION: Record<ToastVariant, number> = { success: 4000, error: 8000 };
+/** Undo needs time to be noticed; a normal 4s toast is too quick to act on. */
+const ACTION_DURATION = 10_000;
 const MAX_VISIBLE = 3;
 
 interface ToastContextValue {
-  notify: (message: string, variant?: ToastVariant) => void;
+  notify: (message: string, variant?: ToastVariant, action?: ToastAction) => void;
 }
 
 const ToastContext = createContext<ToastContextValue | null>(null);
@@ -53,12 +65,12 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const notify = useCallback(
-    (message: string, variant: ToastVariant = "success") => {
+    (message: string, variant: ToastVariant = "success", action?: ToastAction) => {
       const id = nextId.current++;
-      setToasts((current) => [...current, { id, variant, message }].slice(-MAX_VISIBLE));
+      setToasts((current) => [...current, { id, variant, message, action }].slice(-MAX_VISIBLE));
       timers.current.set(
         id,
-        setTimeout(() => dismiss(id), DURATION[variant])
+        setTimeout(() => dismiss(id), action ? ACTION_DURATION : DURATION[variant])
       );
     },
     [dismiss]
@@ -124,6 +136,23 @@ function Toast({ toast, onDismiss }: { toast: ToastItem; onDismiss: () => void }
       >
         {toast.message}
       </p>
+      {toast.action && (
+        <button
+          type="button"
+          onClick={async () => {
+            await toast.action?.onClick();
+            onDismiss();
+          }}
+          className={cn(
+            "shrink-0 rounded-full border px-2.5 py-1 text-xs font-semibold transition-colors",
+            isError
+              ? "border-red-500/30 hover:bg-red-500/10"
+              : "border-emerald-500/30 hover:bg-emerald-500/10"
+          )}
+        >
+          {toast.action.label}
+        </button>
+      )}
       <button
         type="button"
         onClick={onDismiss}

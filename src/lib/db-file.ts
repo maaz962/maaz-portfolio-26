@@ -3,6 +3,7 @@ import path from "path";
 import crypto from "crypto";
 import type {
   User,
+  UserRole,
   BlogCategory,
   BlogPost,
   BlogSettings,
@@ -26,6 +27,7 @@ import {
   DAILY_HINT_LIMIT,
 } from "./gamification";
 import { getAdminEnv, adminAvatarUrl, ADMIN_ID, ADMIN_CREATED_AT } from "./admin-seed";
+import { isKnownRole } from "./roles";
 import {
   buildStandings,
   isOnPublicLeaderboard,
@@ -130,6 +132,7 @@ function getSeedData(): DatabaseSchema {
             username: adminEnv.config.username,
             email: adminEnv.config.email,
             isAdmin: true,
+            role: "owner" as const,
             avatarUrl: adminAvatarUrl(adminEnv.config.username),
             createdAt: ADMIN_CREATED_AT,
             passwordHash: adminEnv.config.passwordHash,
@@ -142,6 +145,7 @@ function getSeedData(): DatabaseSchema {
       username: "jane_dev",
       email: "jane@example.com",
       isAdmin: false,
+      role: "player" as const,
       avatarUrl: "https://api.dicebear.com/7.x/bottts/svg?seed=jane_dev",
       createdAt: new Date("2026-08-05T08:30:00Z").toISOString(),
       passwordHash: hashPassword("password123"),
@@ -152,6 +156,7 @@ function getSeedData(): DatabaseSchema {
       username: "security_ninja",
       email: "ninja@example.com",
       isAdmin: false,
+      role: "player" as const,
       avatarUrl: "https://api.dicebear.com/7.x/bottts/svg?seed=security_ninja",
       createdAt: new Date("2026-08-10T14:45:00Z").toISOString(),
       passwordHash: hashPassword("password123"),
@@ -166,15 +171,24 @@ function getSeedData(): DatabaseSchema {
 export async function findUserById(id: string): Promise<User | null> {
   const db = await readDbFile();
   const found = db.users.find((u) => u.id === id);
-  if (!found) return null;
+  // A soft-deleted account is gone as far as every caller of this function is
+  // concerned; Trash reads go through listUsers(true) instead.
+  if (!found || found.deletedAt) return null;
   const { passwordHash, ...user } = found;
   return user;
 }
 
-/** All registered users (never exposes password hashes), newest first. */
-export async function listUsers(): Promise<User[]> {
+/**
+ * All registered users (never exposes password hashes), newest first.
+ *
+ * `includeDeleted` is only used by the admin Trash view. Every public read
+ * (leaderboard, sessions, analytics) calls the default and therefore never
+ * sees a deleted account.
+ */
+export async function listUsers(includeDeleted = false): Promise<User[]> {
   const db = await readDbFile();
   return db.users
+    .filter((user) => includeDeleted || !user.deletedAt)
     .map(({ passwordHash, ...user }) => user)
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 }
@@ -210,6 +224,7 @@ export async function registerUser(
       username: formattedUsername,
       email: formattedEmail,
       isAdmin,
+      role: "player" as const,
       avatarUrl,
       createdAt: new Date().toISOString(),
       passwordHash: hashPassword(password),
@@ -235,6 +250,7 @@ export async function validateCredentials(
     );
 
     if (!found) return null;
+    if (found.deletedAt) return null;
 
     if (!verifyPassword(password, found.passwordHash)) return null;
 
@@ -597,6 +613,7 @@ export async function getUserXpTotals(): Promise<Record<string, number>> {
     byUser.set(g.userId, (byUser.get(g.userId) ?? 0) + (g.xpAdjustment ?? 0));
   }
   for (const user of db.users) {
+    if (user.deletedAt) continue;
     totals[user.id] = byUser.get(user.id) ?? 0;
   }
   return totals;
@@ -649,15 +666,56 @@ export async function getAdminLeaderboardPage(
 // --- ADMIN USER MANAGEMENT ---
 
 /**
- * Permanently removes a non-admin user and every record referencing them
- * (game progress, gamification, XP audit trail). Admin accounts are protected.
+ * Moves a non-admin account to Trash (soft delete).
+ *
+ * Nothing is erased: game progress, gamification and the XP audit trail stay
+ * attached, so `restoreUser` can bring the account back exactly as it was.
+ * Staff accounts are protected. The account immediately drops out of every
+ * public read because `findUserById`/`listUsers`/standings all ignore
+ * `deletedAt`.
  */
-export async function deleteUser(userId: string): Promise<{ ok: boolean }> {
+export async function deleteUser(userId: string): Promise<{ ok: boolean; deletedAt: string }> {
+  return withDbLock(async () => {
+    const db = await readDbFile();
+    const target = db.users.find((u) => u.id === userId);
+    if (!target) throw new Error("User not found");
+    if (target.deletedAt) throw new Error("Account is already in Trash");
+    if (target.isAdmin) throw new Error("Cannot delete an admin account");
+
+    const deletedAt = new Date().toISOString();
+    db.users = db.users.map((u) => (u.id === userId ? { ...u, deletedAt } : u));
+    await saveDbFile(db);
+    return { ok: true, deletedAt };
+  });
+}
+
+/** Restores a soft-deleted account from Trash. */
+export async function restoreUser(userId: string): Promise<User> {
+  return withDbLock(async () => {
+    const db = await readDbFile();
+    const target = db.users.find((u) => u.id === userId);
+    if (!target) throw new Error("User not found");
+    if (!target.deletedAt) throw new Error("Account is not in Trash");
+
+    db.users = db.users.map((u) => (u.id === userId ? { ...u, deletedAt: null } : u));
+    await saveDbFile(db);
+    const { passwordHash: _passwordHash, ...user } = db.users.find((u) => u.id === userId)!;
+    return user;
+  });
+}
+
+/**
+ * Permanently erases an account that is already in Trash, along with every row
+ * that references it. Only offered from Trash, so an accidental click on the
+ * active list can never reach this.
+ */
+export async function purgeUser(userId: string): Promise<{ ok: boolean }> {
   return withDbLock(async () => {
     const db = await readDbFile();
     const target = db.users.find((u) => u.id === userId);
     if (!target) throw new Error("User not found");
     if (target.isAdmin) throw new Error("Cannot delete an admin account");
+    if (!target.deletedAt) throw new Error("Move the account to Trash before erasing it");
 
     db.users = db.users.filter((u) => u.id !== userId);
     db.gameProgress = (db.gameProgress ?? []).filter((p) => p.userId !== userId);
@@ -665,6 +723,24 @@ export async function deleteUser(userId: string): Promise<{ ok: boolean }> {
     db.xpAdjustments = (db.xpAdjustments ?? []).filter((a) => a.userId !== userId);
     await saveDbFile(db);
     return { ok: true };
+  });
+}
+
+/** Grants or revokes a panel role. `isAdmin` is kept in sync for public reads. */
+export async function setUserRole(userId: string, role: UserRole): Promise<User> {
+  if (!isKnownRole(role)) throw new Error("Unknown role");
+  return withDbLock(async () => {
+    const db = await readDbFile();
+    const target = db.users.find((u) => u.id === userId);
+    if (!target) throw new Error("User not found");
+    if (target.deletedAt) throw new Error("Restore the account before changing its role");
+
+    db.users = db.users.map((u) =>
+      u.id === userId ? { ...u, role, isAdmin: role !== "player" } : u
+    );
+    await saveDbFile(db);
+    const { passwordHash: _passwordHash, ...user } = db.users.find((u) => u.id === userId)!;
+    return user;
   });
 }
 
@@ -711,7 +787,7 @@ function buildAdminUserDetail(
   rank: number | null
 ): AdminUserDetail {
   const found = db.users.find((u) => u.id === userId);
-  if (!found) throw new Error("User not found");
+  if (!found || found.deletedAt) throw new Error("User not found");
   // `found` is a `UserWithPassword`; structurally it still satisfies `User`,
   // so returning it as-is would ship the scrypt hash inside the API response.
   const { passwordHash: _passwordHash, ...user } = found;
@@ -781,7 +857,7 @@ export async function setUserTotalXp(
   return withDbLock(async () => {
     const db = await readDbFile();
     const target = db.users.find((u) => u.id === userId);
-    if (!target) throw new Error("User not found");
+    if (!target || target.deletedAt) throw new Error("User not found");
     if (target.isAdmin) throw new Error("Cannot adjust an admin account");
 
     const baseXp = baseXpFor(db, userId);
@@ -835,7 +911,7 @@ export async function setUserHiddenFromLeaderboard(
   return withDbLock(async () => {
     const db = await readDbFile();
     const target = db.users.find((u) => u.id === userId);
-    if (!target) throw new Error("User not found");
+    if (!target || target.deletedAt) throw new Error("User not found");
     if (target.isAdmin) throw new Error("Cannot change an admin account");
 
     db.users = db.users.map((u) => (u.id === userId ? { ...u, hiddenFromLeaderboard: hidden } : u));

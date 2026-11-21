@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getAdminUser } from "@/lib/auth";
+import { getAdminActor } from "@/lib/auth";
 import { getAdminLogsPage } from "@/lib/tracking-store";
+import { can } from "@/lib/roles";
 import type { AdminLogQuery, AdminLogSortKey } from "@/types/tracking";
 
 /**
@@ -27,9 +28,12 @@ const SORT_KEYS: readonly AdminLogSortKey[] = [
 ];
 
 export async function GET(req: NextRequest) {
-  const admin = await getAdminUser();
-  if (!admin) {
+  const actor = await getAdminActor();
+  if (!actor) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401, headers: NO_STORE });
+  }
+  if (!can(actor.role, "logs:view")) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403, headers: NO_STORE });
   }
 
   const params = req.nextUrl.searchParams;

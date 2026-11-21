@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getAdminUser } from "@/lib/auth";
+import { getAdminActor } from "@/lib/auth";
 import { getAdminLeaderboardPage } from "@/lib/db";
+import { can } from "@/lib/roles";
 import type { AdminLeaderboardQuery, AdminLeaderboardSortKey } from "@/types";
 
 /**
@@ -22,9 +23,12 @@ const DEFAULT_PAGE_SIZE = 25;
 const SORT_KEYS: readonly AdminLeaderboardSortKey[] = ["rank", "xp", "name", "streak"];
 
 export async function GET(req: NextRequest) {
-  const admin = await getAdminUser();
-  if (!admin) {
+  const actor = await getAdminActor();
+  if (!actor) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401, headers: NO_STORE });
+  }
+  if (!can(actor.role, "leaderboard:view")) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403, headers: NO_STORE });
   }
 
   const params = req.nextUrl.searchParams;
